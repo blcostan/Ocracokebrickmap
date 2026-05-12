@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Island Inn Memorial Brick Finder</title>
+    <title>Island Inn Memorial Brick Map</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
         :root {
@@ -11,162 +11,54 @@
             --brick-border: #5d4037;
             --highlight: #ffd54f;
             --lawn: #7ea37e;
+            --blank-bg: #e0e0e0;
         }
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: #fdfdfd; 
-            margin: 0; 
-            padding: 0; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; /* Centers everything horizontally */
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #fdfdfd; margin: 0; display: flex; flex-direction: column; align-items: center; }
         
         .header { 
-            position: sticky; top: 0; width: 100%; background: white; 
-            padding: 20px 0; z-index: 1000; text-align: center;
-            border-bottom: 4px solid var(--brick-border); 
+            position: sticky; top: 0; width: 100%; background: white; padding: 20px 0; 
+            z-index: 1000; text-align: center; border-bottom: 4px solid var(--brick-border);
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        input { 
-            padding: 12px; width: 85%; max-width: 450px; 
-            border-radius: 25px; border: 2px solid #ddd; font-size: 16px; 
-            outline: none; transition: 0.3s;
-        }
-        input:focus { border-color: var(--brick-border); box-shadow: 0 0 8px rgba(0,0,0,0.1); }
+        input { padding: 12px; width: 85%; max-width: 450px; border-radius: 25px; border: 2px solid #ddd; font-size: 16px; outline: none; }
 
-        /* The Main Path Layout */
-        .map-container { 
-            width: 100%; 
-            max-width: 1000px; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; /* Keeps the plazas centered */
-            padding: 40px 0;
-        }
+        .map-container { padding: 40px 10px; display: flex; flex-direction: column; align-items: center; width: 100%; }
 
-        .plaza-island { 
-            display: inline-flex; /* Shrinks to fit 6 columns */
-            flex-direction: column; 
-            gap: 6px; 
-            background: #ececec; 
-            padding: 20px; 
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            margin: 0 auto;
+        /* The Grid System */
+        .plaza { 
+            display: inline-flex; flex-direction: column; gap: 4px; 
+            background: #d3d3d3; padding: 15px; border-radius: 4px; 
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
         }
-
         .row { 
             display: grid; 
-            grid-template-columns: repeat(6, 130px); /* Fixed 6 columns */
-            gap: 8px; 
-            justify-content: center; /* Centers the bricks within the 6-col grid */
+            grid-template-columns: repeat(6, 120px); /* Strict 6-column layout */
+            gap: 4px; 
+            justify-content: center;
         }
 
         .brick {
-            width: 130px; height: 65px; background: var(--brick-bg);
-            border: 1px solid var(--brick-border); border-radius: 3px;
+            width: 120px; height: 60px; background: var(--brick-bg);
+            border: 1px solid var(--brick-border); border-radius: 2px;
             display: flex; align-items: center; justify-content: center;
-            padding: 6px; font-size: 10px; font-weight: bold; text-align: center; 
-            cursor: pointer; color: white; line-height: 1.2; box-sizing: border-box;
-            box-shadow: 2px 2px 0px rgba(0,0,0,0.1); transition: 0.2s;
+            padding: 5px; font-size: 9px; font-weight: bold; text-align: center; 
+            cursor: pointer; color: white; line-height: 1.1; box-sizing: border-box;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
         }
         
-        .empty-space { width: 130px; height: 65px; background: transparent; }
-
-        .brick:hover { filter: brightness(1.1); transform: translateY(-2px); }
-        .brick.match { background: var(--highlight) !important; color: #000; transform: scale(1.1); z-index: 10; border: 2px solid orange; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        .brick.hidden { opacity: 0.15; filter: grayscale(1); }
-
-        /* Landscaping */
-        .lawn { 
-            width: 90%; max-width: 850px; height: 180px; background: var(--lawn); 
-            margin: 30px 0; border-radius: 10px; display: flex; align-items: center; 
-            justify-content: center; color: white; font-weight: bold; font-style: italic;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
-        }
-        .label { font-weight: bold; color: #888; margin: 20px 0 10px 0; text-transform: uppercase; font-size: 12px; letter-spacing: 2px; }
-    </style>
-</head>
-<body>
-
-    <div class="header">
-        <h2 style="margin:0 0 10px 0; color: var(--brick-border);">Ocracoke Memorial Brick Finder</h2>
-        <input type="text" id="search" placeholder="Type a name to locate a brick...">
-        <div id="stats" style="font-size: 12px; color: #999; margin-top: 5px;"></div>
-    </div>
-
-    <div class="map-container">
-        <div class="label">Northwest Section</div>
-        <div id="nw-plaza" class="plaza-island"></div>
-        
-        <div class="lawn">MIDDLE LAWN</div>
-        
-        <div class="label">Southeast Plaza</div>
-        <div id="se-plaza" class="plaza-island"></div>
-    </div>
-
-    <script>
-        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ3j2xmIEyMKMz7nwsVM4HaZuXtBTQmyyJijPGkhQULJQbB2NcD0ZnrW_WWTKYe4FmD6WsZjD_TXh6-/pub?output=csv';
-
-        Papa.parse(CSV_URL, {
-            download: true, header: true,
-            complete: function(results) {
-                const data = results.data.filter(b => b.Inscription && b.Inscription.trim() !== "");
-                
-                // Segment 1: Photo 1
-                renderSection('nw-plaza', data.filter(b => b['Photo Section'] === 'Photo 1'));
-                
-                // Segment 2: Everything else (Photos 2, 3, 4)
-                renderSection('se-plaza', data.filter(b => b['Photo Section'] !== 'Photo 1'));
-                
-                document.getElementById('stats').innerText = `${data.length} Bricks Found`;
-            }
-        });
-
-        function renderSection(containerId, bricks) {
-            const container = document.getElementById(containerId);
-            
-            const rows = [...new Set(bricks.map(b => b.Row))].sort((a, b) => {
-                if (a === 'Center' || b === 'Center') return 0;
-                return parseInt(a) - parseInt(b);
-            });
-
-            rows.forEach(r => {
-                const rowDiv = document.createElement('div');
-                rowDiv.className = 'row';
-                const rowData = bricks.filter(b => b.Row === r);
-                
-                for (let col = 1; col <= 6; col++) {
-                    const brick = rowData.find(b => parseInt(b.Col) === col);
-                    if (brick) {
-                        const bDiv = document.createElement('div');
-                        bDiv.className = 'brick';
-                        bDiv.innerText = brick.Inscription;
-                        bDiv.onclick = () => alert(brick.Inscription);
-                        rowDiv.appendChild(bDiv);
-                    } else {
-                        const empty = document.createElement('div');
-                        empty.className = 'empty-space';
-                        rowDiv.appendChild(empty);
-                    }
-                }
-                container.appendChild(rowDiv);
-            });
+        /* Styling for the blank spacers */
+        .brick.is-blank { 
+            background: var(--blank-bg); border: 1px dashed #bbb; 
+            color: transparent; cursor: default; box-shadow: none; 
         }
 
-        document.getElementById('search').addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase().trim();
-            document.querySelectorAll('.brick').forEach(b => {
-                const match = b.innerText.toLowerCase().includes(term);
-                if (term === "") {
-                    b.classList.remove('match', 'hidden');
-                } else {
-                    b.classList.toggle('match', match);
-                    b.classList.toggle('hidden', !match);
-                }
-            });
-        });
-    </script>
-</body>
-</html>
+        /* Large Center Stone Styling */
+        .brick.center-stone {
+            grid-column: span 6; width: 100%; height: 80px;
+            background: #8d6e63; font-size: 14px; letter-spacing: 2px;
+        }
+
+        .brick.match { background: var(--highlight) !important; color: #000; transform: scale(1.1); z-index: 10; border-color: #f57c00; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .brick.hidden { opacity: 0.1; filter: grayscale(1); }
+
+        .lawn { width: 90%; max-width: 800px; height: 150px; background: var
