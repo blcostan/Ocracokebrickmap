@@ -4,193 +4,93 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Island Inn | Fig Garden Brick Finder</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
         :root {
-            --fig-green: #415d43;
-            --fig-purple: #5e3c58;
-            --sand: #fdfaf5;
-            --brick: #b06d50;
-            --path-tan: #dcd7cc;
+            --fig-green: #2d5a27; --sand: #fdfaf5;
+            --brick: #b06d50; --ocean: #0077be; --wood: #7d6e64;
         }
+        body { font-family: 'Georgia', serif; background-color: var(--sand); margin: 0; color: #333; }
+        
+        .header { position: sticky; top: 0; width: 100%; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); padding: 20px 0; z-index: 1000; text-align: center; border-bottom: 5px solid var(--ocean); }
+        
+        /* Updated to use your GitHub AVIF link */
+        .render-map { width: 90%; max-width: 600px; margin: 15px auto; border: 2px solid #ddd; border-radius: 4px; display: block; }
+        
+        #search { padding: 12px 20px; width: 80%; max-width: 400px; border-radius: 25px; border: 2px solid #aec4c2; font-size: 16px; margin-top: 10px; outline: none; }
 
-        body { 
-            font-family: 'Georgia', serif; 
-            background-color: var(--sand);
-            margin: 0; 
-            color: #333;
-            line-height: 1.6;
-        }
-
-        /* Fixed Botanical Art */
-        .foliage {
-            position: fixed; top: 0; width: 200px; height: 100%; z-index: -1; opacity: 0.6; pointer-events: none;
-        }
-        .foliage-left { 
-            left: 0; 
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 400'%3E%3Cpath d='M20 50 c15-15 40-5 35 20 s-25 25-35 0' fill='%23415d43'/%3E%3Cpath d='M20 180 c20-20 50-10 45 30 s-35 35-45 0' fill='%237a8d60'/%3E%3Cpath d='M45 75 q5-15 15-5 t-5 25' fill='%235e3c58'/%3E%3C/svg%3E");
-        }
-        .foliage-right { 
-            right: 0; 
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 400'%3E%3Cpath d='M80 110 c-15-15-40-5-35 20 s25 25 35 0' fill='%23415d43'/%3E%3Cpath d='M60 250 c-25-25-60-15-55 45 s45 55 55 0' fill='%235e3c58'/%3E%3C/svg%3E");
-        }
-
-        .header { 
-            position: sticky; top: 0; width: 100%; 
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 20px 0; z-index: 1000; text-align: center; 
-            border-bottom: 4px solid var(--fig-green);
-            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
-        }
-
-        .header h1 { margin: 0; color: var(--fig-green); font-size: 1.8rem; letter-spacing: 1px; }
-
-        /* Garden Rendering Styles */
-        .render-card {
-            width: 90%; max-width: 700px; margin: 20px auto;
-            background: white; padding: 10px; border: 1px solid var(--path-tan);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-        }
-        .render-card img { width: 100%; height: auto; display: block; border-radius: 2px; }
-        .render-label { font-size: 11px; color: #777; margin-top: 8px; text-transform: uppercase; letter-spacing: 1px; }
-
-        input { 
-            padding: 12px 20px; width: 80%; max-width: 400px; 
-            border-radius: 25px; border: 2px solid var(--path-tan); 
-            font-size: 16px; margin-top: 15px; outline: none;
-            transition: border-color 0.3s;
-        }
-        input:focus { border-color: var(--fig-green); }
-
-        .map-container { padding: 20px; display: flex; flex-direction: column; align-items: center; }
-
-        .plaza { 
-            display: inline-flex; flex-direction: column; gap: 6px; 
-            background: rgba(255, 255, 255, 0.5); padding: 15px; 
-            border: 1px solid var(--path-tan); margin-bottom: 20px; 
-        }
-
+        .container { padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .plaza { display: inline-flex; flex-direction: column; gap: 6px; background: rgba(255, 255, 255, 0.5); padding: 12px; border: 1px solid #dcd7cc; margin-bottom: 30px; }
         .row { display: grid; gap: 5px; justify-content: center; }
-
-        .brick { 
-            width: 100px; height: 50px; background: var(--brick); 
-            border: 1px solid #4a3728; display: flex; 
-            align-items: center; justify-content: center; padding: 4px; 
-            font-size: 8.5px; font-weight: bold; text-align: center; color: white; 
-            line-height: 1.1; cursor: pointer; transition: 0.2s;
-        }
-
+        
+        .brick { width: 100px; height: 50px; background: var(--brick); border: 1px solid #4a3728; display: flex; align-items: center; justify-content: center; padding: 5px; font-size: 8px; font-weight: bold; text-align: center; color: white; line-height: 1.1; cursor: pointer; transition: 0.2s; }
         .brick.is-blank { background: #eeeae0; border: 1px dashed #ccc; color: transparent; pointer-events: none; }
-        
-        .brick.center-stone { 
-            background: #7d6e64; font-size: 13px; height: 80px; 
-            border: 4px double #fff; grid-column: 1 / -1; width: 100%;
-        }
-
-        .brick.match { 
-            background: #ffd54f !important; color: #000 !important; 
-            transform: scale(1.15); z-index: 100; border: 2px solid orange;
-            box-shadow: 0 0 15px rgba(0,0,0,0.2);
-        }
-        
+        .brick.match { background: #ffd54f !important; color: #000 !important; transform: scale(1.15); z-index: 10; border: 2px solid orange; box-shadow: 0 0 15px rgba(0,0,0,0.3); }
         .brick.hidden { opacity: 0.1; filter: grayscale(1); }
+        
+        .brick.center-stone { background: var(--wood); font-size: 13px; height: 80px; border: 4px double #fff; grid-column: 1 / -1; width: 100%; }
+        .lawn { width: 100%; max-width: 700px; height: 50px; background: #8da58e; margin: 20px 0; border-radius: 25px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 3px; border: 3px solid #6d8c6d; }
+        .label { font-weight: bold; color: var(--fig-green); margin: 10px 0; text-transform: uppercase; font-size: 12px; letter-spacing: 2px; }
 
-        .lawn-divider { 
-            width: 100%; max-width: 600px; height: 60px; background: #8da58e;
-            margin: 20px 0; border-radius: 30px; display: flex; align-items: center; 
-            justify-content: center; color: white; font-weight: bold; text-transform: uppercase; 
-            letter-spacing: 4px; font-size: 12px; border: 2px solid #6d8c6d;
-        }
-
-        .section-title { font-weight: bold; color: var(--fig-green); margin: 15px 0; text-transform: uppercase; font-size: 12px; letter-spacing: 2px; }
-
-        @media (max-width: 600px) {
-            .foliage { display: none; }
-            .brick { width: 14vw; height: 10vw; font-size: 1.5vw; }
-        }
+        @media (max-width: 600px) { .brick { width: 14vw; height: 10vw; font-size: 1.5vw; } }
     </style>
 </head>
 <body>
-
-    <div class="foliage foliage-left"></div>
-    <div class="foliage foliage-right"></div>
-
     <div class="header">
         <h1>Island Inn Fig Garden</h1>
-        
-        <div class="render-card">
-            <img src="rendering of garden.jpg" alt="Garden Rendering">
-            <div class="render-label">Interactive Map Reference</div>
-        </div>
-
-        <input type="text" id="search" placeholder="Search names or inscriptions...">
+        <img src="rendering%20of%20garden.avif" class="render-map" alt="Garden Map">
+        <input type="text" id="search" placeholder="Search names (e.g., Sam Jones, Norvell)...">
     </div>
-
-    <div class="map-container">
-        <div class="section-title">North Path (Top of Rendering)</div>
+    <div class="container">
+        <div class="label">North Path (Fig Garden)</div>
         <div id="north-section" class="plaza"></div>
-        
-        <div class="lawn-divider">Central Lawn Area</div>
-        
+        <div class="lawn">Central Lawn</div>
         <div id="south-section" class="plaza"></div>
-        <div class="section-title">South Path (Bottom of Rendering)</div>
+        <div class="label">South Path</div>
     </div>
 
     <script>
-        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ3j2xmIEyMKMz7nwsVM4HaZuXtBTQmyyJijPGkhQULJQbB2NcD0ZnrW_WWTKYe4FmD6WsZjD_TXh6-/pub?output=csv';
+        // Sample data from your directory 
+        const brickData = [
+            {s:"North", r:2, c:2, i:"LET THE GOOD BEGIN"},
+            {s:"North", r:4, c:2, i:"SAM JONES", n:"Sam Jones"},
+            {s:"North", r:12, c:2, i:"OCRACOKE VARIETY STORE"},
+            {s:"North", r:14, c:1, i:"SUSAN AND EDWARD NORVELL", n:"Susan Norvell, Edward Norvell"},
+            {s:"South", r:3, c:1, i:"DAVID GUGLIELMO ALICE & BILL MARROW", n:"David Guglielmo, Alice Marrow, Bill Marrow"},
+            {s:"South", r:20, c:3, i:"ISLAND INN COMMONS"},
+            {s:"South", r:38, c:3, i:"IN MEMORY OF DEAN AND BARB MILLER", n:"Dean Miller, Barb Miller"}
+        ];
 
-        Papa.parse(CSV_URL, {
-            download: true, header: true, skipEmptyLines: true, dynamicTyping: true,
-            complete: function(results) {
-                const data = results.data;
-                const north = data.filter(b => String(b.Section).trim() === 'North');
-                const south = data.filter(b => String(b.Section).trim() === 'South');
-                renderSection('north-section', north, true); // Reversed to meet lawn
-                renderSection('south-section', south, false);
-            }
-        });
-
-        function renderSection(id, bricks, rev) {
+        function render(id, sectionName, totalRows, rev) {
             const container = document.getElementById(id);
-            const rowMap = {};
-            bricks.forEach(b => {
-                if (!rowMap[b.Row]) rowMap[b.Row] = {};
-                rowMap[b.Row][b.Col] = b;
-            });
-            let keys = Object.keys(rowMap).sort((a,b) => a - b);
-            if (rev) keys.reverse();
-            keys.forEach(k => {
+            for (let r = 1; r <= totalRows; r++) {
+                const rowNum = rev ? (totalRows - r + 1) : r;
                 const rowDiv = document.createElement('div');
                 rowDiv.className = 'row';
-                const cols = rowMap[k];
-                const colNums = Object.keys(cols).map(n => parseInt(n));
-                const max = Math.max(...colNums, 5);
-                rowDiv.style.gridTemplateColumns = `repeat(${max}, 1fr)`;
-                
-                if (Object.values(cols).some(b => b.Inscription && b.Inscription.includes("COMMONS"))) {
+                rowDiv.style.gridTemplateColumns = `repeat(6, 1fr)`;
+
+                for (let c = 1; c <= 6; c++) {
+                    const b = brickData.find(d => d.s === sectionName && d.r === rowNum && d.c === c);
                     const bDiv = document.createElement('div');
-                    bDiv.className = 'brick center-stone';
-                    bDiv.innerText = "ISLAND INN COMMONS";
-                    rowDiv.appendChild(bDiv);
-                } else {
-                    for (let c = 1; c <= max; c++) {
-                        const brick = cols[c];
-                        const bDiv = document.createElement('div');
-                        if (brick) {
-                            const txt = (brick.Inscription || "").trim();
-                            const blank = txt === "" || txt.includes("[BLANK]");
-                            bDiv.className = 'brick' + (blank ? ' is-blank' : '');
-                            bDiv.innerText = blank ? "" : txt;
-                            bDiv.dataset.search = (txt + " " + (brick["Searchable Names"] || "")).toLowerCase();
-                            if (!blank) bDiv.onclick = () => alert(`"${txt}"\nRow ${k}, Column ${c}`);
-                        } else { bDiv.className = 'brick is-blank'; }
-                        rowDiv.appendChild(bDiv);
+                    
+                    if (b && b.i === "ISLAND INN COMMONS") {
+                        bDiv.className = 'brick center-stone';
+                        bDiv.innerText = b.i;
+                    } else if (b) {
+                        bDiv.className = 'brick';
+                        bDiv.innerText = b.i;
+                        bDiv.dataset.search = (b.i + " " + (b.n || "")).toLowerCase();
+                    } else {
+                        bDiv.className = 'brick is-blank';
                     }
+                    rowDiv.appendChild(bDiv);
                 }
                 container.appendChild(rowDiv);
-            });
+            }
         }
+
+        // Render based on the directory row counts [cite: 16, 34]
+        render('north-section', 'North', 42, true); 
+        render('south-section', 'South', 40, false);
 
         document.getElementById('search').addEventListener('input', (e) => {
             const t = e.target.value.toLowerCase().trim();
