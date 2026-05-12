@@ -7,14 +7,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
         :root {
-            --brick-bg: #d2b48c; /* Tan/Brick color */
-            --brick-border: #8b4513; /* Brown border */
-            --highlight: #ffeb3b; /* Yellow for search matches */
+            --brick-bg: #d2b48c; 
+            --brick-border: #8b4513; 
+            --highlight: #ffeb3b; 
             --text-color: #333;
         }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #fafafa; margin: 0; padding: 0; text-align: center; }
         
-        /* Sticky Header for Search */
         .controls { 
             position: sticky; 
             top: 0; 
@@ -33,38 +32,15 @@
             border-radius: 25px; 
             font-size: 18px;
             outline: none;
-            transition: border-color 0.3s;
         }
-        input:focus { border-color: var(--brick-border); }
         #stats { margin-top: 10px; font-weight: bold; color: #666; }
 
-        /* Map Layout */
-        .map-container { display: flex; flex-direction: column; align-items: center; gap: 50px; padding: 40px 20px; }
-        
-        .section { 
-            background: #fff; 
-            padding: 30px; 
-            border-radius: 15px; 
-            width: 100%; 
-            max-width: 1100px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            border: 1px solid #ddd;
-        }
-        .section-title { 
-            font-size: 20px; 
-            font-weight: bold; 
-            margin-bottom: 25px; 
-            color: #888; 
-            text-transform: uppercase; 
-            letter-spacing: 3px;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
-        }
+        .map-container { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 40px 20px; }
         
         .grid { display: flex; flex-direction: column; gap: 10px; align-items: center; }
         .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
         
-        /* Brick Styling */
+        /* UNIFORM BRICK SIZE */
         .brick {
             width: 150px; 
             height: 75px;
@@ -84,32 +60,20 @@
             transition: all 0.2s ease; 
             cursor: pointer;
             color: var(--text-color);
+            box-sizing: border-box; /* Ensures padding doesn't change size */
         }
-        .brick:hover { transform: translateY(-5px); box-shadow: 5px 5px 15px rgba(0,0,0,0.2); background: #e6ccaa; }
         
-        /* Interactive States */
+        .brick:hover { transform: translateY(-5px); background: #e6ccaa; }
         .brick.hidden { opacity: 0.15; filter: grayscale(1); transform: scale(0.95); }
         .brick.match { 
             background: var(--highlight); 
             border-color: #f57c00; 
-            transform: scale(1.15); 
+            transform: scale(1.1); 
             z-index: 50; 
-            box-shadow: 0 0 20px rgba(255, 235, 59, 0.6);
-        }
-
-        /* Large Center Stone Styling */
-        .brick.center-brick { 
-            width: 350px; 
-            height: 120px; 
-            background: var(--brick-border); 
-            color: white; 
-            font-size: 18px; 
-            border-color: #5d2e0d;
         }
 
         @media (max-width: 600px) {
             .brick { width: 120px; height: 60px; font-size: 9px; }
-            .brick.center-brick { width: 250px; height: 80px; font-size: 14px; }
         }
     </style>
 </head>
@@ -117,32 +81,23 @@
 
     <div class="controls">
         <h1>Ocracoke Memorial Brick Map</h1>
-        <input type="text" id="search" placeholder="Type a name (e.g., 'Holloman' or 'Cockrell')...">
-        <div id="stats">Connecting to Google Sheets...</div>
+        <input type="text" id="search" placeholder="Search by name...">
+        <div id="stats">Connecting to Map...</div>
     </div>
 
-    <div id="map" class="map-container">
-        </div>
+    <div id="map" class="map-container"></div>
 
     <script>
-        // Your actual Google Sheets CSV URL
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ3j2xmIEyMKMz7nwsVM4HaZuXtBTQmyyJijPGkhQULJQbB2NcD0ZnrW_WWTKYe4FmD6WsZjD_TXh6-/pub?output=csv';
-
-        let allBricks = [];
 
         function init() {
             Papa.parse(CSV_URL, {
                 download: true,
                 header: true,
                 complete: function(results) {
-                    // Filter out any empty rows
-                    allBricks = results.data.filter(row => row.Inscription && row.Inscription.trim() !== "");
-                    renderMap(allBricks);
-                    document.getElementById('stats').innerText = `Total Bricks: ${allBricks.length} | Visual Map Ready`;
-                },
-                error: function(err) {
-                    document.getElementById('stats').innerText = "Error loading data. Check spreadsheet publishing.";
-                    console.error(err);
+                    const data = results.data.filter(row => row.Inscription && row.Inscription.trim() !== "");
+                    renderMap(data);
+                    document.getElementById('stats').innerText = `Total Bricks: ${data.length}`;
                 }
             });
         }
@@ -151,23 +106,18 @@
             const container = document.getElementById('map');
             container.innerHTML = '';
             
-            // Define the sections in order
+            const gridDiv = document.createElement('div');
+            gridDiv.className = 'grid';
+
+            // We group bricks by their Section and Row to maintain the physical sequence
+            // but we no longer display the section labels.
             const sections = ['Photo 1', 'Photo 2', 'Photo 3', 'Photo 4'];
             
             sections.forEach(secName => {
                 const secData = data.filter(b => b['Photo Section'] === secName);
-                if (secData.length === 0) return;
-
-                const secDiv = document.createElement('div');
-                secDiv.className = 'section';
-                secDiv.innerHTML = `<div class="section-title">${secName}</div>`;
                 
-                const gridDiv = document.createElement('div');
-                gridDiv.className = 'grid';
-
-                // Sort and group by Row number
                 const rows = [...new Set(secData.map(b => b.Row))].sort((a, b) => {
-                    if (a === 'Center' || b === 'Center') return a === 'Center' ? -1 : 1;
+                    if (a === 'Center' || b === 'Center') return 0; 
                     return parseInt(a) - parseInt(b);
                 });
                 
@@ -178,40 +128,27 @@
                     
                     bricksInRow.forEach(brick => {
                         const bDiv = document.createElement('div');
-                        // Apply special class for center bricks
-                        const isCenter = brick.Inscription.includes("ISLAND INN") || brick.Row === "Center";
-                        bDiv.className = 'brick' + (isCenter ? ' center-brick' : '');
-                        
+                        bDiv.className = 'brick'; // All bricks now use only this class
                         bDiv.innerText = brick.Inscription;
+                        bDiv.title = `Row ${brick.Row}, Col ${brick.Col}\n${brick['Searchable Names']}`;
                         
-                        // Tooltip with metadata
-                        bDiv.title = `Location: ${secName}, Row ${brick.Row}, Col ${brick.Col}\nSearchable Names: ${brick['Searchable Names']}`;
-                        
-                        // Click to show more info (optional)
-                        bDiv.onclick = () => alert(`Brick Info:\n${brick.Inscription}\n\nLocation: ${secName}, Row ${brick.Row}, Column ${brick.Col}`);
-                        
+                        bDiv.onclick = () => alert(`"${brick.Inscription}"\n\nRow: ${brick.Row}\nColumn: ${brick.Col}`);
                         rowDiv.appendChild(bDiv);
                     });
                     gridDiv.appendChild(rowDiv);
                 });
-
-                secDiv.appendChild(gridDiv);
-                container.appendChild(secDiv);
             });
+
+            container.appendChild(gridDiv);
         }
 
-        // Real-time Search Logic
         document.getElementById('search').addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase().trim();
-            const bricks = document.querySelectorAll('.brick');
-            
-            bricks.forEach(bDiv => {
-                const text = bDiv.innerText.toLowerCase();
-                const metadata = bDiv.title.toLowerCase(); // Check searchable names too
-                
+            document.querySelectorAll('.brick').forEach(bDiv => {
+                const isMatch = bDiv.innerText.toLowerCase().includes(term) || bDiv.title.toLowerCase().includes(term);
                 if (term === '') {
                     bDiv.classList.remove('match', 'hidden');
-                } else if (text.includes(term) || metadata.includes(term)) {
+                } else if (isMatch) {
                     bDiv.classList.add('match');
                     bDiv.classList.remove('hidden');
                 } else {
@@ -221,7 +158,6 @@
             });
         });
 
-        // Start the process
         init();
     </script>
 </body>
