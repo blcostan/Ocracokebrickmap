@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Island Inn | Brick Finder with Navigation</title>
+    <title>Island Inn | Precision Garden Locator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
         :root { --fig-green: #2d5a27; --sand: #fdfaf5; --brick: #b06d50; --ocean: #0077be; --wood: #7d6e64; --highlight: #ff3b3b; }
@@ -68,10 +68,10 @@
             <div id="locator-dot"></div>
         </div>
         <p style="font-size:0.8rem; color:#444; line-height:1.5; margin-top:20px;">
-            <b>Map Key:</b><br>
-            • South Section (Red/Top)<br>
-            • North Section (Blue/Bottom)<br><br>
-            Use <b>NEXT</b> to cycle through multiple families with the same name.
+            <b>Updated Placement:</b><br>
+            Horizontal: 54%<br>
+            South (Top) Vertical: 38%<br>
+            North (Bottom) Vertical: 72%
         </p>
     </div>
 
@@ -127,80 +127,4 @@
                 const label = document.createElement('div'); label.className = 'row-label'; label.innerText = 'R' + r;
                 rowWrapper.appendChild(label);
                 const rowGrid = document.createElement('div');
-                rowGrid.className = 'row-grid';
-                rowGrid.style.gridTemplateColumns = `repeat(${maxCol}, 1fr)`;
-
-                for (let c = 1; c <= maxCol; c++) {
-                    const brick = rowData[c];
-                    const bDiv = document.createElement('div');
-                    if (brick) {
-                        const isCommons = brick.Inscription && brick.Inscription.includes("COMMONS");
-                        const isBlank = (brick.Inscription || "").includes("[BLANK]");
-                        bDiv.className = isCommons ? 'brick center-stone' : ('brick' + (isBlank ? ' is-blank' : ''));
-                        bDiv.innerText = isBlank ? "" : brick.Inscription;
-                        bDiv.dataset.search = (brick.Inscription + " " + (brick["Searchable Names"] || "")).toLowerCase();
-                        bDiv.dataset.section = brick.Section;
-                    } else { bDiv.className = 'brick is-blank'; }
-                    rowGrid.appendChild(bDiv);
-                }
-                rowWrapper.appendChild(rowGrid);
-                container.appendChild(rowWrapper);
-            }
-        }
-
-        function updateNavigation() {
-            const dot = document.getElementById('locator-dot');
-            const nextBtn = document.getElementById('next-btn');
-            const countLabel = document.getElementById('match-count');
-
-            // Reset classes
-            document.querySelectorAll('.brick').forEach(b => b.classList.remove('active-match'));
-
-            if (matchedBricks.length > 0) {
-                const current = matchedBricks[currentMatchIndex];
-                current.classList.add('active-match');
-                current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-                dot.style.display = 'block';
-                const centerX = '54%'; 
-                dot.style.top = (current.dataset.section === 'North') ? '72%' : '34%';
-                dot.style.left = centerX;
-
-                nextBtn.style.display = matchedBricks.length > 1 ? 'block' : 'none';
-                countLabel.innerText = `Found ${matchedBricks.length} match(es). Showing #${currentMatchIndex + 1}`;
-            } else {
-                dot.style.display = 'none';
-                nextBtn.style.display = 'none';
-                countLabel.innerText = "";
-            }
-        }
-
-        document.getElementById('search').addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase().trim();
-            matchedBricks = [];
-            currentMatchIndex = 0;
-
-            document.querySelectorAll('.brick').forEach(b => {
-                if (b.classList.contains('center-stone')) return;
-                const matches = term !== "" && b.dataset.search && b.dataset.search.includes(term);
-                b.classList.toggle('match', matches);
-                b.classList.toggle('hidden', term !== "" && !matches);
-                if (matches) matchedBricks.push(b);
-            });
-
-            updateNavigation();
-        });
-
-        document.getElementById('next-btn').addEventListener('click', () => {
-            currentMatchIndex = (currentMatchIndex + 1) % matchedBricks.length;
-            updateNavigation();
-        });
-
-        function scrollToPath() {
-            if (matchedBricks[currentMatchIndex]) {
-                matchedBricks[currentMatchIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        }
-    </script>
-</body>
-</html>
+                rowGrid.className
