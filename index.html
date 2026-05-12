@@ -23,7 +23,16 @@
 
         .main-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; scroll-behavior: smooth; }
         .header { position: sticky; top: 0; width: 100%; background: white; padding: 15px 0; z-index: 1000; text-align: center; border-bottom: 4px solid var(--ocean); }
-        #search { padding: 12px 20px; width: 85%; max-width: 400px; border-radius: 25px; border: 2px solid #aec4c2; font-size: 16px; outline: none; }
+        
+        .search-controls { display: flex; gap: 10px; justify-content: center; align-items: center; width: 90%; max-width: 500px; margin: 0 auto; }
+        #search { padding: 12px 20px; flex: 1; border-radius: 25px; border: 2px solid #aec4c2; font-size: 16px; outline: none; }
+        
+        #next-btn { 
+            padding: 10px 20px; border-radius: 20px; border: none; 
+            background: var(--fig-green); color: white; cursor: pointer; 
+            font-weight: bold; display: none;
+        }
+        #match-count { font-size: 12px; color: #666; margin-top: 5px; min-height: 15px; }
 
         .container { padding: 40px 20px; width: 100%; display: flex; flex-direction: column; align-items: center; }
         .plaza { display: inline-flex; flex-direction: column; gap: 4px; padding: 10px; margin-bottom: 30px; align-items: center; }
@@ -36,7 +45,8 @@
             display: flex; align-items: center; justify-content: center; padding: 4px; 
             font-size: 8px; font-weight: bold; text-align: center; color: white; line-height: 1.1; 
         }
-        .brick.match { background: #ffd54f !important; color: #000 !important; transform: scale(1.1); border: 2px solid orange; box-shadow: 0 0 15px rgba(0,0,0,0.3); }
+        .brick.match { background: #ffd54f !important; color: #000 !important; border: 2px solid orange; }
+        .brick.active-match { transform: scale(1.15); box-shadow: 0 0 20px rgba(0,0,0,0.4); z-index: 5; outline: 3px solid var(--highlight); }
         .brick.hidden { opacity: 0.15; filter: grayscale(1); }
         .brick.is-blank { background: #eeeae0; border: 1px dashed #ccc; color: transparent; pointer-events: none; }
         .brick.center-stone { background: var(--wood); font-size: 12px; height: 80px; border: 4px double #fff; width: 100%; grid-column: 1 / -1; }
@@ -55,15 +65,20 @@
             <div id="locator-dot"></div>
         </div>
         <p style="font-size:0.8rem; color:#666; margin-top:15px;">
-            Top = South Path<br>
-            Bottom = North Path
+            Top = South Path (38%)<br>
+            Bottom = North Path (72%)<br>
+            Horizontal = 54%
         </p>
     </div>
 
     <div class="main-content">
         <div class="header">
             <h1>Fig Garden Brick Finder</h1>
-            <input type="text" id="search" placeholder="Type a name...">
+            <div class="search-controls">
+                <input type="text" id="search" placeholder="Type a name...">
+                <button id="next-btn">NEXT</button>
+            </div>
+            <div id="match-count"></div>
         </div>
         <div class="container">
             <div id="north-section" class="plaza"></div>
@@ -74,13 +89,15 @@
 
     <script>
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ3j2xmIEyMKMz7nwsVM4HaZuXtBTQmyyJijPGkhQULJQbB2NcD0ZnrW_WWTKYe4FmD6WsZjD_TXh6-/pub?output=csv';
+        let currentMatchIndex = 0;
+        let matchedBricks = [];
 
         Papa.parse(CSV_URL, {
             download: true, header: true, skipEmptyLines: true,
             complete: function(results) {
                 const data = results.data;
                 data.forEach(row => {
-                    row.Section = String(row.Section).trim().split(' ')[0];
+                    row.Section = String(row.Section || "").trim().split(' ')[0];
                     row.Row = parseInt(row.Row);
                     row.Col = parseInt(row.Col);
                 });
@@ -106,61 +123,75 @@
                 rowGrid.className = 'row-grid';
                 rowGrid.style.gridTemplateColumns = `repeat(${maxCol}, 1fr)`;
 
-                if (Object.values(rowData).some(b => b.Inscription && b.Inscription.includes("COMMONS"))) {
-                    const stone = document.createElement('div'); stone.className = 'brick center-stone'; stone.innerText = "ISLAND INN COMMONS"; rowGrid.appendChild(stone);
-                } else {
-                    for (let c = 1; c <= maxCol; c++) {
-                        const brick = rowData[c];
-                        const bDiv = document.createElement('div');
-                        if (brick) {
-                            const isBlank = (brick.Inscription || "").includes("[BLANK]");
-                            bDiv.className = 'brick' + (isBlank ? ' is-blank' : '');
-                            bDiv.innerText = isBlank ? "" : brick.Inscription;
-                            bDiv.dataset.search = (brick.Inscription + " " + (brick["Searchable Names"] || "")).toLowerCase();
-                            bDiv.dataset.section = brick.Section;
-                        } else { bDiv.className = 'brick is-blank'; }
-                        rowGrid.appendChild(bDiv);
-                    }
+                for (let c = 1; c <= maxCol; c++) {
+                    const brick = rowData[c];
+                    const bDiv = document.createElement('div');
+                    if (brick) {
+                        const isCommons = brick.Inscription && brick.Inscription.includes("COMMONS");
+                        const isBlank = (brick.Inscription || "").includes("[BLANK]");
+                        bDiv.className = isCommons ? 'brick center-stone' : ('brick' + (isBlank ? ' is-blank' : ''));
+                        bDiv.innerText = isBlank ? "" : brick.Inscription;
+                        bDiv.dataset.search = (brick.Inscription + " " + (brick["Searchable Names"] || "")).toLowerCase();
+                        bDiv.dataset.section = brick.Section;
+                    } else { bDiv.className = 'brick is-blank'; }
+                    rowGrid.appendChild(bDiv);
                 }
                 rowWrapper.appendChild(rowGrid);
                 container.appendChild(rowWrapper);
             }
         }
 
-        document.getElementById('search').addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase().trim();
+        function updateNavigation() {
             const dot = document.getElementById('locator-dot');
-            let foundSection = null;
+            const nextBtn = document.getElementById('next-btn');
+            const countLabel = document.getElementById('match-count');
 
-            document.querySelectorAll('.brick').forEach(b => {
-                const matches = b.dataset.search && b.dataset.search.includes(term);
-                if (term === "") { 
-                    b.classList.remove('match', 'hidden'); 
-                } else { 
-                    b.classList.toggle('match', !!matches); 
-                    b.classList.toggle('hidden', !matches); 
-                    if (matches && !foundSection) foundSection = b.dataset.section;
-                }
-            });
+            document.querySelectorAll('.brick').forEach(b => b.classList.remove('active-match'));
 
-            if (term !== "" && foundSection) {
+            if (matchedBricks.length > 0) {
+                const current = matchedBricks[currentMatchIndex];
+                current.classList.add('active-match');
+                current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
                 dot.style.display = 'block';
-                const centerX = '54%'; // Nudged right
-                if (foundSection === 'North') {
-                    dot.style.top = '72%'; 
-                    dot.style.left = centerX;
-                } else if (foundSection === 'South') {
-                    dot.style.top = '38%'; // Nudged down
-                    dot.style.left = centerX;
-                }
+                const centerX = '54%'; 
+                dot.style.top = (current.dataset.section === 'North') ? '72%' : '38%';
+                dot.style.left = centerX;
+
+                nextBtn.style.display = matchedBricks.length > 1 ? 'block' : 'none';
+                countLabel.innerText = `Found ${matchedBricks.length} match(es). Showing #${currentMatchIndex + 1}`;
             } else {
                 dot.style.display = 'none';
+                nextBtn.style.display = 'none';
+                countLabel.innerText = "";
             }
+        }
+
+        document.getElementById('search').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase().trim();
+            matchedBricks = [];
+            currentMatchIndex = 0;
+
+            document.querySelectorAll('.brick').forEach(b => {
+                if (b.classList.contains('center-stone')) return;
+                const matches = term !== "" && b.dataset.search && b.dataset.search.includes(term);
+                b.classList.toggle('match', matches);
+                b.classList.toggle('hidden', term !== "" && !matches);
+                if (matches) matchedBricks.push(b);
+            });
+
+            updateNavigation();
+        });
+
+        document.getElementById('next-btn').addEventListener('click', () => {
+            currentMatchIndex = (currentMatchIndex + 1) % matchedBricks.length;
+            updateNavigation();
         });
 
         function scrollToPath() {
-            const match = document.querySelector('.brick.match');
-            if (match) match.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (matchedBricks[currentMatchIndex]) {
+                matchedBricks[currentMatchIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
         }
     </script>
 </body>
