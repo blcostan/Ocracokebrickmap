@@ -57,11 +57,11 @@
             <img src="rendering%20of%20garden.avif" alt="Garden Map">
             <div id="locator-dot"></div>
         </div>
-        <p style="font-size:0.8rem; color:#444; line-height:1.5; margin-top:20px; background: #f9f9f9; padding: 10px; border-radius: 5px;">
-            <b>Orientation:</b><br>
-            • Southern Path = Red (Top)<br>
-            • Northern Path = Blue (Bottom)<br><br>
-            Search for a name. When the dot appears, <b>click the map</b> to zoom to the bricks.
+        <p style="font-size:0.8rem; color:#444; line-height:1.5; margin-top:20px;">
+            <b>Dot Placement:</b><br>
+            • South Section (Red/Top)<br>
+            • North Section (Blue/Bottom)<br><br>
+            <i>Note: Dot is now nudged right (52%) to center on the rendering's path.</i>
         </p>
     </div>
 
@@ -155,16 +155,15 @@
 
             if (term !== "" && foundSection) {
                 dot.style.display = 'block';
-                // PINPOINT CENTERING
-                // Adjust centerX to line up perfectly with the rendering's walkway
-                const centerX = '50%'; 
+                // NUDGED TO THE RIGHT
+                const centerX = '52%'; 
 
                 if (foundSection === 'North') {
-                    // NORTH = BLUE RECT = BOTTOM OF IMAGE
+                    // NORTH = BOTTOM
                     dot.style.top = '72%'; 
                     dot.style.left = centerX;
                 } else if (foundSection === 'South') {
-                    // SOUTH = RED RECT = TOP OF IMAGE
+                    // SOUTH = TOP
                     dot.style.top = '34%'; 
                     dot.style.left = centerX;
                 }
@@ -175,11 +174,7 @@
 
         function scrollToPath() {
             const match = document.querySelector('.brick.match');
-            if (match) {
-                match.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            } else {
-                document.getElementById('lawn-anchor').scrollIntoView({ behavior: 'smooth' });
-            }
+            if (match) match.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     </script>
 </body>
