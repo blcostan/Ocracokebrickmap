@@ -12,34 +12,31 @@
         body { font-family: sans-serif; background: #fdfdfd; margin: 0; display: flex; flex-direction: column; align-items: center; }
         .header { position: sticky; top: 0; width: 100%; background: white; padding: 20px 0; z-index: 1000; text-align: center; border-bottom: 4px solid var(--brick-border); box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         input { padding: 12px; width: 85%; max-width: 450px; border-radius: 25px; border: 2px solid #ddd; font-size: 16px; outline: none; }
-        input:focus { border-color: var(--brick-border); }
         .map-container { padding: 40px 10px; display: flex; flex-direction: column; align-items: center; width: 100%; }
-        .plaza { display: inline-flex; flex-direction: column; gap: 6px; background: #e0e0e0; padding: 20px; border-radius: 4px; margin-bottom: 30px; align-items: center; }
+        .plaza { display: inline-flex; flex-direction: column; gap: 8px; background: #e0e0e0; padding: 20px; border-radius: 4px; margin-bottom: 30px; }
         .row { display: grid; grid-template-columns: repeat(6, 120px); gap: 6px; justify-content: center; }
-        .brick { width: 120px; height: 60px; background: var(--brick-bg); border: 1px solid var(--brick-border); border-radius: 2px; display: flex; align-items: center; justify-content: center; padding: 6px; font-size: 9px; font-weight: bold; text-align: center; color: white; line-height: 1.2; box-sizing: border-box; cursor: pointer; transition: all 0.2s; }
-        .brick.is-blank { background: var(--blank-bg); border: 1px dashed #ccc; color: transparent; cursor: default; }
-        .brick.center-stone { grid-column: span 6; width: 100%; height: 80px; background: #8d6e63; font-size: 14px; cursor: default; margin: 10px 0; }
+        .brick { width: 120px; height: 60px; background: var(--brick-bg); border: 1px solid var(--brick-border); border-radius: 2px; display: flex; align-items: center; justify-content: center; padding: 6px; font-size: 9px; font-weight: bold; text-align: center; color: white; line-height: 1.2; box-sizing: border-box; cursor: pointer; }
+        .brick.is-blank { background: var(--blank-bg); border: 1px dashed #bbb; color: transparent; cursor: default; }
+        .brick.center-stone { grid-column: span 6; width: 100%; height: 80px; background: #8d6e63; font-size: 14px; cursor: default; margin: 10px 0; border: 2px solid var(--brick-border); }
         .brick.match { background: var(--highlight) !important; color: #000 !important; transform: scale(1.15); z-index: 10; border: 2px solid orange; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
-        .brick.hidden { opacity: 0.2; filter: grayscale(0.8); }
-        .lawn { width: 90%; max-width: 750px; height: 100px; background: var(--lawn); margin: 20px 0; border-radius: 15px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
-        .label { font-weight: bold; color: #555; margin: 10px 0; text-transform: uppercase; font-size: 13px; letter-spacing: 1.5px; }
+        .brick.hidden { opacity: 0.2; filter: grayscale(1); }
+        .lawn { width: 90%; max-width: 750px; height: 80px; background: var(--lawn); margin: 20px 0; border-radius: 40px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+        .label { font-weight: bold; color: #444; margin: 10px 0; text-transform: uppercase; font-size: 14px; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <h2>Island Inn Memorial Brick Finder</h2>
-        <input type="text" id="search" placeholder="Search by name or inscription...">
+        <input type="text" id="search" placeholder="Search names or inscriptions...">
     </div>
 
     <div class="map-container">
         <div class="label">North Path</div>
-        <div id="nw-section" class="plaza"></div>
-        
-        <div class="lawn">Main Lawn Area</div>
-        
+        <div id="north-section" class="plaza"></div>
+        <div class="lawn">Lawn Area</div>
         <div class="label">South Path</div>
-        <div id="se-section" class="plaza"></div>
+        <div id="south-section" class="plaza"></div>
     </div>
 
     <script>
@@ -51,14 +48,11 @@
             skipEmptyLines: true,
             complete: function(results) {
                 const data = results.data;
-                
-                // Photo 1 & 2 belong to "North"
                 const northBricks = data.filter(b => b.Section === 'North');
-                renderSection('nw-section', northBricks, true); // Reversed to face the lawn
-                
-                // Photo 3 & 4 belong to "South"
                 const southBricks = data.filter(b => b.Section === 'South');
-                renderSection('se-section', southBricks, false);
+
+                renderSection('north-section', northBricks, true); // North is reversed to meet lawn
+                renderSection('south-section', southBricks, false); // South is standard
             }
         });
 
@@ -66,48 +60,58 @@
             const container = document.getElementById(containerId);
             const rowMap = {};
 
+            // 1. Group bricks by Row, and then by Column
             bricks.forEach(b => {
-                const rowNum = b.Row;
-                if (!rowMap[rowNum]) rowMap[rowNum] = [];
-                rowMap[rowNum].push(b);
+                const r = String(b.Row).trim();
+                const c = String(b.Col).trim();
+                if (!rowMap[r]) rowMap[r] = {};
+                rowMap[r][c] = b;
             });
 
-            let sortedRowKeys = Object.keys(rowMap).sort((a, b) => parseInt(a) - parseInt(b));
+            // 2. Sort the rows numerically
+            let sortedRowKeys = Object.keys(rowMap).sort((a, b) => {
+                if (isNaN(a)) return 0;
+                return parseInt(a) - parseInt(b);
+            });
             if (reverseRows) sortedRowKeys.reverse();
 
+            // 3. Build the grid
             sortedRowKeys.forEach(rowKey => {
                 const rowDiv = document.createElement('div');
                 rowDiv.className = 'row';
-                const rowData = rowMap[rowKey];
+                const colsInRow = rowMap[rowKey];
 
-                const centerStone = rowData.find(b => b.Inscription && b.Inscription.includes("Island Inn Commons"));
+                // Special handling for the Center Stone (Island Inn Commons)
+                const centerStone = Object.values(colsInRow).find(b => b.Inscription.includes("ISLAND INN COMMONS"));
 
                 if (centerStone) {
                     const bDiv = document.createElement('div');
                     bDiv.className = 'brick center-stone';
-                    bDiv.innerText = centerStone.Inscription;
+                    bDiv.innerText = "ISLAND INN COMMONS";
                     rowDiv.appendChild(bDiv);
                 } else {
+                    // Loop 1 through 6 strictly
                     for (let col = 1; col <= 6; col++) {
-                        const brick = rowData.find(b => parseInt(b.Col) === col);
+                        const brick = colsInRow[String(col)]; // Look for the string version of the column number
                         const bDiv = document.createElement('div');
                         
                         if (brick) {
-                            const isBlank = brick.Inscription.includes("[BLANK]") || brick.Inscription.trim() === "";
-                            bDiv.className = 'brick' + (isBlank ? ' is-blank' : '');
-                            bDiv.innerText = isBlank ? "" : brick.Inscription;
+                            const text = (brick.Inscription || "").trim();
+                            const isBlank = text === "" || text.toUpperCase().includes("[BLANK]");
                             
-                            // COMBINED SEARCH DATA: Checks Inscription AND Searchable Names
-                            const searchableContent = (brick.Inscription + " " + (brick["Searchable Names"] || "")).toLowerCase();
-                            bDiv.dataset.search = searchableContent;
+                            bDiv.className = 'brick' + (isBlank ? ' is-blank' : '');
+                            bDiv.innerText = isBlank ? "" : text;
+                            
+                            // Include "Searchable Names" in the hidden search data
+                            const searchData = (text + " " + (brick["Searchable Names"] || "")).toLowerCase();
+                            bDiv.dataset.search = searchData;
                             
                             if (!isBlank) {
-                                bDiv.onclick = () => {
-                                    alert(`Full Inscription: ${brick.Inscription}\nSearchable Names: ${brick["Searchable Names"] || 'None'}\nPosition: Row ${brick.Row}, Column ${brick.Col}`);
-                                };
+                                bDiv.onclick = () => alert(`"${text}"\n\nSearchable Names: ${brick["Searchable Names"] || 'None'}\nLocation: Row ${rowKey}, Column ${col}`);
                             }
                         } else {
-                            bDiv.className = 'brick is-blank'; 
+                            // If No Data exists for this column, create an empty placeholder to keep Row 2, Col 2 in its spot
+                            bDiv.className = 'brick is-blank';
                         }
                         rowDiv.appendChild(bDiv);
                     }
@@ -116,22 +120,14 @@
             });
         }
 
+        // Search logic
         document.getElementById('search').addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase().trim();
-            const bricks = document.querySelectorAll('.brick');
-            
-            bricks.forEach(b => {
+            document.querySelectorAll('.brick').forEach(b => {
                 if (b.classList.contains('is-blank') || b.classList.contains('center-stone')) return;
-                
-                const dataToSearch = b.dataset.search || "";
-                const isMatch = dataToSearch.includes(term);
-                
-                if (term === "") {
-                    b.classList.remove('match', 'hidden');
-                } else {
-                    b.classList.toggle('match', isMatch);
-                    b.classList.toggle('hidden', !isMatch);
-                }
+                const match = b.dataset.search.includes(term);
+                b.classList.toggle('match', term !== "" && match);
+                b.classList.toggle('hidden', term !== "" && !match);
             });
         });
     </script>
