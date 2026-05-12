@@ -7,170 +7,118 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
         :root {
-            --brick-bg: #d2b48c; 
-            --brick-border: #8b4513; 
+            --brick-bg: #c19a6b; 
+            --brick-border: #704214; 
             --highlight: #ffeb3b; 
-            --lawn-green: #90b990;
-            --step-gray: #a1a1a1;
+            --lawn: #739e73;
         }
-        body { font-family: sans-serif; background: #fafafa; margin: 0; padding: 0; text-align: center; }
+        body { font-family: 'Segoe UI', sans-serif; background: #e0e0e0; margin: 0; padding: 0; }
         
-        .controls { 
-            position: sticky; top: 0; background: white; padding: 20px; z-index: 100; 
-            border-bottom: 3px solid var(--brick-border); box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        .header { 
+            position: sticky; top: 0; background: white; padding: 15px; z-index: 1000; 
+            border-bottom: 4px solid var(--brick-border); text-align: center;
         }
-        input { padding: 12px; width: 80%; max-width: 500px; border: 2px solid #ccc; border-radius: 25px; font-size: 18px; outline: none; }
+        input { padding: 12px; width: 80%; max-width: 500px; border-radius: 20px; border: 1px solid #ccc; font-size: 16px; }
 
-        .map-container { display: flex; flex-direction: column; align-items: center; padding: 40px 20px; }
+        .map-wrapper { display: flex; flex-direction: column; align-items: center; padding: 40px 10px; }
         
-        /* Fixed Grid Layout */
-        .path-section { display: flex; flex-direction: column; gap: 6px; align-items: center; background: #fff; padding: 10px; }
-        
-        /* Force rows to be distinct and not wrap bricks into other rows */
-        .row { 
-            display: grid; 
-            grid-template-columns: repeat(6, 140px); /* Strictly 6 columns */
-            gap: 8px; 
-            justify-content: center; 
-            margin-bottom: 4px;
-            width: 100%;
+        /* The "Masonry" Section */
+        .stone-plaza { 
+            display: flex; flex-direction: column; gap: 4px; padding: 15px; 
+            background: #d3d3d3; border-radius: 4px; box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
         }
+
+        /* Staggered Row Logic */
+        .row { display: flex; justify-content: center; gap: 4px; }
+        .row:nth-child(even) { margin-left: 20px; } /* Mimics running bond pattern */
 
         .brick {
-            width: 140px; height: 70px; background: var(--brick-bg);
-            border: 2px solid var(--brick-border); border-radius: 4px;
+            width: 130px; height: 60px; background: var(--brick-bg);
+            border: 1px solid var(--brick-border); border-radius: 2px;
             display: flex; align-items: center; justify-content: center;
             padding: 5px; font-size: 10px; font-weight: bold; text-align: center; 
-            cursor: pointer; transition: all 0.2s; box-sizing: border-box;
-            overflow: hidden;
+            cursor: pointer; box-shadow: 2px 2px 2px rgba(0,0,0,0.2);
+            transition: 0.2s; color: #3e2723;
         }
         
-        /* Empty slots for rows with fewer than 6 bricks */
-        .empty-slot { width: 140px; height: 70px; visibility: hidden; }
+        .brick:hover { background: #d2b48c; transform: translateY(-2px); }
+        .brick.match { background: var(--highlight) !important; border-color: #f57c00; transform: scale(1.1); z-index: 10; }
+        .brick.hidden { opacity: 0.2; filter: grayscale(1); }
 
-        .brick:hover { transform: scale(1.05); background: #e6ccaa; z-index: 5; }
-        .brick.hidden { opacity: 0.1; filter: grayscale(1); }
-        .brick.match { background: var(--highlight); border-color: orange; transform: scale(1.1); z-index: 10; box-shadow: 0 0 10px rgba(0,0,0,0.3); }
-
-        /* The Stairs */
-        .stairs-visual {
-            display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 880px; margin: 0;
+        /* Environmental Elements */
+        .lawn { 
+            width: 100%; max-width: 800px; height: 160px; background: var(--lawn); 
+            margin: 20px 0; border-radius: 10px; display: flex; align-items: center; 
+            justify-content: center; color: white; font-style: italic; font-weight: bold;
         }
-        .step { width: 100%; height: 15px; background: var(--step-gray); border: 1px solid #777; border-bottom: 3px solid #555; }
-
-        .lawn-area { 
-            width: 100%; max-width: 900px; height: 200px; 
-            background: var(--lawn-green); margin: 0; 
-            display: flex; align-items: center; justify-content: center;
-            color: white; font-weight: bold; letter-spacing: 2px; font-style: italic;
-            border-top: 2px solid #555;
-        }
-
-        .label { color: #888; font-size: 12px; margin: 20px 0 10px 0; text-transform: uppercase; font-weight: bold; }
+        .steps { width: 300px; height: 40px; background: #999; border: 2px solid #666; margin-bottom: 5px; }
+        .label { font-weight: bold; color: #555; text-transform: uppercase; margin: 10px 0; font-size: 14px; }
     </style>
 </head>
 <body>
 
-    <div class="controls">
-        <h1>Island Inn Commons Brick Map</h1>
-        <input type="text" id="search" placeholder="Search by name (e.g. Holloman)...">
-        <div id="stats" style="margin-top:10px; font-weight:bold;">Loading...</div>
+    <div class="header">
+        <h2 style="margin:0 0 10px 0;">Island Inn Commons Brick Finder</h2>
+        <input type="text" id="search" placeholder="Search names (e.g., 'Holloman')...">
     </div>
 
-    <div id="map" class="map-container"></div>
+    <div class="map-wrapper">
+        <div class="label">Upper Path (Building Side)</div>
+        <div id="top-section" class="stone-plaza"></div>
+        
+        <div class="label">Steps Down</div>
+        <div class="steps"></div>
+        
+        <div class="lawn">GRASS LAWN AREA</div>
+        
+        <div class="label">Lower Plaza (Star Location)</div>
+        <div id="bottom-section" class="stone-plaza"></div>
+    </div>
 
     <script>
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ3j2xmIEyMKMz7nwsVM4HaZuXtBTQmyyJijPGkhQULJQbB2NcD0ZnrW_WWTKYe4FmD6WsZjD_TXh6-/pub?output=csv';
 
-        function init() {
-            Papa.parse(CSV_URL, {
-                download: true, header: true,
-                complete: function(results) {
-                    const data = results.data.filter(row => row.Inscription);
-                    renderMap(data);
-                    document.getElementById('stats').innerText = `Total Bricks: ${data.length}`;
-                }
-            });
-        }
+        Papa.parse(CSV_URL, {
+            download: true, header: true,
+            complete: function(results) {
+                const data = results.data.filter(b => b.Inscription);
+                renderSection('top-section', data.filter(b => b['Photo Section'] === 'Photo 1'));
+                renderSection('bottom-section', data.filter(b => b['Photo Section'] !== 'Photo 1'));
+            }
+        });
 
-        function createSection(container, bricks) {
-            const grid = document.createElement('div');
-            grid.className = 'path-section';
-            
-            // Identify unique rows in this section
-            const rowIds = [...new Set(bricks.map(b => b.Row))].sort((a, b) => {
-                if (a === 'Center' || b === 'Center') return a === 'Center' ? 0 : -1;
+        function renderSection(id, bricks) {
+            const container = document.getElementById(id);
+            // Group by Row
+            const rows = [...new Set(bricks.map(b => b.Row))].sort((a,b) => {
+                if (a === 'Center') return 0;
                 return parseInt(a) - parseInt(b);
             });
 
-            rowIds.forEach(r => {
+            rows.forEach(r => {
                 const rowDiv = document.createElement('div');
                 rowDiv.className = 'row';
-                const bricksInRow = bricks.filter(b => b.Row === r).sort((a,b) => parseInt(a.Col) - parseInt(b.Col));
+                const rowBricks = bricks.filter(b => b.Row === r).sort((a,b) => parseInt(a.Col) - parseInt(b.Col));
                 
-                // Create exactly 6 slots per row
-                for (let i = 1; i <= 6; i++) {
-                    const brickData = bricksInRow.find(b => parseInt(b.Col) === i);
-                    if (brickData) {
-                        const bDiv = document.createElement('div');
-                        bDiv.className = 'brick';
-                        bDiv.innerText = brickData.Inscription;
-                        bDiv.title = `Row ${r}, Col ${i}`;
-                        bDiv.onclick = () => alert(brickData.Inscription);
-                        rowDiv.appendChild(bDiv);
-                    } else {
-                        const empty = document.createElement('div');
-                        empty.className = 'empty-slot';
-                        rowDiv.appendChild(empty);
-                    }
-                }
-                grid.appendChild(rowDiv);
+                rowBricks.forEach(brick => {
+                    const bDiv = document.createElement('div');
+                    bDiv.className = 'brick';
+                    bDiv.innerText = brick.Inscription;
+                    bDiv.onclick = () => alert(brick.Inscription);
+                    rowDiv.appendChild(bDiv);
+                });
+                container.appendChild(rowDiv);
             });
-            container.appendChild(grid);
-        }
-
-        function renderMap(data) {
-            const container = document.getElementById('map');
-            container.innerHTML = '';
-
-            // 1. TOP PATH (Photo 1)
-            const topBricks = data.filter(b => b['Photo Section'] === 'Photo 1');
-            container.insertAdjacentHTML('beforeend', '<div class="label">Top Path (Building Side)</div>');
-            createSection(container, topBricks);
-
-            // 2. STEPS FACING LAWN
-            container.insertAdjacentHTML('beforeend', `
-                <div class="label">Steps Down</div>
-                <div class="stairs-visual">
-                    <div class="step"></div>
-                    <div class="step" style="width:95%"></div>
-                    <div class="step" style="width:90%"></div>
-                </div>
-            `);
-
-            // 3. THE LAWN
-            const lawn = document.createElement('div');
-            lawn.className = 'lawn-area';
-            lawn.innerText = "MIDDLE LAWN";
-            container.appendChild(lawn);
-
-            // 4. LOWER PLAZA
-            container.insertAdjacentHTML('beforeend', '<div class="label">Lower Plaza (Catherine Holloman Brick here)</div>');
-            const lowerBricks = data.filter(b => b['Photo Section'] !== 'Photo 1');
-            createSection(container, lowerBricks);
         }
 
         document.getElementById('search').addEventListener('input', (e) => {
             const term = e.target.value.toLowerCase().trim();
-            document.querySelectorAll('.brick').forEach(bDiv => {
-                const isMatch = bDiv.innerText.toLowerCase().includes(term);
-                if (term === '') bDiv.classList.remove('match', 'hidden');
-                else if (isMatch) { bDiv.classList.add('match'); bDiv.classList.remove('hidden'); }
-                else { bDiv.classList.remove('match'); bDiv.classList.add('hidden'); }
+            document.querySelectorAll('.brick').forEach(b => {
+                const match = b.innerText.toLowerCase().includes(term);
+                b.classList.toggle('match', term !== '' && match);
+                b.classList.toggle('hidden', term !== '' && !match);
             });
         });
-
-        init();
     </script>
 </body>
 </html>
