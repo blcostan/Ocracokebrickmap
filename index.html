@@ -3,37 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Island Inn | Garden Brick Finder</title>
+    <title>Island Inn Brick Finder | v4</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
-        :root {
-            --fig-green: #2d5a27; --sand: #fdfaf5;
-            --brick: #b06d50; --ocean: #0077be; --wood: #7d6e64;
-            --highlight: #ff3b3b;
-        }
+        :root { --fig-green: #2d5a27; --sand: #fdfaf5; --brick: #b06d50; --ocean: #0077be; --wood: #7d6e64; --highlight: #ff3b3b; }
         body { font-family: 'Georgia', serif; background-color: var(--sand); margin: 0; display: flex; height: 100vh; overflow: hidden; }
 
-        /* Sidebar Map Area */
-        .map-sidebar {
-            width: 320px; background: white; border-right: 2px solid #ddd;
-            display: flex; flex-direction: column; padding: 20px;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.05); z-index: 10;
-        }
-        .map-container { 
-            position: relative; width: 100%; border: 3px solid #ccc; 
-            border-radius: 8px; overflow: hidden; cursor: pointer;
-        }
+        /* Sidebar Map */
+        .map-sidebar { width: 320px; background: white; border-right: 2px solid #ddd; display: flex; flex-direction: column; padding: 20px; z-index: 10; }
+        .map-container { position: relative; width: 100%; border: 3px solid #ccc; border-radius: 8px; overflow: hidden; cursor: pointer; }
         .map-container img { width: 100%; display: block; }
         
         #locator-dot {
-            position: absolute; width: 22px; height: 22px;
-            background: var(--highlight); border: 3px solid white;
-            border-radius: 50%; display: none;
-            box-shadow: 0 0 20px rgba(255, 59, 59, 1);
-            z-index: 20; transform: translate(-50%, -50%);
-            animation: pulse 1s infinite;
+            position: absolute; width: 22px; height: 22px; background: var(--highlight); 
+            border: 3px solid white; border-radius: 50%; display: none;
+            box-shadow: 0 0 20px rgba(255, 59, 59, 1); z-index: 20; 
+            transform: translate(-50%, -50%); animation: pulse 1s infinite;
         }
-        @keyframes pulse { 0% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.3); } 100% { transform: translate(-50%, -50%) scale(1); } }
+        @keyframes pulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.3); } }
 
         /* Main Content */
         .main-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; scroll-behavior: smooth; }
@@ -41,7 +28,10 @@
         #search { padding: 12px 20px; width: 85%; max-width: 400px; border-radius: 25px; border: 2px solid #aec4c2; font-size: 16px; outline: none; }
 
         .container { padding: 40px 20px; width: 100%; display: flex; flex-direction: column; align-items: center; }
-        .plaza { display: inline-flex; flex-direction: column; gap: 4px; padding: 10px; margin-bottom: 30px; align-items: center; }
+        .status-msg { color: #888; font-style: italic; margin-top: 20px; }
+        
+        /* Brick Layout */
+        .plaza { display: inline-flex; flex-direction: column; gap: 4px; padding: 10px; margin-bottom: 30px; align-items: center; min-height: 50px; }
         .row-container { display: flex; align-items: center; justify-content: center; width: 100%; position: relative; margin-bottom: 2px; }
         .row-label { position: absolute; left: -45px; font-size: 10px; color: #bbb; font-family: sans-serif; }
         .row-grid { display: grid; gap: 5px; justify-content: center; }
@@ -51,45 +41,45 @@
             display: flex; align-items: center; justify-content: center; padding: 4px; 
             font-size: 8px; font-weight: bold; text-align: center; color: white; line-height: 1.1; 
         }
-        .brick.match { background: #ffd54f !important; color: #000 !important; transform: scale(1.1); border: 2px solid orange; box-shadow: 0 0 15px rgba(0,0,0,0.3); }
+        .brick.match { background: #ffd54f !important; color: #000 !important; transform: scale(1.1); border: 2px solid orange; box-shadow: 0 0 15px rgba(0,0,0,0.3); z-index: 5; }
         .brick.hidden { opacity: 0.15; filter: grayscale(1); }
         .brick.is-blank { background: #eeeae0; border: 1px dashed #ccc; color: transparent; pointer-events: none; }
         .brick.center-stone { background: var(--wood); font-size: 12px; height: 80px; border: 4px double #fff; width: 100%; grid-column: 1 / -1; }
         
         .lawn { width: 90%; max-width: 600px; height: 60px; background: #8da58e; margin: 20px 0; border-radius: 30px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 4px; border: 3px solid #6d8c6d; }
         
-        @media (max-width: 850px) {
-            body { flex-direction: column; overflow: visible; }
-            .map-sidebar { display: none; }
-            .main-content { overflow-y: visible; height: auto; }
-            .brick { width: 14vw; height: 10vw; font-size: 1.4vw; }
-        }
+        @media (max-width: 850px) { body { flex-direction: column; overflow: visible; } .map-sidebar { display: none; } .main-content { height: auto; } .brick { width: 14vw; height: 10vw; font-size: 1.4vw; } }
     </style>
 </head>
 <body>
 
     <div class="map-sidebar">
-        <h3 style="color:var(--fig-green); margin-top:0;">Garden Locator</h3>
+        <h3 style="color:var(--fig-green); margin-top:0;">Map Orientation</h3>
         <div class="map-container" onclick="scrollToPath()">
             <img src="rendering%20of%20garden.avif" alt="Garden Map">
             <div id="locator-dot"></div>
         </div>
-        <p style="font-size:0.8rem; color:#666; line-height:1.4; margin-top:15px;">
-            <b>Orientation Corrected:</b><br>
-            Top Path = Southern Path (Red)<br>
-            Bottom Path = Northern Path (Blue)
+        <p style="font-size:0.75rem; color:#666; line-height:1.4; margin-top:15px;">
+            <b>Red Rect (Top):</b> Southern Path<br>
+            <b>Blue Rect (Bottom):</b> Northern Path<br><br>
+            <i>Search for a name to see the dot move to the correct area.</i>
         </p>
     </div>
 
     <div class="main-content">
         <div class="header">
             <h1>Fig Garden Brick Finder</h1>
-            <input type="text" id="search" placeholder="Type a name to locate...">
+            <input type="text" id="search" placeholder="Search by name...">
+            <div id="loading-msg" class="status-msg">Connecting to data...</div>
         </div>
 
         <div class="container">
+            <h4 style="color:var(--fig-green)">NORTHERN SECTION</h4>
             <div id="north-section" class="plaza"></div>
-            <div class="lawn" id="lawn-anchor">Lawn Area</div>
+            
+            <div class="lawn" id="lawn-anchor">Central Lawn</div>
+            
+            <h4 style="color:var(--fig-green)">SOUTHERN SECTION</h4>
             <div id="south-section" class="plaza"></div>
         </div>
     </div>
@@ -100,47 +90,66 @@
         Papa.parse(CSV_URL, {
             download: true, header: true, skipEmptyLines: true,
             complete: function(results) {
+                document.getElementById('loading-msg').style.display = 'none';
                 const data = results.data;
+                
+                // DATA CLEANING: Removes trailing spaces and handles missing values
                 data.forEach(row => {
-                    row.Section = String(row.Section).trim().split(' ')[0];
-                    row.Row = parseInt(row.Row);
-                    row.Col = parseInt(row.Col);
+                    row.Section = row.Section ? row.Section.trim().split(' ')[0] : "";
+                    row.Row = parseInt(row.Row) || 0;
+                    row.Col = parseInt(row.Col) || 0;
                 });
+
                 renderSection('north-section', data.filter(b => b.Section === 'North'), 42); 
                 renderSection('south-section', data.filter(b => b.Section === 'South'), 40);
+            },
+            error: function() {
+                document.getElementById('loading-msg').innerText = "Error: Could not load spreadsheet.";
             }
         });
 
         function renderSection(id, bricks, maxRow) {
             const container = document.getElementById(id);
+            if (bricks.length === 0) return;
+
             const grid = {};
             bricks.forEach(b => { if (!grid[b.Row]) grid[b.Row] = {}; grid[b.Row][b.Col] = b; });
 
             for (let r = 1; r <= maxRow; r++) {
                 const rowData = grid[r] || {};
                 if (Object.keys(rowData).length === 0) continue;
-                const maxCol = Math.max(...Object.keys(rowData).map(Number));
+                
+                const maxColInRow = Math.max(...Object.keys(rowData).map(Number));
                 const rowWrapper = document.createElement('div');
                 rowWrapper.className = 'row-container';
-                const label = document.createElement('div'); label.className = 'row-label'; label.innerText = 'R' + r;
+                
+                const label = document.createElement('div');
+                label.className = 'row-label';
+                label.innerText = 'R' + r;
                 rowWrapper.appendChild(label);
+
                 const rowGrid = document.createElement('div');
                 rowGrid.className = 'row-grid';
-                rowGrid.style.gridTemplateColumns = `repeat(${maxCol}, 1fr)`;
+                rowGrid.style.gridTemplateColumns = `repeat(${maxColInRow}, 1fr)`;
 
-                if (Object.values(rowData).some(b => b.Inscription && b.Inscription.includes("COMMONS"))) {
+                const isCommons = Object.values(rowData).some(b => b.Inscription && b.Inscription.includes("COMMONS"));
+
+                if (isCommons) {
                     const stone = document.createElement('div'); stone.className = 'brick center-stone'; stone.innerText = "ISLAND INN COMMONS"; rowGrid.appendChild(stone);
                 } else {
-                    for (let c = 1; c <= maxCol; c++) {
+                    for (let c = 1; c <= maxColInRow; c++) {
                         const brick = rowData[c];
                         const bDiv = document.createElement('div');
                         if (brick) {
-                            const isBlank = (brick.Inscription || "").includes("[BLANK]");
+                            const txt = (brick.Inscription || "").trim();
+                            const isBlank = txt === "" || txt.includes("[BLANK]");
                             bDiv.className = 'brick' + (isBlank ? ' is-blank' : '');
-                            bDiv.innerText = isBlank ? "" : brick.Inscription;
-                            bDiv.dataset.search = (brick.Inscription + " " + (brick["Searchable Names"] || "")).toLowerCase();
+                            bDiv.innerText = isBlank ? "" : txt;
+                            bDiv.dataset.search = (txt + " " + (brick["Searchable Names"] || "")).toLowerCase();
                             bDiv.dataset.section = brick.Section;
-                        } else { bDiv.className = 'brick is-blank'; }
+                        } else {
+                            bDiv.className = 'brick is-blank';
+                        }
                         rowGrid.appendChild(bDiv);
                     }
                 }
@@ -155,6 +164,7 @@
             let foundSection = null;
 
             document.querySelectorAll('.brick').forEach(b => {
+                if (b.classList.contains('center-stone')) return;
                 const matches = b.dataset.search && b.dataset.search.includes(term);
                 if (term === "") { 
                     b.classList.remove('match', 'hidden'); 
@@ -167,3 +177,25 @@
 
             if (term !== "" && foundSection) {
                 dot.style.display = 'block';
+                // REVERSED ORIENTATION LOGIC:
+                // North Path Data -> Bottom (Blue)
+                // South Path Data -> Top (Red)
+                if (foundSection === 'North') {
+                    dot.style.top = '72%'; dot.style.left = '51%';
+                } else if (foundSection === 'South') {
+                    dot.style.top = '34%'; dot.style.left = '51%';
+                }
+            } else {
+                dot.style.display = 'none';
+            }
+        });
+
+        function scrollToPath() {
+            const firstMatch = document.querySelector('.brick.match');
+            if (firstMatch) {
+                firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    </script>
+</body>
+</html>
