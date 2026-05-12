@@ -7,41 +7,35 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
         :root {
-            --brick-bg: #b08d73;
-            --brick-border: #5d4037;
-            --highlight: #ffd54f;
-            --lawn: #7ea37e;
-            --blank-bg: #e0e0e0;
+            --brick-bg: #b08d73; --brick-border: #5d4037; --highlight: #ffd54f; --lawn: #7ea37e; --blank-bg: #f0f0f0;
         }
-        body { font-family: 'Segoe UI', sans-serif; background: #fdfdfd; margin: 0; display: flex; flex-direction: column; align-items: center; }
+        body { font-family: sans-serif; background: #fdfdfd; margin: 0; display: flex; flex-direction: column; align-items: center; }
         .header { position: sticky; top: 0; width: 100%; background: white; padding: 20px 0; z-index: 1000; text-align: center; border-bottom: 4px solid var(--brick-border); }
         input { padding: 12px; width: 85%; max-width: 450px; border-radius: 25px; border: 2px solid #ddd; font-size: 16px; }
-        .map-container { padding: 40px 10px; display: flex; flex-direction: column; align-items: center; width: 100%; min-height: 400px; }
-        .plaza { display: inline-flex; flex-direction: column; gap: 4px; background: #d3d3d3; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
-        .row { display: grid; grid-template-columns: repeat(6, 120px); gap: 4px; justify-content: center; }
-        .brick { width: 120px; height: 60px; background: var(--brick-bg); border: 1px solid var(--brick-border); border-radius: 2px; display: flex; align-items: center; justify-content: center; padding: 5px; font-size: 9px; font-weight: bold; text-align: center; color: white; line-height: 1.1; box-sizing: border-box; }
-        .brick.is-blank { background: var(--blank-bg); border: 1px dashed #bbb; color: transparent; cursor: default; }
-        .brick.center-stone { grid-column: span 6; width: 100%; height: 80px; background: #8d6e63; font-size: 14px; }
-        .brick.match { background: var(--highlight) !important; color: #000; transform: scale(1.1); z-index: 10; border-color: orange; }
+        .map-container { padding: 40px 10px; display: flex; flex-direction: column; align-items: center; width: 100%; }
+        .plaza { display: inline-flex; flex-direction: column; gap: 6px; background: #e0e0e0; padding: 20px; border-radius: 4px; margin-bottom: 30px; align-items: center; }
+        .row { display: grid; grid-template-columns: repeat(6, 120px); gap: 6px; justify-content: center; }
+        .brick { width: 120px; height: 60px; background: var(--brick-bg); border: 1px solid var(--brick-border); border-radius: 2px; display: flex; align-items: center; justify-content: center; padding: 6px; font-size: 9px; font-weight: bold; text-align: center; color: white; line-height: 1.2; box-sizing: border-box; cursor: pointer; }
+        .brick.is-blank { background: var(--blank-bg); border: 1px dashed #ccc; color: transparent; cursor: default; }
+        .brick.center-stone { grid-column: span 6; width: 100%; height: 80px; background: #8d6e63; font-size: 14px; cursor: default; }
+        .brick.match { background: var(--highlight) !important; color: #000; transform: scale(1.1); z-index: 10; border: 2px solid orange; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
         .brick.hidden { opacity: 0.1; filter: grayscale(1); }
-        .lawn { width: 90%; max-width: 800px; height: 120px; background: var(--lawn); margin: 20px 0; border-radius: 15px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
-        .label { font-weight: bold; color: #888; margin: 10px 0; text-transform: uppercase; font-size: 12px; }
+        .lawn { width: 90%; max-width: 750px; height: 120px; background: var(--lawn); margin: 20px 0; border-radius: 15px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
+        .label { font-weight: bold; color: #888; margin: 10px 0; text-transform: uppercase; font-size: 12px; letter-spacing: 2px; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <h2>Island Inn Memorial Brick Finder</h2>
-        <input type="text" id="search" placeholder="Search by name...">
+        <input type="text" id="search" placeholder="Type a name (e.g. Holloman)...">
     </div>
 
-    <div id="loading-msg" style="padding: 50px;">Loading brick data...</div>
-
     <div class="map-container">
-        <div class="label">Northwest Section (Photos 1 & 2)</div>
+        <div class="label">Northwest Plaza (Photos 1 & 2)</div>
         <div id="nw-section" class="plaza"></div>
-        <div class="lawn">MIDDLE LAWN</div>
-        <div class="label">Southeast Section (Photos 3 & 4)</div>
+        <div class="lawn">MIDDLE LAWN AREA</div>
+        <div class="label">Southeast Plaza (Photos 3 & 4)</div>
         <div id="se-section" class="plaza"></div>
     </div>
 
@@ -49,26 +43,13 @@
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTCxdMjqCBt1D7Q2smwitwiyt0U0fbRaRbcbzkJ5j84wVtn8w4I58cglPweA9gf0s1dcQKo_Gl8rdE8/pub?output=csv';
 
         Papa.parse(CSV_URL, {
-            download: true,
-            header: true,
-            skipEmptyLines: true,
+            download: true, header: true, skipEmptyLines: true,
             complete: function(results) {
-                console.log("Data loaded:", results.data.length, "rows");
-                document.getElementById('loading-msg').style.display = 'none';
-                
                 const data = results.data;
-                
-                // Top Sections
-                const nwData = data.filter(b => b['Photo Section'] === 'Photo 1' || b['Photo Section'] === 'Photo 2');
-                renderSection('nw-section', nwData);
-                
-                // Bottom Sections
-                const seData = data.filter(b => b['Photo Section'] === 'Photo 3' || b['Photo Section'] === 'Photo 4');
-                renderSection('se-section', seData);
-            },
-            error: function(err) {
-                document.getElementById('loading-msg').innerText = "Error loading spreadsheet. Please check if it is Published to Web.";
-                console.error(err);
+                // Group Photos 1 and 2 together
+                renderSection('nw-section', data.filter(b => b['Photo Section'] === 'Photo 1' || b['Photo Section'] === 'Photo 2'));
+                // Group Photos 3 and 4 together
+                renderSection('se-section', data.filter(b => b['Photo Section'] === 'Photo 3' || b['Photo Section'] === 'Photo 4'));
             }
         });
 
@@ -77,30 +58,28 @@
             const rowMap = {};
 
             bricks.forEach(b => {
-                const r = b.Row || "Unknown";
-                if (!rowMap[r]) rowMap[r] = [];
-                rowMap[r].push(b);
+                if (!rowMap[b.Row]) rowMap[b.Row] = [];
+                rowMap[b.Row].push(b);
             });
 
-            const sortedRows = Object.keys(rowMap).sort((a, b) => {
+            const sortedRowKeys = Object.keys(rowMap).sort((a, b) => {
                 if (a === 'Center') return -1;
-                if (b === 'Center') return 1;
                 return parseInt(a) - parseInt(b);
             });
 
-            sortedRows.forEach(rowKey => {
+            sortedRowKeys.forEach(rowKey => {
                 const rowDiv = document.createElement('div');
                 rowDiv.className = 'row';
-                const rowBricks = rowMap[rowKey];
+                const rowData = rowMap[rowKey];
 
                 if (rowKey === 'Center') {
                     const bDiv = document.createElement('div');
                     bDiv.className = 'brick center-stone';
-                    bDiv.innerText = rowBricks[0].Inscription;
+                    bDiv.innerText = rowData[0].Inscription;
                     rowDiv.appendChild(bDiv);
                 } else {
                     for (let col = 1; col <= 6; col++) {
-                        const brick = rowBricks.find(b => String(b.Col) === String(col));
+                        const brick = rowData.find(b => String(b.Col).trim() === String(col));
                         const bDiv = document.createElement('div');
                         if (brick) {
                             const isBlank = brick.Inscription.toUpperCase().includes("BLANK");
@@ -108,7 +87,7 @@
                             bDiv.innerText = isBlank ? "" : brick.Inscription;
                             if (!isBlank) bDiv.onclick = () => alert(brick.Inscription);
                         } else {
-                            bDiv.className = 'brick is-blank';
+                            bDiv.className = 'brick is-blank'; // Fills missing columns to keep alignment
                         }
                         rowDiv.appendChild(bDiv);
                     }
@@ -121,7 +100,7 @@
             const term = e.target.value.toLowerCase().trim();
             document.querySelectorAll('.brick').forEach(b => {
                 if (b.classList.contains('is-blank') || b.classList.contains('center-stone')) return;
-                const match = b.innerText.toLowerCase().includes(term);
+                const match = (b.innerText.toLowerCase().includes(term));
                 b.classList.toggle('match', term !== "" && match);
                 b.classList.toggle('hidden', term !== "" && !match);
             });
