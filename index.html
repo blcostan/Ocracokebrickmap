@@ -12,132 +12,158 @@
         }
         body { font-family: 'Georgia', serif; background-color: var(--sand); margin: 0; color: #333; display: flex; height: 100vh; overflow: hidden; }
 
-        /* Left Side: Permanent Map Reference (Desktop) */
         .map-sidebar {
-            width: 350px; background: white; border-right: 2px solid #ddd;
+            width: 300px; background: white; border-right: 2px solid #ddd;
             display: flex; flex-direction: column; padding: 20px;
             box-shadow: 2px 0 10px rgba(0,0,0,0.05); z-index: 10;
         }
-        .map-sidebar h2 { color: var(--fig-green); font-size: 1.2rem; margin-top: 0; }
         .map-sidebar img { width: 100%; border-radius: 4px; border: 1px solid #ccc; cursor: zoom-in; }
-        .map-sidebar p { font-size: 0.8rem; color: #666; font-style: italic; }
-
-        /* Right Side: Scrollable Bricks */
-        .main-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding-bottom: 50px; }
+        
+        .main-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
 
         .header { position: sticky; top: 0; width: 100%; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); padding: 15px 0; z-index: 1000; text-align: center; border-bottom: 4px solid var(--ocean); }
         #search { padding: 12px 20px; width: 85%; max-width: 400px; border-radius: 25px; border: 2px solid #aec4c2; font-size: 16px; outline: none; }
 
-        .container { padding: 20px; width: 100%; display: flex; flex-direction: column; align-items: center; }
-        .plaza { display: inline-flex; flex-direction: column; gap: 6px; background: rgba(255,255,255,0.4); padding: 12px; border: 1px solid #dcd7cc; margin-bottom: 30px; }
-        .row { display: grid; gap: 5px; justify-content: center; }
+        .container { padding: 40px 20px; width: 100%; display: flex; flex-direction: column; align-items: center; }
+        .plaza { display: inline-flex; flex-direction: column; gap: 6px; padding: 10px; margin-bottom: 30px; }
         
-        .brick { width: 90px; height: 48px; background: var(--brick); border: 1px solid #4a3728; display: flex; align-items: center; justify-content: center; padding: 4px; font-size: 8px; font-weight: bold; text-align: center; color: white; line-height: 1.1; cursor: pointer; transition: 0.2s; box-shadow: 2px 2px 0 rgba(0,0,0,0.1); }
+        .row-container { display: flex; align-items: center; gap: 12px; margin-bottom: 2px; }
+        .row-label { font-size: 10px; color: #999; width: 25px; text-align: right; font-family: sans-serif; }
+        
+        /* The key change: dynamic grid assignment */
+        .row-grid { display: grid; gap: 5px; }
+        
+        .brick { 
+            width: 95px; height: 48px; background: var(--brick); border: 1px solid #4a3728; 
+            display: flex; align-items: center; justify-content: center; padding: 4px; 
+            font-size: 8px; font-weight: bold; text-align: center; color: white; 
+            line-height: 1.1; cursor: pointer; transition: 0.2s; box-shadow: 1px 1px 0 rgba(0,0,0,0.1); 
+        }
+        
         .brick.is-blank { background: #eeeae0; border: 1px dashed #ccc; color: transparent; pointer-events: none; }
         .brick.match { background: #ffd54f !important; color: #000 !important; transform: scale(1.15); z-index: 5; border: 2px solid orange; box-shadow: 0 0 15px rgba(0,0,0,0.3); }
-        .brick.hidden { opacity: 0.1; filter: grayscale(1); }
+        .brick.hidden { opacity: 0.15; filter: grayscale(1); }
         
-        .brick.center-stone { background: var(--wood); font-size: 12px; height: 80px; border: 4px double #fff; grid-column: 1 / -1; width: 100%; }
-        .lawn { width: 90%; max-width: 600px; height: 50px; background: #8da58e; margin: 20px 0; border-radius: 25px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 3px; border: 3px solid #6d8c6d; }
-        .label { font-weight: bold; color: var(--fig-green); margin: 10px 0; text-transform: uppercase; font-size: 12px; letter-spacing: 2px; }
+        .brick.center-stone { background: var(--wood); font-size: 12px; height: 80px; border: 4px double #fff; width: 100%; grid-column: 1 / -1; }
+        
+        .lawn { width: 90%; max-width: 600px; height: 60px; background: #8da58e; margin: 20px 0; border-radius: 30px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 4px; border: 3px solid #6d8c6d; }
+        .section-tag { font-weight: bold; color: var(--fig-green); margin-bottom: 10px; text-transform: uppercase; font-size: 13px; letter-spacing: 2px; }
 
-        /* Mobile Adjustments */
         @media (max-width: 850px) {
             body { flex-direction: column; overflow: visible; }
-            .map-sidebar { display: none; } /* Hide sidebar on mobile */
+            .map-sidebar { display: none; }
             .main-content { overflow-y: visible; height: auto; }
-            .mobile-map-toggle {
-                display: block; position: fixed; bottom: 20px; right: 20px;
-                width: 60px; height: 60px; background: var(--fig-green);
-                border-radius: 50%; color: white; border: 3px solid white;
-                box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 3000;
-                display: flex; align-items: center; justify-content: center; font-size: 10px; text-transform: uppercase;
-            }
-            .brick { width: 14vw; height: 10vw; font-size: 1.5vw; }
+            .brick { width: 15vw; height: 10vw; font-size: 1.5vw; }
         }
-
-        /* Modal for Mobile Map */
-        #mapModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 4000; align-items: center; justify-content: center; }
-        #mapModal img { max-width: 95%; max-height: 90%; border: 5px solid white; }
     </style>
 </head>
 <body>
 
     <div class="map-sidebar">
-        <h2>Garden Reference</h2>
-        <img src="rendering%20of%20garden.avif" alt="Garden Map" onclick="openModal()">
-        <p>Use the search above to find a specific name. The North Path sits just above the lawn near the Fig Garden.</p>
+        <h2 style="color:var(--fig-green); margin-top:0;">Reference Map</h2>
+        <img src="rendering%20of%20garden.avif" alt="Garden Map" onclick="document.getElementById('mapModal').style.display='flex'">
+        <p style="font-size:0.8rem;">Bricks are organized by Row (R) and Column. Some rows have 5 bricks, others have 6.</p>
     </div>
 
-    <div class="mobile-map-toggle" style="display:none;" id="mobileMapBtn" onclick="openModal()">Map</div>
-
-    <div id="mapModal" onclick="this.style.display='none'">
-        <img src="rendering%20of%20garden.avif" alt="Garden Map">
+    <div id="mapModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:5000; align-items:center; justify-content:center;" onclick="this.style.display='none'">
+        <img src="rendering%20of%20garden.avif" style="max-width:95%; max-height:90%;">
     </div>
 
     <div class="main-content">
         <div class="header">
             <h1>Fig Garden Brick Finder</h1>
-            <input type="text" id="search" placeholder="Search by name (e.g. Miller, Hardy)...">
+            <input type="text" id="search" placeholder="Search names (e.g. Sam Jones, Hardy)...">
         </div>
 
         <div class="container">
-            <div class="label">North Path (Fig Garden)</div>
+            <div class="section-tag">North Section (Fig Garden)</div>
             <div id="north-section" class="plaza"></div>
-            <div class="lawn">Central Lawn Area</div>
+            
+            <div class="lawn">Central Lawn</div>
+            
             <div id="south-section" class="plaza"></div>
-            <div class="label">South Path (Main Entrance)</div>
+            <div class="section-tag">South Section (Main Path)</div>
         </div>
     </div>
 
     <script>
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ3j2xmIEyMKMz7nwsVM4HaZuXtBTQmyyJijPGkhQULJQbB2NcD0ZnrW_WWTKYe4FmD6WsZjD_TXh6-/pub?output=csv';
 
-        function openModal() { document.getElementById('mapModal').style.display = 'flex'; }
-
         Papa.parse(CSV_URL, {
             download: true, header: true, skipEmptyLines: true,
             complete: function(results) {
                 const data = results.data;
-                // Trimming section names to handle "North " vs "North"
-                const north = data.filter(b => String(b.Section).trim().toLowerCase() === 'north');
-                const south = data.filter(b => String(b.Section).trim().toLowerCase() === 'south');
                 
-                renderSection('north-section', north, 42, true); 
-                renderSection('south-section', south, 40, false);
+                data.forEach(row => {
+                    row.Section = String(row.Section).trim();
+                    row.Row = parseInt(row.Row);
+                    row.Col = parseInt(row.Col);
+                });
+
+                const northData = data.filter(b => b.Section === 'North');
+                const southData = data.filter(b => b.Section === 'South');
+
+                renderSection('north-section', northData, 42); 
+                renderSection('south-section', southData, 40);
             }
         });
 
-        function renderSection(id, bricks, totalRows, rev) {
+        function renderSection(id, bricks, maxRow) {
             const container = document.getElementById(id);
-            const rowMap = {};
+            const grid = {};
+            
             bricks.forEach(b => {
-                if (!rowMap[b.Row]) rowMap[b.Row] = {};
-                rowMap[b.Row][b.Col] = b;
+                if (!grid[b.Row]) grid[b.Row] = {};
+                grid[b.Row][b.Col] = b;
             });
 
-            for (let r = 1; r <= totalRows; r++) {
-                const rowNum = rev ? (totalRows - r + 1) : r;
-                const rowDiv = document.createElement('div');
-                rowDiv.className = 'row';
-                rowDiv.style.gridTemplateColumns = `repeat(6, 1fr)`;
+            for (let r = 1; r <= maxRow; r++) {
+                const rowData = grid[r] || {};
+                const brickList = Object.values(rowData);
+                
+                // Skip rows that are completely empty in the spreadsheet
+                if (brickList.length === 0) continue;
 
-                for (let c = 1; c <= 6; c++) {
-                    const brick = rowMap[rowNum] ? rowMap[rowNum][c] : null;
-                    const bDiv = document.createElement('div');
-                    if (brick) {
-                        const txt = (brick.Inscription || "").trim();
-                        if (txt.includes("COMMONS")) {
-                            bDiv.className = 'brick center-stone'; bDiv.innerText = "ISLAND INN COMMONS";
-                        } else {
-                            const blank = txt === "" || txt.includes("[BLANK]");
-                            bDiv.className = 'brick' + (blank ? ' is-blank' : '');
-                            bDiv.innerText = blank ? "" : txt;
+                // Determine the width of this specific row (5 or 6)
+                const maxColInRow = Math.max(...Object.keys(rowData).map(Number), 5);
+
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'row-container';
+                
+                const label = document.createElement('div');
+                label.className = 'row-label';
+                label.innerText = 'R' + r;
+                rowDiv.appendChild(label);
+
+                const rowGrid = document.createElement('div');
+                rowGrid.className = 'row-grid';
+                rowGrid.style.gridTemplateColumns = `repeat(${maxColInRow}, 1fr)`;
+
+                const isCommonsRow = brickList.some(b => b.Inscription && b.Inscription.includes("COMMONS"));
+
+                if (isCommonsRow) {
+                    const stone = document.createElement('div');
+                    stone.className = 'brick center-stone';
+                    stone.innerText = "ISLAND INN COMMONS";
+                    rowGrid.appendChild(stone);
+                } else {
+                    for (let c = 1; c <= maxColInRow; c++) {
+                        const brick = rowData[c];
+                        const bDiv = document.createElement('div');
+                        
+                        if (brick) {
+                            const txt = (brick.Inscription || "").trim();
+                            const isBlank = txt === "" || txt === "[BLANK]";
+                            bDiv.className = 'brick' + (isBlank ? ' is-blank' : '');
+                            bDiv.innerText = isBlank ? "" : txt;
                             bDiv.dataset.search = (txt + " " + (brick["Searchable Names"] || "")).toLowerCase();
+                        } else {
+                            bDiv.className = 'brick is-blank';
                         }
-                    } else { bDiv.className = 'brick is-blank'; }
-                    rowDiv.appendChild(bDiv);
+                        rowGrid.appendChild(bDiv);
+                    }
                 }
+                rowDiv.appendChild(rowGrid);
                 container.appendChild(rowDiv);
             }
         }
@@ -145,15 +171,12 @@
         document.getElementById('search').addEventListener('input', (e) => {
             const t = e.target.value.toLowerCase().trim();
             document.querySelectorAll('.brick').forEach(b => {
-                if (b.classList.contains('is-blank') || b.classList.contains('center-stone')) return;
+                if (b.classList.contains('center-stone')) return;
                 const m = b.dataset.search && b.dataset.search.includes(t);
                 if (t === "") { b.classList.remove('match', 'hidden'); } 
                 else { b.classList.toggle('match', !!m); b.classList.toggle('hidden', !m); }
             });
         });
-
-        // Show floating button only on mobile
-        if(window.innerWidth < 850) document.getElementById('mobileMapBtn').style.display = 'flex';
     </script>
 </body>
 </html>
