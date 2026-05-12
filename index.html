@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ocracoke Memorial Brick Map</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        :root {
+            --brick-bg: #d2b48c; /* Tan/Brick color */
+            --brick-border: #8b4513; /* Brown border */
+            --highlight: #ffeb3b; /* Yellow for search matches */
+            --text-color: #333;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #fafafa; margin: 0; padding: 0; text-align: center; }
+        
+        /* Sticky Header for Search */
+        .controls { 
+            position: sticky; 
+            top: 0; 
+            background: white; 
+            padding: 20px; 
+            z-index: 100; 
+            border-bottom: 3px solid var(--brick-border); 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { margin: 0 0 10px 0; font-size: 24px; color: var(--brick-border); }
+        input { 
+            padding: 12px; 
+            width: 90%; 
+            max-width: 500px; 
+            border: 2px solid #ccc; 
+            border-radius: 25px; 
+            font-size: 18px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        input:focus { border-color: var(--brick-border); }
+        #stats { margin-top: 10px; font-weight: bold; color: #666; }
+
+        /* Map Layout */
+        .map-container { display: flex; flex-direction: column; align-items: center; gap: 50px; padding: 40px 20px; }
+        
+        .section { 
+            background: #fff; 
+            padding: 30px; 
+            border-radius: 15px; 
+            width: 100%; 
+            max-width: 1100px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 1px solid #ddd;
+        }
+        .section-title { 
+            font-size: 20px; 
+            font-weight: bold; 
+            margin-bottom: 25px; 
+            color: #888; 
+            text-transform: uppercase; 
+            letter-spacing: 3px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .grid { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+        .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        
+        /* Brick Styling */
+        .brick {
+            width: 150px; 
+            height: 75px;
+            background: var(--brick-bg);
+            border: 2px solid var(--brick-border);
+            border-radius: 4px;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            padding: 8px; 
+            font-size: 11px; 
+            font-weight: bold;
+            text-align: center; 
+            overflow: hidden; 
+            line-height: 1.3;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.1);
+            transition: all 0.2s ease; 
+            cursor: pointer;
+            color: var(--text-color);
+        }
+        .brick:hover { transform: translateY(-5px); box-shadow: 5px 5px 15px rgba(0,0,0,0.2); background: #e6ccaa; }
+        
+        /* Interactive States */
+        .brick.hidden { opacity: 0.15; filter: grayscale(1); transform: scale(0.95); }
+        .brick.match { 
+            background: var(--highlight); 
+            border-color: #f57c00; 
+            transform: scale(1.15); 
+            z-index: 50; 
+            box-shadow: 0 0 20px rgba(255, 235, 59, 0.6);
+        }
+
+        /* Large Center Stone Styling */
+        .brick.center-brick { 
+            width: 350px; 
+            height: 120px; 
+            background: var(--brick-border); 
+            color: white; 
+            font-size: 18px; 
+            border-color: #5d2e0d;
+        }
+
+        @media (max-width: 600px) {
+            .brick { width: 120px; height: 60px; font-size: 9px; }
+            .brick.center-brick { width: 250px; height: 80px; font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <h1>Ocracoke Memorial Brick Map</h1>
+        <input type="text" id="search" placeholder="Type a name (e.g., 'Holloman' or 'Cockrell')...">
+        <div id="stats">Connecting to Google Sheets...</div>
+    </div>
+
+    <div id="map" class="map-container">
+        </div>
+
+    <script>
+        // Your actual Google Sheets CSV URL
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ3j2xmIEyMKMz7nwsVM4HaZuXtBTQmyyJijPGkhQULJQbB2NcD0ZnrW_WWTKYe4FmD6WsZjD_TXh6-/pub?output=csv';
+
+        let allBricks = [];
+
+        function init() {
+            Papa.parse(CSV_URL, {
+                download: true,
+                header: true,
+                complete: function(results) {
+                    // Filter out any empty rows
+                    allBricks = results.data.filter(row => row.Inscription && row.Inscription.trim() !== "");
+                    renderMap(allBricks);
+                    document.getElementById('stats').innerText = `Total Bricks: ${allBricks.length} | Visual Map Ready`;
+                },
+                error: function(err) {
+                    document.getElementById('stats').innerText = "Error loading data. Check spreadsheet publishing.";
+                    console.error(err);
+                }
+            });
+        }
+
+        function renderMap(data) {
+            const container = document.getElementById('map');
+            container.innerHTML = '';
+            
+            // Define the sections in order
+            const sections = ['Photo 1', 'Photo 2', 'Photo 3', 'Photo 4'];
+            
+            sections.forEach(secName => {
+                const secData = data.filter(b => b['Photo Section'] === secName);
+                if (secData.length === 0) return;
+
+                const secDiv = document.createElement('div');
+                secDiv.className = 'section';
+                secDiv.innerHTML = `<div class="section-title">${secName}</div>`;
+                
+                const gridDiv = document.createElement('div');
+                gridDiv.className = 'grid';
+
+                // Sort and group by Row number
+                const rows = [...new Set(secData.map(b => b.Row))].sort((a, b) => {
+                    if (a === 'Center' || b === 'Center') return a === 'Center' ? -1 : 1;
+                    return parseInt(a) - parseInt(b);
+                });
+                
+                rows.forEach(r => {
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = 'row';
+                    const bricksInRow = secData.filter(b => b.Row === r).sort((a,b) => parseInt(a.Col) - parseInt(b.Col));
+                    
+                    bricksInRow.forEach(brick => {
+                        const bDiv = document.createElement('div');
+                        // Apply special class for center bricks
+                        const isCenter = brick.Inscription.includes("ISLAND INN") || brick.Row === "Center";
+                        bDiv.className = 'brick' + (isCenter ? ' center-brick' : '');
+                        
+                        bDiv.innerText = brick.Inscription;
+                        
+                        // Tooltip with metadata
+                        bDiv.title = `Location: ${secName}, Row ${brick.Row}, Col ${brick.Col}\nSearchable Names: ${brick['Searchable Names']}`;
+                        
+                        // Click to show more info (optional)
+                        bDiv.onclick = () => alert(`Brick Info:\n${brick.Inscription}\n\nLocation: ${secName}, Row ${brick.Row}, Column ${brick.Col}`);
+                        
+                        rowDiv.appendChild(bDiv);
+                    });
+                    gridDiv.appendChild(rowDiv);
+                });
+
+                secDiv.appendChild(gridDiv);
+                container.appendChild(secDiv);
+            });
+        }
+
+        // Real-time Search Logic
+        document.getElementById('search').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase().trim();
+            const bricks = document.querySelectorAll('.brick');
+            
+            bricks.forEach(bDiv => {
+                const text = bDiv.innerText.toLowerCase();
+                const metadata = bDiv.title.toLowerCase(); // Check searchable names too
+                
+                if (term === '') {
+                    bDiv.classList.remove('match', 'hidden');
+                } else if (text.includes(term) || metadata.includes(term)) {
+                    bDiv.classList.add('match');
+                    bDiv.classList.remove('hidden');
+                } else {
+                    bDiv.classList.remove('match');
+                    bDiv.classList.add('hidden');
+                }
+            });
+        });
+
+        // Start the process
+        init();
+    </script>
+</body>
+</html>
