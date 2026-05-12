@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Island Inn | Precision Locator</title>
+    <title>Island Inn | Garden Brick Finder</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
         :root {
@@ -13,30 +13,29 @@
         }
         body { font-family: 'Georgia', serif; background-color: var(--sand); margin: 0; display: flex; height: 100vh; overflow: hidden; }
 
-        /* Left Side: Precision Map */
+        /* Sidebar Map Area */
         .map-sidebar {
             width: 320px; background: white; border-right: 2px solid #ddd;
             display: flex; flex-direction: column; padding: 20px;
             box-shadow: 2px 0 10px rgba(0,0,0,0.05); z-index: 10;
         }
         .map-container { 
-            position: relative; width: 100%; border: 3px solid var(--fig-green); 
-            border-radius: 8px; overflow: hidden; cursor: pointer; 
+            position: relative; width: 100%; border: 3px solid #ccc; 
+            border-radius: 8px; overflow: hidden; cursor: pointer;
         }
         .map-container img { width: 100%; display: block; }
         
-        /* The Precision Dot */
         #locator-dot {
             position: absolute; width: 16px; height: 16px;
             background: var(--highlight); border: 2px solid white;
             border-radius: 50%; display: none;
-            box-shadow: 0 0 15px rgba(255, 59, 59, 0.8);
+            box-shadow: 0 0 15px rgba(255, 59, 59, 0.9);
             z-index: 20; transform: translate(-50%, -50%);
             animation: pulse 1.2s infinite;
         }
         @keyframes pulse { 0% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.4); } 100% { transform: translate(-50%, -50%) scale(1); } }
 
-        /* Right Side: Bricks */
+        /* Right Side Content */
         .main-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; scroll-behavior: smooth; }
         .header { position: sticky; top: 0; width: 100%; background: white; padding: 15px 0; z-index: 1000; text-align: center; border-bottom: 4px solid var(--ocean); }
         #search { padding: 12px 20px; width: 85%; max-width: 400px; border-radius: 25px; border: 2px solid #aec4c2; font-size: 16px; outline: none; }
@@ -75,17 +74,15 @@
             <img src="rendering%20of%20garden.avif" alt="Garden Map">
             <div id="locator-dot"></div>
         </div>
-        <p style="font-size:0.75rem; color:#666; line-height:1.4; margin-top:10px;">
-            <b>Search</b> for a brick.<br>
-            The <b>Red Dot</b> will appear on the path below.<br>
-            <b>Click the map</b> to jump to the brick list.
+        <p style="font-size:0.8rem; color:#666; line-height:1.4; margin-top:15px;">
+            Search for a name to see the location on the path. <b>Click the map</b> to zoom to the brick.
         </p>
     </div>
 
     <div class="main-content">
         <div class="header">
             <h1>Fig Garden Brick Finder</h1>
-            <input type="text" id="search" placeholder="Search by name (e.g. Hardy, Gamble)...">
+            <input type="text" id="search" placeholder="Type a name...">
         </div>
 
         <div class="container">
@@ -157,30 +154,34 @@
             let firstMatch = null;
 
             document.querySelectorAll('.brick').forEach(b => {
-                if (b.classList.contains('center-stone')) return;
-                const m = b.dataset.search && b.dataset.search.includes(t);
+                const matches = b.dataset.search && b.dataset.search.includes(t);
                 if (t === "") { b.classList.remove('match', 'hidden'); } 
                 else { 
-                    b.classList.toggle('match', !!m); b.classList.toggle('hidden', !m); 
-                    if (m && !firstMatch) firstMatch = b;
+                    b.classList.toggle('match', !!matches); b.classList.toggle('hidden', !matches); 
+                    if (matches && !firstMatch) firstMatch = b;
                 }
             });
 
             if (t !== "" && firstMatch) {
                 dot.style.display = 'block';
-                const row = parseInt(firstMatch.dataset.row);
-                let yPos = 0;
+                const rowNum = parseInt(firstMatch.dataset.row);
+                let yPercent = 0;
                 
-                // CLAMPED COORDINATES based on your Red (North) and Blue (South) rectangles
+                // DATA-TO-PIXEL CONVERSION based on your red/blue rectangles
                 if (firstMatch.dataset.section === 'North') {
-                    // Start 15% down (Row 1), end 38% down (Row 42)
-                    yPos = 15 + ((row / 42) * 23); 
+                    // NORTH (RED BOX): Starts at 26% of image, ends at 43%
+                    const northStart = 26;
+                    const northEnd = 43;
+                    yPercent = northStart + ((rowNum / 42) * (northEnd - northStart));
                 } else {
-                    // Start 60% down (Row 1), end 92% down (Row 40)
-                    yPos = 60 + ((row / 40) * 32);
+                    // SOUTH (BLUE BOX): Starts at 58% of image, ends at 86%
+                    const southStart = 58;
+                    const southEnd = 86;
+                    yPercent = southStart + ((rowNum / 40) * (southEnd - southStart));
                 }
-                dot.style.top = yPos + '%';
-                dot.style.left = '51%'; // Centered on the path
+                
+                dot.style.top = yPercent + '%';
+                dot.style.left = '51%'; // Center of the path
             } else {
                 dot.style.display = 'none';
             }
