@@ -11,7 +11,7 @@
             --brick-border: #8b4513; 
             --highlight: #ffeb3b; 
             --lawn-green: #90b990;
-            --step-gray: #bbb;
+            --step-gray: #a1a1a1;
         }
         body { font-family: sans-serif; background: #fafafa; margin: 0; padding: 0; text-align: center; }
         
@@ -23,39 +23,50 @@
 
         .map-container { display: flex; flex-direction: column; align-items: center; padding: 40px 20px; }
         
-        /* Layout Elements */
-        .path-section { display: flex; flex-direction: column; gap: 8px; align-items: center; background: #fff; padding: 20px; border-radius: 8px; }
+        /* Fixed Grid Layout */
+        .path-section { display: flex; flex-direction: column; gap: 6px; align-items: center; background: #fff; padding: 10px; }
         
-        /* Visual Steps */
-        .steps-visual {
-            width: 300px; margin: 10px 0;
-            display: flex; flex-direction: column; align-items: center; gap: 4px;
-        }
-        .step { width: 100%; height: 12px; background: var(--step-gray); border-radius: 2px; border-bottom: 2px solid #999; }
-
-        .lawn-area { 
-            width: 100%; max-width: 800px; height: 180px; 
-            background: var(--lawn-green); margin: 0; 
-            display: flex; align-items: center; justify-content: center;
-            color: white; font-weight: bold; letter-spacing: 2px; font-style: italic;
-            border-top: 5px solid #7a9c7a;
+        /* Force rows to be distinct and not wrap bricks into other rows */
+        .row { 
+            display: grid; 
+            grid-template-columns: repeat(6, 140px); /* Strictly 6 columns */
+            gap: 8px; 
+            justify-content: center; 
+            margin-bottom: 4px;
+            width: 100%;
         }
 
-        .row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 2px; }
-        
         .brick {
             width: 140px; height: 70px; background: var(--brick-bg);
             border: 2px solid var(--brick-border); border-radius: 4px;
             display: flex; align-items: center; justify-content: center;
             padding: 5px; font-size: 10px; font-weight: bold; text-align: center; 
             cursor: pointer; transition: all 0.2s; box-sizing: border-box;
+            overflow: hidden;
         }
         
-        .brick:hover { transform: translateY(-3px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); background: #e6ccaa; }
-        .brick.hidden { opacity: 0.1; filter: grayscale(1); }
-        .brick.match { background: var(--highlight); border-color: orange; transform: scale(1.1); z-index: 10; }
+        /* Empty slots for rows with fewer than 6 bricks */
+        .empty-slot { width: 140px; height: 70px; visibility: hidden; }
 
-        .label { color: #888; font-size: 12px; margin: 15px 0; text-transform: uppercase; font-weight: bold; }
+        .brick:hover { transform: scale(1.05); background: #e6ccaa; z-index: 5; }
+        .brick.hidden { opacity: 0.1; filter: grayscale(1); }
+        .brick.match { background: var(--highlight); border-color: orange; transform: scale(1.1); z-index: 10; box-shadow: 0 0 10px rgba(0,0,0,0.3); }
+
+        /* The Stairs */
+        .stairs-visual {
+            display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 880px; margin: 0;
+        }
+        .step { width: 100%; height: 15px; background: var(--step-gray); border: 1px solid #777; border-bottom: 3px solid #555; }
+
+        .lawn-area { 
+            width: 100%; max-width: 900px; height: 200px; 
+            background: var(--lawn-green); margin: 0; 
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: bold; letter-spacing: 2px; font-style: italic;
+            border-top: 2px solid #555;
+        }
+
+        .label { color: #888; font-size: 12px; margin: 20px 0 10px 0; text-transform: uppercase; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -86,6 +97,7 @@
             const grid = document.createElement('div');
             grid.className = 'path-section';
             
+            // Identify unique rows in this section
             const rowIds = [...new Set(bricks.map(b => b.Row))].sort((a, b) => {
                 if (a === 'Center' || b === 'Center') return a === 'Center' ? 0 : -1;
                 return parseInt(a) - parseInt(b);
@@ -94,16 +106,24 @@
             rowIds.forEach(r => {
                 const rowDiv = document.createElement('div');
                 rowDiv.className = 'row';
-                bricks.filter(b => b.Row === r)
-                      .sort((a,b) => parseInt(a.Col) - parseInt(b.Col))
-                      .forEach(brick => {
-                          const bDiv = document.createElement('div');
-                          bDiv.className = 'brick';
-                          bDiv.innerText = brick.Inscription;
-                          bDiv.title = `Section: ${brick['Photo Section']}, Row ${brick.Row}, Col ${brick.Col}`;
-                          bDiv.onclick = () => alert(brick.Inscription);
-                          rowDiv.appendChild(bDiv);
-                      });
+                const bricksInRow = bricks.filter(b => b.Row === r).sort((a,b) => parseInt(a.Col) - parseInt(b.Col));
+                
+                // Create exactly 6 slots per row
+                for (let i = 1; i <= 6; i++) {
+                    const brickData = bricksInRow.find(b => parseInt(b.Col) === i);
+                    if (brickData) {
+                        const bDiv = document.createElement('div');
+                        bDiv.className = 'brick';
+                        bDiv.innerText = brickData.Inscription;
+                        bDiv.title = `Row ${r}, Col ${i}`;
+                        bDiv.onclick = () => alert(brickData.Inscription);
+                        rowDiv.appendChild(bDiv);
+                    } else {
+                        const empty = document.createElement('div');
+                        empty.className = 'empty-slot';
+                        rowDiv.appendChild(empty);
+                    }
+                }
                 grid.appendChild(rowDiv);
             });
             container.appendChild(grid);
@@ -113,28 +133,29 @@
             const container = document.getElementById('map');
             container.innerHTML = '';
 
-            // 1. TOP PATH 
+            // 1. TOP PATH (Photo 1)
             const topBricks = data.filter(b => b['Photo Section'] === 'Photo 1');
-            container.insertAdjacentHTML('beforeend', '<div class="label">Top Path (from building)</div>');
+            container.insertAdjacentHTML('beforeend', '<div class="label">Top Path (Building Side)</div>');
             createSection(container, topBricks);
 
-            // 2. STEPS
+            // 2. STEPS FACING LAWN
             container.insertAdjacentHTML('beforeend', `
-                <div class="steps-visual">
+                <div class="label">Steps Down</div>
+                <div class="stairs-visual">
                     <div class="step"></div>
+                    <div class="step" style="width:95%"></div>
                     <div class="step" style="width:90%"></div>
-                    <div class="step" style="width:80%"></div>
                 </div>
             `);
 
             // 3. THE LAWN
             const lawn = document.createElement('div');
             lawn.className = 'lawn-area';
-            lawn.innerText = "MIDDLE LAWN AREA";
+            lawn.innerText = "MIDDLE LAWN";
             container.appendChild(lawn);
 
-            // 4. LOWER PLAZA (Holloman is here)
-            container.insertAdjacentHTML('beforeend', '<div class="label">Lower Plaza Area</div>');
+            // 4. LOWER PLAZA
+            container.insertAdjacentHTML('beforeend', '<div class="label">Lower Plaza (Catherine Holloman Brick here)</div>');
             const lowerBricks = data.filter(b => b['Photo Section'] !== 'Photo 1');
             createSection(container, lowerBricks);
         }
