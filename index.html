@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Island Inn Brick Finder | v4</title>
+    <title>Island Inn | Precision Brick Finder</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
         :root { --fig-green: #2d5a27; --sand: #fdfaf5; --brick: #b06d50; --ocean: #0077be; --wood: #7d6e64; --highlight: #ff3b3b; }
@@ -11,11 +11,11 @@
 
         /* Sidebar Map */
         .map-sidebar { width: 320px; background: white; border-right: 2px solid #ddd; display: flex; flex-direction: column; padding: 20px; z-index: 10; }
-        .map-container { position: relative; width: 100%; border: 3px solid #ccc; border-radius: 8px; overflow: hidden; cursor: pointer; }
+        .map-container { position: relative; width: 100%; border: 3px solid #ccc; border-radius: 8px; overflow: hidden; cursor: pointer; background: #f0f0f0; }
         .map-container img { width: 100%; display: block; }
         
         #locator-dot {
-            position: absolute; width: 22px; height: 22px; background: var(--highlight); 
+            position: absolute; width: 20px; height: 20px; background: var(--highlight); 
             border: 3px solid white; border-radius: 50%; display: none;
             box-shadow: 0 0 20px rgba(255, 59, 59, 1); z-index: 20; 
             transform: translate(-50%, -50%); animation: pulse 1s infinite;
@@ -28,10 +28,7 @@
         #search { padding: 12px 20px; width: 85%; max-width: 400px; border-radius: 25px; border: 2px solid #aec4c2; font-size: 16px; outline: none; }
 
         .container { padding: 40px 20px; width: 100%; display: flex; flex-direction: column; align-items: center; }
-        .status-msg { color: #888; font-style: italic; margin-top: 20px; }
-        
-        /* Brick Layout */
-        .plaza { display: inline-flex; flex-direction: column; gap: 4px; padding: 10px; margin-bottom: 30px; align-items: center; min-height: 50px; }
+        .plaza { display: inline-flex; flex-direction: column; gap: 4px; padding: 10px; margin-bottom: 30px; align-items: center; }
         .row-container { display: flex; align-items: center; justify-content: center; width: 100%; position: relative; margin-bottom: 2px; }
         .row-label { position: absolute; left: -45px; font-size: 10px; color: #bbb; font-family: sans-serif; }
         .row-grid { display: grid; gap: 5px; justify-content: center; }
@@ -54,32 +51,32 @@
 <body>
 
     <div class="map-sidebar">
-        <h3 style="color:var(--fig-green); margin-top:0;">Map Orientation</h3>
+        <h3 style="color:var(--fig-green); margin-top:0;">Garden Map</h3>
         <div class="map-container" onclick="scrollToPath()">
             <img src="rendering%20of%20garden.avif" alt="Garden Map">
             <div id="locator-dot"></div>
         </div>
         <p style="font-size:0.75rem; color:#666; line-height:1.4; margin-top:15px;">
-            <b>Red Rect (Top):</b> Southern Path<br>
-            <b>Blue Rect (Bottom):</b> Northern Path<br><br>
-            <i>Search for a name to see the dot move to the correct area.</i>
+            <b>Map Key:</b><br>
+            Top Rect = Southern Path<br>
+            Bottom Rect = Northern Path<br><br>
+            Click the map to jump to your search result.
         </p>
     </div>
 
     <div class="main-content">
         <div class="header">
             <h1>Fig Garden Brick Finder</h1>
-            <input type="text" id="search" placeholder="Search by name...">
-            <div id="loading-msg" class="status-msg">Connecting to data...</div>
+            <input type="text" id="search" placeholder="Type a name (e.g. Miller, Gamble)...">
         </div>
 
         <div class="container">
-            <h4 style="color:var(--fig-green)">NORTHERN SECTION</h4>
+            <h4 style="color:var(--fig-green); letter-spacing:2px;">NORTHERN SECTION</h4>
             <div id="north-section" class="plaza"></div>
             
             <div class="lawn" id="lawn-anchor">Central Lawn</div>
             
-            <h4 style="color:var(--fig-green)">SOUTHERN SECTION</h4>
+            <h4 style="color:var(--fig-green); letter-spacing:2px;">SOUTHERN SECTION</h4>
             <div id="south-section" class="plaza"></div>
         </div>
     </div>
@@ -90,28 +87,24 @@
         Papa.parse(CSV_URL, {
             download: true, header: true, skipEmptyLines: true,
             complete: function(results) {
-                document.getElementById('loading-msg').style.display = 'none';
                 const data = results.data;
                 
-                // DATA CLEANING: Removes trailing spaces and handles missing values
+                // Scrub data: Ensure Section is clean "North" or "South"
                 data.forEach(row => {
-                    row.Section = row.Section ? row.Section.trim().split(' ')[0] : "";
+                    if (row.Section) {
+                        row.Section = row.Section.trim().split(' ')[0]; 
+                    }
                     row.Row = parseInt(row.Row) || 0;
                     row.Col = parseInt(row.Col) || 0;
                 });
 
                 renderSection('north-section', data.filter(b => b.Section === 'North'), 42); 
                 renderSection('south-section', data.filter(b => b.Section === 'South'), 40);
-            },
-            error: function() {
-                document.getElementById('loading-msg').innerText = "Error: Could not load spreadsheet.";
             }
         });
 
         function renderSection(id, bricks, maxRow) {
             const container = document.getElementById(id);
-            if (bricks.length === 0) return;
-
             const grid = {};
             bricks.forEach(b => { if (!grid[b.Row]) grid[b.Row] = {}; grid[b.Row][b.Col] = b; });
 
@@ -124,8 +117,7 @@
                 rowWrapper.className = 'row-container';
                 
                 const label = document.createElement('div');
-                label.className = 'row-label';
-                label.innerText = 'R' + r;
+                label.className = 'row-label'; label.innerText = 'R' + r;
                 rowWrapper.appendChild(label);
 
                 const rowGrid = document.createElement('div');
@@ -147,9 +139,7 @@
                             bDiv.innerText = isBlank ? "" : txt;
                             bDiv.dataset.search = (txt + " " + (brick["Searchable Names"] || "")).toLowerCase();
                             bDiv.dataset.section = brick.Section;
-                        } else {
-                            bDiv.className = 'brick is-blank';
-                        }
+                        } else { bDiv.className = 'brick is-blank'; }
                         rowGrid.appendChild(bDiv);
                     }
                 }
@@ -177,13 +167,15 @@
 
             if (term !== "" && foundSection) {
                 dot.style.display = 'block';
-                // REVERSED ORIENTATION LOGIC:
-                // North Path Data -> Bottom (Blue)
-                // South Path Data -> Top (Red)
+                // X-AXIS FIX: Set to 48% to center better on the rendering walkway
+                const centerX = '48%'; 
+
                 if (foundSection === 'North') {
-                    dot.style.top = '72%'; dot.style.left = '51%';
+                    dot.style.top = '72%'; // Bottom (Blue Rect)
+                    dot.style.left = centerX;
                 } else if (foundSection === 'South') {
-                    dot.style.top = '34%'; dot.style.left = '51%';
+                    dot.style.top = '34%'; // Top (Red Rect)
+                    dot.style.left = centerX;
                 }
             } else {
                 dot.style.display = 'none';
@@ -192,9 +184,7 @@
 
         function scrollToPath() {
             const firstMatch = document.querySelector('.brick.match');
-            if (firstMatch) {
-                firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
+            if (firstMatch) firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     </script>
 </body>
