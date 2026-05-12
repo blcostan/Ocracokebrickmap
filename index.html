@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Island Inn Memorial Brick Map</title>
+    <title>Island Inn Memorial Brick Finder</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
         :root {
@@ -12,71 +12,98 @@
             --highlight: #ffd54f;
             --lawn: #7ea37e;
         }
-        body { font-family: sans-serif; background: #f4f4f4; margin: 0; padding: 0; text-align: center; }
-        
-        .header { 
-            position: sticky; top: 0; background: white; padding: 20px; z-index: 1000; 
-            border-bottom: 3px solid var(--brick-border); box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        input { padding: 12px; width: 80%; max-width: 400px; border-radius: 20px; border: 1px solid #ccc; font-size: 16px; }
-
-        .map-area { display: flex; flex-direction: column; align-items: center; padding: 20px; }
-
-        /* The Grid Logic */
-        .plaza-grid { 
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #fdfdfd; 
+            margin: 0; 
+            padding: 0; 
             display: flex; 
             flex-direction: column; 
-            gap: 5px; 
-            background: #ddd; 
-            padding: 10px; 
-            border-radius: 5px;
+            align-items: center; /* Centers everything horizontally */
+        }
+        
+        .header { 
+            position: sticky; top: 0; width: 100%; background: white; 
+            padding: 20px 0; z-index: 1000; text-align: center;
+            border-bottom: 4px solid var(--brick-border); 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        input { 
+            padding: 12px; width: 85%; max-width: 450px; 
+            border-radius: 25px; border: 2px solid #ddd; font-size: 16px; 
+            outline: none; transition: 0.3s;
+        }
+        input:focus { border-color: var(--brick-border); box-shadow: 0 0 8px rgba(0,0,0,0.1); }
+
+        /* The Main Path Layout */
+        .map-container { 
+            width: 100%; 
+            max-width: 1000px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; /* Keeps the plazas centered */
+            padding: 40px 0;
+        }
+
+        .plaza-island { 
+            display: inline-flex; /* Shrinks to fit 6 columns */
+            flex-direction: column; 
+            gap: 6px; 
+            background: #ececec; 
+            padding: 20px; 
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin: 0 auto;
         }
 
         .row { 
             display: grid; 
-            grid-template-columns: repeat(6, 120px); /* Strictly 6 bricks wide */
-            gap: 5px; 
-            justify-content: center;
+            grid-template-columns: repeat(6, 130px); /* Fixed 6 columns */
+            gap: 8px; 
+            justify-content: center; /* Centers the bricks within the 6-col grid */
         }
 
         .brick {
-            width: 120px; height: 60px; background: var(--brick-bg);
-            border: 1px solid var(--brick-border); border-radius: 2px;
+            width: 130px; height: 65px; background: var(--brick-bg);
+            border: 1px solid var(--brick-border); border-radius: 3px;
             display: flex; align-items: center; justify-content: center;
-            padding: 5px; font-size: 9px; font-weight: bold; text-align: center; 
+            padding: 6px; font-size: 10px; font-weight: bold; text-align: center; 
             cursor: pointer; color: white; line-height: 1.2; box-sizing: border-box;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.1); transition: 0.2s;
         }
         
-        /* Empty space holder for missing bricks in the grid */
-        .empty { width: 120px; height: 60px; background: rgba(0,0,0,0.03); border: 1px dashed #ccc; }
+        .empty-space { width: 130px; height: 65px; background: transparent; }
 
-        .brick.match { background: var(--highlight) !important; color: #000; transform: scale(1.1); z-index: 10; border-color: orange; }
-        .brick.hidden { opacity: 0.1; filter: grayscale(1); }
+        .brick:hover { filter: brightness(1.1); transform: translateY(-2px); }
+        .brick.match { background: var(--highlight) !important; color: #000; transform: scale(1.1); z-index: 10; border: 2px solid orange; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .brick.hidden { opacity: 0.15; filter: grayscale(1); }
 
-        /* Environmental Elements */
+        /* Landscaping */
         .lawn { 
-            width: 100%; max-width: 750px; height: 180px; background: var(--lawn); 
-            margin: 20px 0; border-radius: 10px; display: flex; align-items: center; 
-            justify-content: center; color: white; font-weight: bold;
+            width: 90%; max-width: 850px; height: 180px; background: var(--lawn); 
+            margin: 30px 0; border-radius: 10px; display: flex; align-items: center; 
+            justify-content: center; color: white; font-weight: bold; font-style: italic;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
         }
-        .label { font-weight: bold; color: #666; margin: 15px 0 5px 0; text-transform: uppercase; font-size: 13px; }
+        .label { font-weight: bold; color: #888; margin: 20px 0 10px 0; text-transform: uppercase; font-size: 12px; letter-spacing: 2px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h2>Memorial Brick Finder</h2>
-        <input type="text" id="search" placeholder="Type a name to highlight brick...">
+        <h2 style="margin:0 0 10px 0; color: var(--brick-border);">Ocracoke Memorial Brick Finder</h2>
+        <input type="text" id="search" placeholder="Type a name to locate a brick...">
+        <div id="stats" style="font-size: 12px; color: #999; margin-top: 5px;"></div>
     </div>
 
-    <div class="map-area">
-        <div class="label">Northwest Path (Photo 1)</div>
-        <div id="nw-plaza" class="plaza-grid"></div>
+    <div class="map-container">
+        <div class="label">Northwest Section</div>
+        <div id="nw-plaza" class="plaza-island"></div>
         
-        <div class="lawn">MIDDLE LAWN AREA</div>
+        <div class="lawn">MIDDLE LAWN</div>
         
-        <div class="label">Southeast Plaza (Photos 2, 3, 4)</div>
-        <div id="se-plaza" class="plaza-grid"></div>
+        <div class="label">Southeast Plaza</div>
+        <div id="se-plaza" class="plaza-island"></div>
     </div>
 
     <script>
@@ -87,45 +114,40 @@
             complete: function(results) {
                 const data = results.data.filter(b => b.Inscription && b.Inscription.trim() !== "");
                 
-                // Render Top Section
-                renderGrid('nw-plaza', data.filter(b => b['Photo Section'] === 'Photo 1'));
+                // Segment 1: Photo 1
+                renderSection('nw-plaza', data.filter(b => b['Photo Section'] === 'Photo 1'));
                 
-                // Render Bottom Section (Starting with Photo 3/Lawn side)
-                renderGrid('se-plaza', data.filter(b => b['Photo Section'] !== 'Photo 1'));
+                // Segment 2: Everything else (Photos 2, 3, 4)
+                renderSection('se-plaza', data.filter(b => b['Photo Section'] !== 'Photo 1'));
+                
+                document.getElementById('stats').innerText = `${data.length} Bricks Found`;
             }
         });
 
-        function renderGrid(containerId, bricks) {
+        function renderSection(containerId, bricks) {
             const container = document.getElementById(containerId);
             
-            // Get unique row numbers and sort them
-            const rowList = [...new Set(bricks.map(b => b.Row))].sort((a, b) => {
+            const rows = [...new Set(bricks.map(b => b.Row))].sort((a, b) => {
                 if (a === 'Center' || b === 'Center') return 0;
                 return parseInt(a) - parseInt(b);
             });
 
-            rowList.forEach(rowNum => {
+            rows.forEach(r => {
                 const rowDiv = document.createElement('div');
                 rowDiv.className = 'row';
+                const rowData = bricks.filter(b => b.Row === r);
                 
-                // Get bricks for this specific row
-                const bricksInRow = bricks.filter(b => b.Row === rowNum);
-                
-                // Always create 6 slots per row (Columns 1 through 6)
                 for (let col = 1; col <= 6; col++) {
-                    const brick = bricksInRow.find(b => parseInt(b.Col) === col);
-                    
+                    const brick = rowData.find(b => parseInt(b.Col) === col);
                     if (brick) {
                         const bDiv = document.createElement('div');
                         bDiv.className = 'brick';
                         bDiv.innerText = brick.Inscription;
-                        bDiv.title = `Row: ${brick.Row}, Col: ${brick.Col}`;
                         bDiv.onclick = () => alert(brick.Inscription);
                         rowDiv.appendChild(bDiv);
                     } else {
-                        // Create a placeholder for empty brick slots to keep alignment
                         const empty = document.createElement('div');
-                        empty.className = 'empty';
+                        empty.className = 'empty-space';
                         rowDiv.appendChild(empty);
                     }
                 }
