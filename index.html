@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Island Inn Precision Brick Finder</title>
+    <title>Island Inn | Precision Garden Locator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
         :root { --fig-green: #2d5a27; --sand: #fdfaf5; --brick: #b06d50; --ocean: #0077be; --wood: #7d6e64; --highlight: #ff3b3b; }
@@ -58,10 +58,10 @@
             <div id="locator-dot"></div>
         </div>
         <p style="font-size:0.8rem; color:#444; line-height:1.5; margin-top:20px;">
-            <b>Dot Placement:</b><br>
-            • South Section (Red/Top)<br>
-            • North Section (Blue/Bottom)<br><br>
-            <i>Note: Dot is now nudged right (52%) to center on the rendering's path.</i>
+            <b>Updated Placement:</b><br>
+            Center Horizontal: 54%<br><br>
+            • South Section (Red Box/Top)<br>
+            • North Section (Blue Box/Bottom)
         </p>
     </div>
 
@@ -155,15 +155,13 @@
 
             if (term !== "" && foundSection) {
                 dot.style.display = 'block';
-                // NUDGED TO THE RIGHT
-                const centerX = '52%'; 
+                // centerX adjusted to 54%
+                const centerX = '54%'; 
 
                 if (foundSection === 'North') {
-                    // NORTH = BOTTOM
                     dot.style.top = '72%'; 
                     dot.style.left = centerX;
                 } else if (foundSection === 'South') {
-                    // SOUTH = TOP
                     dot.style.top = '34%'; 
                     dot.style.left = centerX;
                 }
