@@ -3,79 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ocracoke Memorial Brick Map</title>
+    <title>Island Inn Memorial Brick Map</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
         :root {
             --brick-bg: #b08d73;
             --brick-border: #5d4037;
             --highlight: #ffd54f;
-            --grass: #81a881;
-            --stone-dust: #d1c4e933;
+            --lawn: #7ea37e;
         }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f0f0; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; }
+        body { font-family: sans-serif; background: #f4f4f4; margin: 0; padding: 0; text-align: center; }
         
-        /* Sticky Search Bar */
         .header { 
-            position: sticky; top: 0; width: 100%; background: white; padding: 15px 0; 
-            z-index: 1000; border-bottom: 4px solid var(--brick-border); text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky; top: 0; background: white; padding: 20px; z-index: 1000; 
+            border-bottom: 3px solid var(--brick-border); box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-        input { padding: 12px; width: 85%; max-width: 500px; border-radius: 25px; border: 2px solid #ddd; font-size: 16px; outline: none; }
-        input:focus { border-color: var(--brick-border); }
+        input { padding: 12px; width: 80%; max-width: 400px; border-radius: 20px; border: 1px solid #ccc; font-size: 16px; }
 
-        .map-container { padding: 40px 10px; display: flex; flex-direction: column; align-items: center; }
+        .map-area { display: flex; flex-direction: column; align-items: center; padding: 20px; }
 
-        /* Masonry Layout */
-        .plaza { display: flex; flex-direction: column; gap: 4px; padding: 20px; background: #e0e0e0; border-radius: 4px; }
-        .row { display: flex; justify-content: center; gap: 4px; }
-        /* Running Bond Stagger */
-        .row:nth-child(even) { transform: translateX(10px); }
+        /* The Grid Logic */
+        .plaza-grid { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 5px; 
+            background: #ddd; 
+            padding: 10px; 
+            border-radius: 5px;
+        }
+
+        .row { 
+            display: grid; 
+            grid-template-columns: repeat(6, 120px); /* Strictly 6 bricks wide */
+            gap: 5px; 
+            justify-content: center;
+        }
 
         .brick {
-            width: 120px; height: 55px; background: var(--brick-bg);
+            width: 120px; height: 60px; background: var(--brick-bg);
             border: 1px solid var(--brick-border); border-radius: 2px;
             display: flex; align-items: center; justify-content: center;
-            padding: 4px; font-size: 9px; font-weight: bold; text-align: center; 
-            cursor: pointer; box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
-            transition: 0.2s; color: #fff; text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
-            line-height: 1.1;
+            padding: 5px; font-size: 9px; font-weight: bold; text-align: center; 
+            cursor: pointer; color: white; line-height: 1.2; box-sizing: border-box;
         }
         
-        .brick:hover { filter: brightness(1.1); transform: translateY(-2px); }
-        .brick.match { background: var(--highlight) !important; color: #333; text-shadow: none; border-color: #f57c00; transform: scale(1.1); z-index: 10; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        .brick.hidden { opacity: 0.15; filter: grayscale(1); transform: scale(0.95); }
+        /* Empty space holder for missing bricks in the grid */
+        .empty { width: 120px; height: 60px; background: rgba(0,0,0,0.03); border: 1px dashed #ccc; }
 
-        /* Scenery */
-        .landscape-label { font-weight: bold; color: #666; text-transform: uppercase; margin: 15px 0; font-size: 12px; letter-spacing: 1px; }
-        .stairs { width: 200px; height: 30px; background: #999; border-bottom: 5px solid #666; margin-bottom: 5px; }
+        .brick.match { background: var(--highlight) !important; color: #000; transform: scale(1.1); z-index: 10; border-color: orange; }
+        .brick.hidden { opacity: 0.1; filter: grayscale(1); }
+
+        /* Environmental Elements */
         .lawn { 
-            width: 100vw; max-width: 900px; height: 200px; background: var(--grass); 
-            margin: 10px 0; border-radius: 10px; display: flex; align-items: center; 
-            justify-content: center; color: white; font-style: italic; font-weight: bold;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+            width: 100%; max-width: 750px; height: 180px; background: var(--lawn); 
+            margin: 20px 0; border-radius: 10px; display: flex; align-items: center; 
+            justify-content: center; color: white; font-weight: bold;
         }
+        .label { font-weight: bold; color: #666; margin: 15px 0 5px 0; text-transform: uppercase; font-size: 13px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h2 style="margin:0 0 10px 0; color: var(--brick-border);">Island Inn Commons Brick Map</h2>
-        <input type="text" id="search" placeholder="Search by name (e.g. Holloman)...">
-        <div id="stats" style="font-size: 12px; color: #888; margin-top: 5px;"></div>
+        <h2>Memorial Brick Finder</h2>
+        <input type="text" id="search" placeholder="Type a name to highlight brick...">
     </div>
 
-    <div class="map-container">
-        <div class="landscape-label">NW Path (Facing SE)</div>
-        <div id="nw-section" class="plaza"></div>
+    <div class="map-area">
+        <div class="label">Northwest Path (Photo 1)</div>
+        <div id="nw-plaza" class="plaza-grid"></div>
         
-        <div class="landscape-label">Steps Down</div>
-        <div class="stairs"></div>
+        <div class="lawn">MIDDLE LAWN AREA</div>
         
-        <div class="lawn">MIDDLE LAWN</div>
-        
-        <div class="landscape-label">SE Plaza (Catherine Holloman Brick here)</div>
-        <div id="se-section" class="plaza"></div>
+        <div class="label">Southeast Plaza (Photos 2, 3, 4)</div>
+        <div id="se-plaza" class="plaza-grid"></div>
     </div>
 
     <script>
@@ -86,41 +87,48 @@
             complete: function(results) {
                 const data = results.data.filter(b => b.Inscription && b.Inscription.trim() !== "");
                 
-                // Segment 1: Northwest Path (Photos 1 & 2)
-                const nwBricks = data.filter(b => b['Photo Section'] === 'Photo 1');
-                renderSection('nw-section', nwBricks, false);
-
-                // Segment 2: Southeast Plaza (Photos 2, 3, & 4)
-                // We exclude Photo 1 and sort to ensure Photo 3 (closest to lawn) is at the top
-                const seBricks = data.filter(b => b['Photo Section'] !== 'Photo 1');
-                renderSection('se-section', seBricks, true);
+                // Render Top Section
+                renderGrid('nw-plaza', data.filter(b => b['Photo Section'] === 'Photo 1'));
                 
-                document.getElementById('stats').innerText = `${data.length} Bricks Found`;
+                // Render Bottom Section (Starting with Photo 3/Lawn side)
+                renderGrid('se-plaza', data.filter(b => b['Photo Section'] !== 'Photo 1'));
             }
         });
 
-        function renderSection(id, bricks, isLowerSection) {
-            const container = document.getElementById(id);
+        function renderGrid(containerId, bricks) {
+            const container = document.getElementById(containerId);
             
-            // Logic to keep Photo 3 at the top of the lower section
-            const rows = [...new Set(bricks.map(b => b.Row))].sort((a,b) => {
+            // Get unique row numbers and sort them
+            const rowList = [...new Set(bricks.map(b => b.Row))].sort((a, b) => {
                 if (a === 'Center' || b === 'Center') return 0;
                 return parseInt(a) - parseInt(b);
             });
 
-            rows.forEach(r => {
+            rowList.forEach(rowNum => {
                 const rowDiv = document.createElement('div');
                 rowDiv.className = 'row';
-                const rowBricks = bricks.filter(b => b.Row === r).sort((a,b) => parseInt(a.Col) - parseInt(b.Col));
                 
-                rowBricks.forEach(brick => {
-                    const bDiv = document.createElement('div');
-                    bDiv.className = 'brick';
-                    bDiv.innerText = brick.Inscription;
-                    bDiv.title = `Section: ${brick['Photo Section']} | Row: ${brick.Row} | Col: ${brick.Col}`;
-                    bDiv.onclick = () => alert(`"${brick.Inscription}"\nLocation: Row ${brick.Row}, Col ${brick.Col}`);
-                    rowDiv.appendChild(bDiv);
-                });
+                // Get bricks for this specific row
+                const bricksInRow = bricks.filter(b => b.Row === rowNum);
+                
+                // Always create 6 slots per row (Columns 1 through 6)
+                for (let col = 1; col <= 6; col++) {
+                    const brick = bricksInRow.find(b => parseInt(b.Col) === col);
+                    
+                    if (brick) {
+                        const bDiv = document.createElement('div');
+                        bDiv.className = 'brick';
+                        bDiv.innerText = brick.Inscription;
+                        bDiv.title = `Row: ${brick.Row}, Col: ${brick.Col}`;
+                        bDiv.onclick = () => alert(brick.Inscription);
+                        rowDiv.appendChild(bDiv);
+                    } else {
+                        // Create a placeholder for empty brick slots to keep alignment
+                        const empty = document.createElement('div');
+                        empty.className = 'empty';
+                        rowDiv.appendChild(empty);
+                    }
+                }
                 container.appendChild(rowDiv);
             });
         }
