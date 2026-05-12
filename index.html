@@ -7,11 +7,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
         :root {
-            --fig-green: #3a5a40;
-            --fig-purple: #5e3c58;
-            --leaf-light: #a3b18a;
+            --fig-green: #2d4c31;
+            --fig-purple: #4a2c40;
+            --leaf-bright: #7a8d60;
             --sand-bg: #fdfaf5;
-            --brick-clay: #b06d50;
+            --brick-clay: #a65d41;
             --brick-border: #4a3728;
             --accent-gold: #f4d35e;
             --grass: #588157;
@@ -23,177 +23,114 @@
             margin: 0; 
             color: #2b2b2b;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        /* Decorative Fig Foliage - Fixed to sides */
-        .foliage-left, .foliage-right {
+        /* BETTER FOLIAGE: Detailed SVG Fig Branches */
+        .foliage {
             position: fixed;
             top: 0;
-            bottom: 0;
-            width: 15%;
+            width: 200px;
+            height: 100%;
             z-index: -1;
+            opacity: 0.9;
             pointer-events: none;
-            opacity: 0.8;
-            background-repeat: repeat-y;
-            background-size: contain;
         }
-
-        /* Using SVG backgrounds for crisp, colorful leaves and fruit */
-        .foliage-left {
-            left: 0;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 200'%3E%3Cpath d='M30 50 Q10 20 40 10 Q70 20 50 50 T30 90' fill='%233a5a40'/%3E%3Ccircle cx='60' cy='80' r='8' fill='%235e3c58'/%3E%3Cpath d='M20 120 Q5 100 25 85 Q45 100 30 120 T20 150' fill='%23a3b18a'/%3E%3Ccircle cx='15' cy='70' r='6' fill='%235e3c58'/%3E%3C/svg%3E");
-        }
-
-        .foliage-right {
-            right: 0;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 200'%3E%3Cpath d='M70 40 Q90 10 60 0 Q30 10 50 40 T70 80' fill='%23a3b18a'/%3E%3Ccircle cx='40' cy='60' r='9' fill='%235e3c58'/%3E%3Cpath d='M80 130 Q95 110 75 95 Q55 110 70 130 T80 160' fill='%233a5a40'/%3E%3Ccircle cx='85' cy='100' r='7' fill='%235e3c58'/%3E%3C/svg%3E");
-        }
+        .foliage-left { left: -20px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 800'%3E%3Cpath d='M10 0 v800' stroke='%234a3728' stroke-width='2'/%3E%3C!-- Leaves --%3E%3Cpath d='M10 100 c30 -20 60 0 40 40 s-50 20-40 -40' fill='%232d4c31'/%3E%3Cpath d='M10 300 c40 -30 80 10 50 50 s-70 10-50 -50' fill='%237a8d60'/%3E%3Cpath d='M10 550 c30 -20 60 0 40 40 s-50 20-40 -40' fill='%232d4c31'/%3E%3C!-- Figs --%3E%3Cellipse cx='45' cy='140' rx='12' ry='15' fill='%234a2c40'/%3E%3Cellipse cx='55' cy='350' rx='10' ry='13' fill='%234a2c40'/%3E%3Cellipse cx='40' cy='580' rx='12' ry='15' fill='%234a2c40'/%3E%3C/svg%3E"); }
+        .foliage-right { right: -20px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 800'%3E%3Cpath d='M90 0 v800' stroke='%234a3728' stroke-width='2'/%3E%3Cpath d='M90 200 c-30 -20 -60 0 -40 40 s50 20 40 -40' fill='%232d4c31'/%3E%3Cpath d='M90 450 c-40 -30 -80 10 -50 50 s70 10 50 -50' fill='%237a8d60'/%3E%3Cpath d='M90 700 c-30 -20 -60 0 -40 40 s50 20 40 -40' fill='%232d4c31'/%3E%3Cellipse cx='55' cy='240' rx='12' ry='15' fill='%234a2c40'/%3E%3Cellipse cx='45' cy='490' rx='10' ry='13' fill='%234a2c40'/%3E%3C/svg%3E"); }
 
         .header { 
-            position: sticky; 
-            top: 0; 
-            width: 100%; 
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(8px);
-            padding: 35px 0; 
-            z-index: 1000; 
-            text-align: center; 
-            border-bottom: 8px solid var(--fig-green);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            position: sticky; top: 0; width: 100%; 
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 25px 0; z-index: 1000; text-align: center; 
+            border-bottom: 6px solid var(--fig-green);
         }
 
-        .header h1 { 
-            margin: 0; 
-            color: var(--fig-green); 
-            font-size: 2.2rem; 
-            text-shadow: 1px 1px 0px #fff;
-        }
-        
-        .header h2 { 
-            margin: 5px 0 20px 0; 
-            font-size: 0.9rem; 
-            color: var(--fig-purple);
-            text-transform: uppercase;
-            letter-spacing: 5px;
-        }
+        .header h1 { margin: 0; color: var(--fig-green); font-size: 2rem; letter-spacing: 1px; }
+        .header h2 { margin: 5px 0 15px 0; font-size: 0.9rem; color: var(--fig-purple); text-transform: uppercase; letter-spacing: 4px; }
+
+        #debug-info { color: #d32f2f; font-size: 12px; margin-bottom: 10px; font-family: monospace; }
 
         input { 
-            padding: 16px 30px; 
-            width: 85%; 
-            max-width: 480px; 
-            border-radius: 4px; 
-            border: 2px solid var(--fig-green); 
-            font-size: 16px; 
-            background: #fff;
-            box-shadow: 4px 4px 0px var(--leaf-light);
-            outline: none;
+            padding: 14px 25px; width: 85%; max-width: 400px; 
+            border-radius: 4px; border: 2px solid var(--fig-green); 
+            font-size: 16px; outline: none; text-align: center;
         }
 
-        .map-container { padding: 50px 20px; display: flex; flex-direction: column; align-items: center; }
+        .map-container { padding: 40px 20px; display: flex; flex-direction: column; align-items: center; }
 
         .plaza { 
-            display: inline-flex; 
-            flex-direction: column; 
-            gap: 10px; 
-            background: rgba(255, 255, 255, 0.4);
-            padding: 20px; 
-            border: 1px solid #e0dcd0;
-            border-radius: 2px;
-            margin-bottom: 50px; 
+            display: inline-flex; flex-direction: column; gap: 8px; 
+            background: rgba(255, 255, 255, 0.5); padding: 15px; 
+            border: 1px solid #dcd7cc; margin-bottom: 40px; 
         }
 
-        .row { display: grid; gap: 8px; justify-content: center; }
+        .row { display: grid; gap: 6px; justify-content: center; }
 
         .brick { 
-            width: 120px; 
-            height: 60px; 
-            background: var(--brick-clay); 
-            border: 1px solid var(--brick-border); 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            padding: 8px; 
-            font-size: 10px; 
-            font-weight: bold; 
-            text-align: center; 
-            color: #fff; 
-            line-height: 1.2; 
-            box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
-            cursor: pointer; 
-            transition: all 0.2s ease;
+            width: 110px; height: 55px; background: var(--brick-clay); 
+            border: 1px solid var(--brick-border); display: flex; 
+            align-items: center; justify-content: center; padding: 6px; 
+            font-size: 9px; font-weight: bold; text-align: center; color: #fff; 
+            line-height: 1.1; box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+            cursor: pointer; transition: 0.2s;
         }
 
-        .brick:hover { filter: brightness(1.1); transform: translateY(-2px); }
-        .brick.is-blank { background: #e9e5db; border: 1px dashed #c0bbb0; box-shadow: none; pointer-events: none; }
+        .brick.is-blank { background: #e9e5db; border: 1px dashed #c0bbb0; box-shadow: none; pointer-events: none; color: transparent; }
         
         .brick.center-stone { 
-            background: var(--fig-green); 
-            font-size: 16px; 
-            height: 110px; 
-            border: 5px double #fff;
-            outline: 2px solid var(--fig-green);
+            background: var(--fig-green); font-size: 14px; height: 90px; 
+            border: 4px double #fff; grid-column: 1 / -1; width: 100%;
         }
 
-        /* Rich Fig-Colored Match Highlight */
         .brick.match { 
-            background: var(--fig-purple) !important; 
-            color: white !important; 
-            transform: scale(1.15); 
-            z-index: 100; 
-            border-color: var(--accent-gold);
-            box-shadow: 0 0 25px rgba(94, 60, 88, 0.5);
+            background: var(--accent-gold) !important; color: #000 !important; 
+            transform: scale(1.2); z-index: 100; border-color: #d4a017;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
         }
         
         .brick.hidden { opacity: 0.1; filter: grayscale(1); }
 
         .lawn { 
-            width: 90%; max-width: 800px; height: 120px; 
-            background: var(--grass);
-            margin: 30px 0; 
-            border-radius: 4px;
-            display: flex; align-items: center; justify-content: center; 
-            color: #fff; font-weight: bold; text-transform: uppercase; letter-spacing: 6px;
-            border: 3px solid #4a6d4a;
-            background-image: linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px);
-            background-size: 100% 10px;
+            width: 90%; max-width: 700px; height: 80px; background: var(--grass);
+            margin: 20px 0; border-radius: 4px; display: flex; align-items: center; 
+            justify-content: center; color: #fff; font-weight: bold; text-transform: uppercase; 
+            letter-spacing: 5px; border: 2px solid #4a6d4a;
         }
 
-        .label { 
-            font-size: 12px; font-weight: bold; color: var(--fig-green); 
-            margin: 25px 0; text-transform: uppercase; letter-spacing: 4px;
-        }
+        .label { font-size: 12px; font-weight: bold; color: var(--fig-green); margin: 20px 0; text-transform: uppercase; letter-spacing: 3px; }
 
-        @media (max-width: 1000px) {
-            .foliage-left, .foliage-right { width: 10%; opacity: 0.5; }
-        }
-        @media (max-width: 600px) {
-            .foliage-left, .foliage-right { display: none; }
-            .brick { width: 15vw; height: 11vw; font-size: 1.6vw; }
+        @media (max-width: 800px) {
+            .foliage { width: 100px; opacity: 0.4; }
+            .brick { width: 14vw; height: 10vw; font-size: 1.5vw; }
         }
     </style>
 </head>
 <body>
 
-    <div class="foliage-left"></div>
-    <div class="foliage-right"></div>
+    <div class="foliage foliage-left"></div>
+    <div class="foliage foliage-right"></div>
 
     <div class="header">
         <h1>Island Inn</h1>
-        <h2>Fig Garden Memorial Bricks</h2>
-        <input type="text" id="search" placeholder="Search by name (e.g., 'Buerkle' or 'Gamble')">
+        <h2>Fig Garden Brick Directory</h2>
+        <div id="debug-info"></div>
+        <input type="text" id="search" placeholder="Type a name to find a brick...">
     </div>
 
     <div class="map-container">
-        <div class="label">── North Garden Path ──</div>
+        <div class="label">── North Path ──</div>
         <div id="north-section" class="plaza"></div>
         
         <div class="lawn">Centeral Lawn Area</div>
         
         <div id="south-section" class="plaza"></div>
-        <div class="label">── South Garden Path ──</div>
+        <div class="label">── South Path ──</div>
     </div>
 
     <script>
+        // UPDATED: Replace this URL with your Google Sheets CSV link
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ3j2xmIEyMKMz7nwsVM4HaZuXtBTQmyyJijPGkhQULJQbB2NcD0ZnrW_WWTKYe4FmD6WsZjD_TXh6-/pub?output=csv';
 
         Papa.parse(CSV_URL, {
@@ -204,6 +141,19 @@
             transformHeader: h => h.trim(),
             complete: function(results) {
                 const data = results.data;
+                const debug = document.getElementById('debug-info');
+
+                if (!data || data.length === 0) {
+                    debug.innerText = "Error: Could not read CSV data.";
+                    return;
+                }
+
+                // Check headers
+                const headers = Object.keys(data[0]);
+                if (!headers.includes('Section') || !headers.includes('Row')) {
+                    debug.innerText = "Check CSV: Found headers [" + headers.join(", ") + "]. Need 'Section', 'Row', 'Col'.";
+                }
+
                 const northBricks = data.filter(b => String(b.Section).trim() === 'North');
                 const southBricks = data.filter(b => String(b.Section).trim() === 'South');
 
@@ -223,4 +173,65 @@
                 rowMap[r][c] = b;
             });
 
-            let sortedRowKeys = Object.keys(rowMap).
+            let sortedRowKeys = Object.keys(rowMap).sort((a, b) => parseInt(a) - parseInt(b));
+            if (reverseRows) sortedRowKeys.reverse();
+
+            sortedRowKeys.forEach(rowKey => {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'row';
+                const colsInRow = rowMap[rowKey];
+                
+                // Determine max columns (5 or 6)
+                const colIndices = Object.keys(colsInRow).map(k => parseInt(k));
+                const maxCol = Math.max(...colIndices, 5);
+                rowDiv.style.gridTemplateColumns = `repeat(${maxCol}, 1fr)`;
+
+                // Special handling for center stone
+                const hasCenter = Object.values(colsInRow).some(b => 
+                    b.Inscription && b.Inscription.toUpperCase().includes("COMMONS")
+                );
+
+                if (hasCenter) {
+                    const bDiv = document.createElement('div');
+                    bDiv.className = 'brick center-stone';
+                    bDiv.innerText = "ISLAND INN COMMONS";
+                    rowDiv.appendChild(bDiv);
+                } else {
+                    for (let c = 1; c <= maxCol; c++) {
+                        const brick = colsInRow[c];
+                        const bDiv = document.createElement('div');
+                        if (brick) {
+                            const text = (brick.Inscription || "").trim();
+                            const isBlank = text === "" || text.toUpperCase().includes("[BLANK]");
+                            bDiv.className = 'brick' + (isBlank ? ' is-blank' : '');
+                            bDiv.innerText = isBlank ? "" : text;
+                            
+                            // Flexible Search (finds "Searchable Names" or "Searchable")
+                            let searchNames = brick["Searchable Names"] || brick["Searchable"] || "";
+                            bDiv.dataset.search = (text + " " + searchNames).toLowerCase();
+                            
+                            if (!isBlank) {
+                                bDiv.onclick = () => alert(`"${text}"\nRow ${rowKey}, Column ${c}`);
+                            }
+                        } else {
+                            bDiv.className = 'brick is-blank';
+                        }
+                        rowDiv.appendChild(bDiv);
+                    }
+                }
+                container.appendChild(rowDiv);
+            });
+        }
+
+        document.getElementById('search').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase().trim();
+            document.querySelectorAll('.brick').forEach(b => {
+                if (b.classList.contains('center-stone') || b.classList.contains('is-blank')) return;
+                const match = b.dataset.search && b.dataset.search.includes(term);
+                if (term === "") { b.classList.remove('match', 'hidden'); } 
+                else { b.classList.toggle('match', !!match); b.classList.toggle('hidden', !match); }
+            });
+        });
+    </script>
+</body>
+</html>
