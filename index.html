@@ -3,113 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Island Inn | Fig Garden Brick Finder</title>
+    <title>Island Inn | Garden Brick Finder</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <style>
         :root {
             --fig-green: #2d5a27; --sand: #fdfaf5;
             --brick: #b06d50; --ocean: #0077be; --wood: #7d6e64;
         }
-        body { font-family: 'Georgia', serif; background-color: var(--sand); margin: 0; color: #333; overflow-x: hidden; }
-        
-        /* Side Art (More pronounced but transparent) */
-        .foliage { position: fixed; top: 0; width: 180px; height: 100%; z-index: -1; opacity: 0.4; pointer-events: none; }
-        .foliage-left { left: 0; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 400'%3E%3Cpath d='M10 50 c15-15 40-5 35 20 s-25 25-35 0' fill='%232d5a27'/%3E%3Cpath d='M55 75 q5-15 15-5 t-5 25' fill='%235e3c58'/%3E%3C/svg%3E"); }
-        .foliage-right { right: 0; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 400'%3E%3Cpath d='M80 110 c-15-15-40-5-35 20 s25 25 35 0' fill='%232d5a27'/%3E%3Cpath d='M60 250 c-25-25-60-15-55 45 s45 55 55 0' fill='%235e3c58'/%3E%3C/svg%3E"); }
+        body { font-family: 'Georgia', serif; background-color: var(--sand); margin: 0; color: #333; display: flex; height: 100vh; overflow: hidden; }
 
-        /* Floating Mini-Map Integration */
-        .mini-map-container {
-            position: fixed; bottom: 20px; right: 20px;
-            width: 150px; height: auto; z-index: 2000;
-            border: 3px solid white; border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            cursor: zoom-in; transition: all 0.3s ease;
-            background: white; overflow: hidden;
+        /* Left Side: Permanent Map Reference (Desktop) */
+        .map-sidebar {
+            width: 350px; background: white; border-right: 2px solid #ddd;
+            display: flex; flex-direction: column; padding: 20px;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05); z-index: 10;
         }
-        .mini-map-container img { width: 100%; display: block; }
-        .mini-map-container.expanded {
-            width: 90vw; max-width: 600px; bottom: 50%; right: 50%;
-            transform: translate(50%, 50%); cursor: zoom-out;
-        }
+        .map-sidebar h2 { color: var(--fig-green); font-size: 1.2rem; margin-top: 0; }
+        .map-sidebar img { width: 100%; border-radius: 4px; border: 1px solid #ccc; cursor: zoom-in; }
+        .map-sidebar p { font-size: 0.8rem; color: #666; font-style: italic; }
 
-        .header { position: sticky; top: 0; width: 100%; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); padding: 15px 0; z-index: 1000; text-align: center; border-bottom: 4px solid var(--ocean); }
-        .header h1 { margin: 0; color: var(--fig-green); font-size: 1.5rem; }
-        
-        #search { padding: 12px 20px; width: 85%; max-width: 400px; border-radius: 25px; border: 2px solid #aec4c2; font-size: 16px; margin-top: 10px; outline: none; }
+        /* Right Side: Scrollable Bricks */
+        .main-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding-bottom: 50px; }
 
-        .container { padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .plaza { display: inline-flex; flex-direction: column; gap: 6px; background: rgba(255, 255, 255, 0.5); padding: 12px; border: 1px solid #dcd7cc; margin-bottom: 30px; }
+        .header { position: sticky; top: 0; width: 100%; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); padding: 15px 0; z-index: 1000; text-align: center; border-bottom: 4px solid var(--ocean); }
+        #search { padding: 12px 20px; width: 85%; max-width: 400px; border-radius: 25px; border: 2px solid #aec4c2; font-size: 16px; outline: none; }
+
+        .container { padding: 20px; width: 100%; display: flex; flex-direction: column; align-items: center; }
+        .plaza { display: inline-flex; flex-direction: column; gap: 6px; background: rgba(255,255,255,0.4); padding: 12px; border: 1px solid #dcd7cc; margin-bottom: 30px; }
         .row { display: grid; gap: 5px; justify-content: center; }
         
-        .brick { width: 100px; height: 50px; background: var(--brick); border: 1px solid #4a3728; display: flex; align-items: center; justify-content: center; padding: 5px; font-size: 8.5px; font-weight: bold; text-align: center; color: white; line-height: 1.1; cursor: pointer; transition: 0.2s; box-shadow: 2px 2px 0 rgba(0,0,0,0.1); }
+        .brick { width: 90px; height: 48px; background: var(--brick); border: 1px solid #4a3728; display: flex; align-items: center; justify-content: center; padding: 4px; font-size: 8px; font-weight: bold; text-align: center; color: white; line-height: 1.1; cursor: pointer; transition: 0.2s; box-shadow: 2px 2px 0 rgba(0,0,0,0.1); }
         .brick.is-blank { background: #eeeae0; border: 1px dashed #ccc; color: transparent; pointer-events: none; }
-        .brick.match { background: #ffd54f !important; color: #000 !important; transform: scale(1.2); z-index: 10; border: 2px solid orange; box-shadow: 0 0 15px rgba(0,0,0,0.4); }
+        .brick.match { background: #ffd54f !important; color: #000 !important; transform: scale(1.15); z-index: 5; border: 2px solid orange; box-shadow: 0 0 15px rgba(0,0,0,0.3); }
         .brick.hidden { opacity: 0.1; filter: grayscale(1); }
         
-        .brick.center-stone { background: var(--wood); font-size: 14px; height: 90px; border: 4px double #fff; grid-column: 1 / -1; width: 100%; }
-        .lawn { width: 95%; max-width: 700px; height: 50px; background: #8da58e; margin: 20px 0; border-radius: 25px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 3px; border: 3px solid #6d8c6d; }
+        .brick.center-stone { background: var(--wood); font-size: 12px; height: 80px; border: 4px double #fff; grid-column: 1 / -1; width: 100%; }
+        .lawn { width: 90%; max-width: 600px; height: 50px; background: #8da58e; margin: 20px 0; border-radius: 25px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 3px; border: 3px solid #6d8c6d; }
         .label { font-weight: bold; color: var(--fig-green); margin: 10px 0; text-transform: uppercase; font-size: 12px; letter-spacing: 2px; }
 
-        @media (max-width: 600px) { .foliage { display: none; } .brick { width: 14vw; height: 10vw; font-size: 1.5vw; } .mini-map-container { width: 100px; bottom: 10px; right: 10px; } }
+        /* Mobile Adjustments */
+        @media (max-width: 850px) {
+            body { flex-direction: column; overflow: visible; }
+            .map-sidebar { display: none; } /* Hide sidebar on mobile */
+            .main-content { overflow-y: visible; height: auto; }
+            .mobile-map-toggle {
+                display: block; position: fixed; bottom: 20px; right: 20px;
+                width: 60px; height: 60px; background: var(--fig-green);
+                border-radius: 50%; color: white; border: 3px solid white;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 3000;
+                display: flex; align-items: center; justify-content: center; font-size: 10px; text-transform: uppercase;
+            }
+            .brick { width: 14vw; height: 10vw; font-size: 1.5vw; }
+        }
+
+        /* Modal for Mobile Map */
+        #mapModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 4000; align-items: center; justify-content: center; }
+        #mapModal img { max-width: 95%; max-height: 90%; border: 5px solid white; }
     </style>
 </head>
 <body>
-    <div class="foliage foliage-left"></div><div class="foliage foliage-right"></div>
-    
-    <div class="header">
-        <h1>Fig Garden Brick Finder</h1>
-        <input type="text" id="search" placeholder="Type a name (e.g. Miller, Norvell)...">
+
+    <div class="map-sidebar">
+        <h2>Garden Reference</h2>
+        <img src="rendering%20of%20garden.avif" alt="Garden Map" onclick="openModal()">
+        <p>Use the search above to find a specific name. The North Path sits just above the lawn near the Fig Garden.</p>
     </div>
 
-    <div class="mini-map-container" id="miniMap" onclick="this.classList.toggle('expanded')">
-        <img src="rendering%20of%20garden.avif" alt="Garden Reference">
-        <div style="font-size: 9px; text-align: center; padding: 2px; background: white;">Tap to Zoom</div>
+    <div class="mobile-map-toggle" style="display:none;" id="mobileMapBtn" onclick="openModal()">Map</div>
+
+    <div id="mapModal" onclick="this.style.display='none'">
+        <img src="rendering%20of%20garden.avif" alt="Garden Map">
     </div>
 
-    <div class="container">
-        <div class="label">North Path (Near Fig Garden)</div>
-        <div id="north-section" class="plaza"></div>
-        <div class="lawn">Central Lawn</div>
-        <div id="south-section" class="plaza"></div>
-        <div class="label">South Path (Main Entrance)</div>
+    <div class="main-content">
+        <div class="header">
+            <h1>Fig Garden Brick Finder</h1>
+            <input type="text" id="search" placeholder="Search by name (e.g. Miller, Hardy)...">
+        </div>
+
+        <div class="container">
+            <div class="label">North Path (Fig Garden)</div>
+            <div id="north-section" class="plaza"></div>
+            <div class="lawn">Central Lawn Area</div>
+            <div id="south-section" class="plaza"></div>
+            <div class="label">South Path (Main Entrance)</div>
+        </div>
     </div>
 
     <script>
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ3j2xmIEyMKMz7nwsVM4HaZuXtBTQmyyJijPGkhQULJQbB2NcD0ZnrW_WWTKYe4FmD6WsZjD_TXh6-/pub?output=csv';
 
+        function openModal() { document.getElementById('mapModal').style.display = 'flex'; }
+
         Papa.parse(CSV_URL, {
             download: true, header: true, skipEmptyLines: true,
             complete: function(results) {
                 const data = results.data;
+                // Trimming section names to handle "North " vs "North"
                 const north = data.filter(b => String(b.Section).trim().toLowerCase() === 'north');
                 const south = data.filter(b => String(b.Section).trim().toLowerCase() === 'south');
-                renderSection('north-section', north, true); 
-                renderSection('south-section', south, false);
+                
+                renderSection('north-section', north, 42, true); 
+                renderSection('south-section', south, 40, false);
             }
         });
 
-        function renderSection(id, bricks, rev) {
+        function renderSection(id, bricks, totalRows, rev) {
             const container = document.getElementById(id);
             const rowMap = {};
             bricks.forEach(b => {
                 if (!rowMap[b.Row]) rowMap[b.Row] = {};
                 rowMap[b.Row][b.Col] = b;
             });
-            let keys = Object.keys(rowMap).sort((a,b) => a - b);
-            if (rev) keys.reverse();
-            keys.forEach(k => {
+
+            for (let r = 1; r <= totalRows; r++) {
+                const rowNum = rev ? (totalRows - r + 1) : r;
                 const rowDiv = document.createElement('div');
                 rowDiv.className = 'row';
-                const cols = rowMap[k];
-                const max = Math.max(...Object.keys(cols).map(n => parseInt(n)), 5);
-                rowDiv.style.gridTemplateColumns = `repeat(${max}, 1fr)`;
-                
-                if (Object.values(cols).some(b => String(b.Inscription).includes("COMMONS"))) {
+                rowDiv.style.gridTemplateColumns = `repeat(6, 1fr)`;
+
+                for (let c = 1; c <= 6; c++) {
+                    const brick = rowMap[rowNum] ? rowMap[rowNum][c] : null;
                     const bDiv = document.createElement('div');
-                    bDiv.className = 'brick center-stone'; bDiv.innerText = "ISLAND INN COMMONS";
+                    if (brick) {
+                        const txt = (brick.Inscription || "").trim();
+                        if (txt.includes("COMMONS")) {
+                            bDiv.className = 'brick center-stone'; bDiv.innerText = "ISLAND INN COMMONS";
+                        } else {
+                            const blank = txt === "" || txt.includes("[BLANK]");
+                            bDiv.className = 'brick' + (blank ? ' is-blank' : '');
+                            bDiv.innerText = blank ? "" : txt;
+                            bDiv.dataset.search = (txt + " " + (brick["Searchable Names"] || "")).toLowerCase();
+                        }
+                    } else { bDiv.className = 'brick is-blank'; }
                     rowDiv.appendChild(bDiv);
-                } else {
-                    for (let c = 1; c <= max; c++) {
-                        const b = cols[c]; const bDiv = document.createElement('div');
-                        if (b) {
-                            const
+                }
+                container.appendChild(rowDiv);
+            }
+        }
+
+        document.getElementById('search').addEventListener('input', (e) => {
+            const t = e.target.value.toLowerCase().trim();
+            document.querySelectorAll('.brick').forEach(b => {
+                if (b.classList.contains('is-blank') || b.classList.contains('center-stone')) return;
+                const m = b.dataset.search && b.dataset.search.includes(t);
+                if (t === "") { b.classList.remove('match', 'hidden'); } 
+                else { b.classList.toggle('match', !!m); b.classList.toggle('hidden', !m); }
+            });
+        });
+
+        // Show floating button only on mobile
+        if(window.innerWidth < 850) document.getElementById('mobileMapBtn').style.display = 'flex';
+    </script>
+</body>
+</html>
