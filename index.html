@@ -92,7 +92,6 @@
                 const data = results.data;
                 data.forEach(row => {
                     let rawSection = String(row.Section || "").trim().split(' ')[0];
-                    // Correcting spreadsheet labels
                     if (rawSection === 'North') row.MappedSection = 'South';
                     else if (rawSection === 'South') row.MappedSection = 'North';
                     else row.MappedSection = rawSection;
@@ -101,10 +100,10 @@
                     row.Col = parseInt(row.Col);
                 });
 
-                // North (Spreadsheet "South"): R1 at bottom (Near Lawn)
+                // NORTH: Spreadsheet "South", limit set to 42, R1 near lawn
                 renderSection('north-section', data.filter(b => b.MappedSection === 'North'), 42, true); 
-                // South (Spreadsheet "North"): R1 at bottom (Entrance / Opposite Lawn)
-                renderSection('south-section', data.filter(b => b.MappedSection === 'South'), 40, true);
+                // SOUTH: Spreadsheet "North", limit updated to 42, R1 at Entrance
+                renderSection('south-section', data.filter(b => b.MappedSection === 'South'), 42, true);
             }
         });
 
