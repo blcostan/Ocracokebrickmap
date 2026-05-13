@@ -26,7 +26,6 @@
             transform: translate(-50%, -50%); transition: all 0.3s ease; 
             cursor: pointer;
         }
-        #map-dot:hover { transform: translate(-50%, -50%) scale(1.2); background: #ff0000; }
 
         /* Main Content Layout */
         .main-content { flex: 1; overflow: auto; display: flex; flex-direction: column; align-items: center; padding: 40px; scroll-behavior: smooth; }
@@ -59,25 +58,24 @@
         <button id="next-btn">Next</button>
     </div>
     <div class="map-container">
-        <div id="map-dot" title="Click to show bricks in this path"></div>
+        <div id="map-dot"></div>
         <img src="rendering%20of%20garden.avif" alt="Garden Map">
     </div>
     <div class="instruction-hint" id="hint">Search a name to begin.</div>
 </div>
 
-<div class="main-content" id="viewer">
+<div class="main-content">
     <div id="north-wrapper" class="plaza-wrapper">
         <div id="north-section" class="plaza"></div>
     </div>
-
     <div class="lawn" id="central-lawn" style="display:none;">CENTRAL LAWN</div>
-
     <div id="south-wrapper" class="plaza-wrapper">
         <div id="south-section" class="plaza"></div>
     </div>
 </div>
 
 <script>
+    // CLEANED INITIALIZATION
     const S_URL = 'https://duanluepelrjjkulpenh.supabase.co'; 
     const S_KEY = 'sb_publishable_WHslguojU3jb1GyQBqc_MA_2w35Y2ou';
     const gardenClient = window.supabase.createClient(S_URL, S_KEY);
@@ -86,9 +84,12 @@
     let currentMatches = [];
 
     async function fetchGarden() {
+        // Double check this table name matches your Supabase dashboard exactly
         const { data, error } = await gardenClient.from('Ocracoke Bricks -').select('*');
+        
         if (error) {
-            document.getElementById('status-bar').innerText = "Error: " + error.message;
+            document.getElementById('status-bar').innerText = "Status: " + error.message;
+            console.error("Supabase error:", error);
             return;
         }
         renderGarden(data);
@@ -158,15 +159,71 @@
     function goToMatch() {
         if (currentMatches.length === 0) return;
         
-        // Auto-show sections and lawn
         document.getElementById('north-wrapper').classList.add('active');
         document.getElementById('south-wrapper').classList.add('active');
         document.getElementById('central-lawn').style.display = 'flex';
-        document.getElementById('hint').innerText = "Click the red dot to cycle through matches.";
 
         currentMatches.forEach(b => b.classList.remove('current-match'));
         matchIndex = (matchIndex + 1) % currentMatches.length;
         const target = currentMatches[matchIndex];
         
         target.classList.add('current-match');
-        target.scrollIntoView({ behavior: 'smooth',
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        updateMapDot(target);
+    }
+
+    function updateMapDot(brickElement) {
+        const dot = document.getElementById('map-dot');
+        const section = brickElement.dataset.section;
+        if (!section) { dot.style.display = "none"; return; }
+        dot.style.display = "block";
+        dot.style.left = "54%"; 
+        dot.style.top = (section === "North") ? "41%" : "66%";
+    }
+
+    document.getElementById('map-dot').onclick = goToMatch;
+
+    document.getElementById('search').oninput = (e) => {
+        const t = e.target.value.toLowerCase().trim();
+        const nextBtn = document.getElementById('next-btn');
+        const dot = document.getElementById('map-dot');
+        const hint = document.getElementById('hint');
+        currentMatches = [];
+        matchIndex = -1;
+
+        if (t === "") {
+            document.getElementById('north-wrapper').classList.remove('active');
+            document.getElementById('south-wrapper').classList.remove('active');
+            document.getElementById('central-lawn').style.display = 'none';
+            hint.innerText = "Search a name to begin.";
+            dot.style.display = "none";
+            nextBtn.style.display = "none";
+            return;
+        }
+
+        document.querySelectorAll('.brick').forEach(b => {
+            const isMatch = b.dataset.search.includes(t);
+            b.classList.remove('current-match');
+            b.classList.toggle('match', isMatch);
+            b.style.opacity = !isMatch ? "0.3" : "1";
+            if (isMatch) currentMatches.push(b);
+        });
+
+        if (currentMatches.length > 0) {
+            updateMapDot(currentMatches[0]);
+            hint.innerHTML = `Found ${currentMatches.length} match(es).<br>Click the <b>red dot</b> to see where!`;
+        } else {
+            dot.style.display = "none";
+            hint.innerText = "No matches found.";
+        }
+
+        nextBtn.style.display = currentMatches.length > 1 ? "block" : "none";
+    };
+
+    document.getElementById('next-btn').onclick = goToMatch;
+
+    fetchGarden();
+</script>
+</body>
+</html>
