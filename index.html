@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0">
-    <title>Ocracoke Commons Brick Finder</title>
+    <title>Island Inn Garden Finder</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { 
@@ -66,7 +66,6 @@
 
         @keyframes pulse { 0% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.15); } 100% { transform: translate(-50%, -50%) scale(1); } }
 
-        /* BRICK OVERLAY - FULL SCREEN FIT */
         #brick-overlay { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: var(--sand); z-index: 1000; display: none; flex-direction: column; 
@@ -78,64 +77,56 @@
         .brick-scroll-viewport {
             flex: 1;
             overflow-y: auto;
-            overflow-x: hidden; /* Prevent horizontal scroll, force fit */
+            padding: 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 10px;
         }
 
-        .brick-view { 
+        /* GRID FIX: The container is now a grid to keep columns aligned */
+        .brick-grid-container {
+            display: grid;
+            gap: 4px;
             width: 100%;
-            max-width: 600px; /* Limits size on desktop so it doesn't get weirdly huge */
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-        }
-
-        .row-bricks { 
-            display: flex; 
-            gap: 2px; 
-            margin-bottom: 2px; 
-            width: 100%; /* Force row to match container width */
+            max-width: 500px; /* Keeps it from stretching too far on desktop */
+            margin: 0 auto;
         }
 
         .brick { 
-            flex: 1; /* Each brick takes equal share of the row width */
-            aspect-ratio: 3 / 2; /* Maintains brick shape regardless of width */
+            aspect-ratio: 3 / 2;
             background: var(--brick); 
             color: white; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
             text-align: center; 
-            font-size: min(2vw, 9px); /* Font scales based on screen width */
+            font-size: min(2.2vw, 10px); 
             font-weight: bold; 
-            padding: 2px; 
+            padding: 4px; 
             box-sizing: border-box; 
             border-radius: 2px; 
-            overflow: hidden;
             word-wrap: break-word;
+            line-height: 1.1;
         }
 
         .brick.current-focus { 
-            outline: 3px solid var(--highlight);
-            outline-offset: -3px;
+            outline: 4px solid var(--highlight);
+            outline-offset: -2px;
             z-index: 10; 
-            background: #d45b4a; /* Slightly lighter to stand out */
-            transform: scale(1.05);
-            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            background: #d45b4a;
+            transform: scale(1.08);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
         }
 
-        .brick.is-blank { background: #dcd7cc; color: transparent; border: 1px dashed #bbb; }
+        .brick.is-blank { background: #dcd7cc; color: transparent; border: 1px dashed #bbb; outline: none !important; transform: none !important; }
 
-        .mini-lawn { width: 100%; background: var(--fig-green); color: white; padding: 8px; text-align: center; border-radius: 10px; font-weight: bold; font-size: 12px; margin: 15px 0; border: 2px solid var(--dark-green); }
-        .path-title { color: var(--dark-green); font-size: 20px; margin-bottom: 5px; text-align: center; }
+        .mini-lawn { grid-column: 1 / -1; background: var(--fig-green); color: white; padding: 10px; text-align: center; border-radius: 10px; font-weight: bold; font-size: 13px; margin: 15px 0; border: 2px solid var(--dark-green); }
+        .path-title-heading { grid-column: 1 / -1; color: var(--dark-green); font-size: 22px; margin-bottom: 5px; text-align: center; }
     </style>
 </head>
 <body>
 
-<h1 id="app-main-title">Ocracoke Commons Fig Garden</h1>
+<h1 id="app-main-title">Island Inn Commons Fig Garden</h1>
 
 <div class="hero-interface">
     <div class="search-area">
@@ -147,7 +138,7 @@
 
     <div id="preview-card" onclick="triggerGridFromPreview()">
         <span id="preview-text"></span>
-        <div style="font-size: 10px; color: var(--dark-green); margin-top: 5px;">Tap to view on path ↑</div>
+        <div style="font-size: 10px; color: var(--dark-green); margin-top: 5px;">Tap here to see path location ↑</div>
     </div>
 
     <div class="main-map-area">
@@ -160,8 +151,8 @@
     <div class="overlay-nav">
         <button class="back-btn" onclick="closeBricks()">← Back to Map</button>
     </div>
-    <div class="brick-scroll-viewport" id="scroll-area">
-        <div class="brick-view" id="brick-content"></div>
+    <div class="brick-scroll-viewport">
+        <div class="brick-grid-container" id="brick-content"></div>
     </div>
 </div>
 
@@ -239,33 +230,34 @@
     function showBrickGrid(targetMatch) {
         const container = document.getElementById('brick-content');
         const isFront = targetMatch.MappedSec === "Front Fig Garden";
+        
+        const sectionBricks = allBricks.filter(b => b.MappedSec === targetMatch.MappedSec);
+        
+        let maxR = 0, maxC = 0;
+        const gridData = {};
 
-        container.innerHTML = `<div class="path-title">${targetMatch.MappedSec}</div>`;
+        sectionBricks.forEach(b => {
+            if (b.R > maxR) maxR = b.R;
+            if (b.C > maxC) maxC = b.C;
+            if (!gridData[b.R]) gridData[b.R] = {};
+            gridData[b.R][b.C] = b;
+        });
+
+        // Dynamic Grid setup to ensure columns align perfectly
+        container.style.gridTemplateColumns = `repeat(${maxC}, 1fr)`;
+        container.innerHTML = `<div class="path-title-heading">${targetMatch.MappedSec}</div>`;
 
         if (isFront) {
             container.innerHTML += `<div class="mini-lawn">CENTRAL LAWN (This Way ↑)</div>`;
         }
-        
-        const sectionBricks = allBricks.filter(b => b.MappedSec === targetMatch.MappedSec);
-        const grid = {};
-        let maxR = 0;
-        let maxC = 0;
-        
-        sectionBricks.forEach(b => {
-            if (b.R > maxR) maxR = b.R;
-            if (b.C > maxC) maxC = b.C;
-            if (!grid[b.R]) grid[b.R] = {};
-            grid[b.R][b.C] = b;
-        });
 
+        // Generate Grid from top row to bottom row
         for (let r = maxR; r >= 1; r--) {
-            const rowDiv = document.createElement('div');
-            rowDiv.className = 'row-bricks';
-
             for (let c = 1; c <= maxC; c++) {
-                const b = grid[r] ? grid[r][c] : null;
+                const b = gridData[r] ? gridData[r][c] : null;
                 const d = document.createElement('div');
                 const isBlank = !b || b.Inscr.includes("[BLANK]");
+                
                 d.className = isBlank ? 'brick is-blank' : 'brick';
                 if (!isBlank) {
                     d.innerText = b.Inscr;
@@ -274,9 +266,8 @@
                         setTimeout(() => d.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
                     }
                 }
-                rowDiv.appendChild(d);
+                container.appendChild(d);
             }
-            container.appendChild(rowDiv);
         }
 
         if (!isFront) {
