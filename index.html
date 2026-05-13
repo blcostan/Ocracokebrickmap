@@ -14,7 +14,6 @@
             --highlight: #ff3b3b; 
         }
         
-        /* FIX: Changed overflow from hidden to auto to allow scrolling */
         body { 
             font-family: 'Georgia', serif; 
             background: var(--sand); 
@@ -35,7 +34,7 @@
         .hero-interface { 
             flex: 1; display: flex; flex-direction: column; align-items: center; 
             justify-content: flex-start; padding: 20px; position: relative;
-            padding-bottom: 50px; /* Extra space at bottom for scrolling comfort */
+            padding-bottom: 50px;
         }
 
         .search-area { width: 100%; max-width: 400px; z-index: 10; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; }
@@ -44,20 +43,23 @@
         #search { flex: 1; padding: 15px; border-radius: 30px; border: 2px solid var(--fig-green); font-size: 18px; outline: none; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; }
         #main-next-btn { padding: 0 20px; border-radius: 30px; border: none; background: var(--fig-green); color: white; font-weight: bold; cursor: pointer; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 
-        #preview-card { width: 100%; max-width: 360px; background: white; border-radius: 12px; padding: 15px; border-left: 5px solid var(--fig-green); box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: none; text-align: center; margin-bottom: 15px; }
+        /* Preview Card is now visually clickable */
+        #preview-card { 
+            width: 100%; max-width: 360px; background: white; border-radius: 12px; 
+            padding: 15px; border-left: 5px solid var(--fig-green); 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: none; 
+            text-align: center; margin-bottom: 15px; cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+        #preview-card:active { transform: scale(0.98); }
+
         #preview-text { font-weight: bold; font-size: 16px; color: var(--brick); margin-bottom: 4px; display: block; }
         #preview-meta { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
 
         .main-map-area { 
-            position: relative; 
-            width: 95%; 
-            max-width: 800px; 
-            height: auto; 
-            background: white; 
-            padding: 10px; 
-            border-radius: 15px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
-            border: 1px solid #ddd; 
+            position: relative; width: 95%; max-width: 800px; height: auto; 
+            background: white; padding: 10px; border-radius: 15px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #ddd; 
         }
         .main-map-area img { width: 100%; display: block; border-radius: 10px; }
 
@@ -66,8 +68,7 @@
             border: 5px solid white; border-radius: 50%; display: none; 
             box-shadow: 0 0 20px rgba(255, 59, 59, 0.8); z-index: 20; 
             transform: translate(-50%, -50%); cursor: pointer; 
-            animation: pulse 1.5s infinite;
-            box-sizing: border-box; 
+            animation: pulse 1.5s infinite; box-sizing: border-box; 
         }
 
         @keyframes pulse { 0% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.15); } 100% { transform: translate(-50%, -50%) scale(1); } }
@@ -100,10 +101,10 @@
         </div>
     </div>
 
-    <div id="preview-card">
-        <span id="preview-meta">Selected Brick:</span>
+    <div id="preview-card" onclick="triggerGridFromPreview()">
+        <span id="preview-meta">Selected Brick (Tap to View Path):</span>
         <span id="preview-text"></span>
-        <div style="font-size: 10px; color: var(--dark-green); margin-top: 8px;">Tap red dot to see path location ↑</div>
+        <div style="font-size: 10px; color: var(--dark-green); margin-top: 8px;">Tap here or red dot to see path location ↑</div>
     </div>
 
     <div class="main-map-area">
@@ -178,10 +179,18 @@
         previewText.innerText = match.Inscr;
     }
 
-    document.getElementById('main-next-btn').onclick = () => {
+    document.getElementById('main-next-btn').onclick = (e) => {
+        e.stopPropagation(); // Prevent triggering card click
         matchIndex = (matchIndex + 1) % currentMatches.length;
         updateUI();
     };
+
+    // Card click logic
+    function triggerGridFromPreview() {
+        if (currentMatches.length > 0) {
+            showBrickGrid(currentMatches[matchIndex]);
+        }
+    }
 
     document.getElementById('map-dot').onclick = () => {
         const match = currentMatches[matchIndex];
