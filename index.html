@@ -22,15 +22,11 @@
         
         #app-main-title {
             text-align: center; color: var(--dark-green); font-size: 22px; 
-            margin: 15px 0 5px 0; font-weight: bold; padding: 0 10px;
+            margin: 15px 0 5px 0; font-weight: bold;
         }
 
-        .hero-interface { 
-            flex: 1; display: flex; flex-direction: column; align-items: center; 
-            padding: 10px; position: relative;
-        }
-
-        .search-area { width: 100%; max-width: 400px; z-index: 10; margin-bottom: 10px; }
+        .hero-interface { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px; }
+        .search-area { width: 100%; max-width: 400px; margin-bottom: 10px; }
         .input-row { display: flex; gap: 8px; }
 
         #search { 
@@ -38,60 +34,38 @@
             font-size: 16px; outline: none; box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
         }
         
-        #main-next-btn { 
-            padding: 0 15px; border-radius: 30px; border: none; 
-            background: var(--fig-green); color: white; font-weight: bold; display: none; 
-        }
+        #main-next-btn { padding: 0 15px; border-radius: 30px; border: none; background: var(--fig-green); color: white; font-weight: bold; display: none; }
 
         #preview-card { 
             width: 90%; max-width: 360px; background: white; border-radius: 12px; 
             padding: 12px; border-left: 5px solid var(--fig-green); 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: none; 
-            text-align: center; margin-bottom: 15px; cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: none; text-align: center; margin-bottom: 15px;
         }
 
-        .main-map-area { 
-            position: relative; width: 100%; max-width: 800px; 
-            background: white; padding: 5px; border-radius: 15px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #ddd; 
-        }
+        .main-map-area { position: relative; width: 100%; max-width: 800px; background: white; padding: 5px; border-radius: 15px; border: 1px solid #ddd; }
         .main-map-area img { width: 100%; display: block; border-radius: 10px; }
 
         #map-dot { 
             position: absolute; width: 30px; height: 30px; background: var(--highlight); 
             border: 3px solid white; border-radius: 50%; display: none; 
-            transform: translate(-50%, -50%); cursor: pointer; 
-            animation: pulse 1.5s infinite; z-index: 20;
+            transform: translate(-50%, -50%); animation: pulse 1.5s infinite; z-index: 20;
         }
 
         @keyframes pulse { 0% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.1); } 100% { transform: translate(-50%, -50%) scale(1); } }
 
-        #brick-overlay { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: var(--sand); z-index: 1000; display: none; flex-direction: column; 
-        }
-        
-        .overlay-nav { 
-            width: 100%; background: white; padding: 10px; display: flex; 
-            justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); flex-shrink: 0; 
-        }
-        
-        .back-btn { 
-            padding: 8px 25px; border-radius: 20px; border: none; 
-            background: var(--dark-green); color: white; font-weight: bold; cursor: pointer;
-        }
+        #brick-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--sand); z-index: 1000; display: none; flex-direction: column; }
+        .overlay-nav { width: 100%; background: white; padding: 10px; display: flex; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); flex-shrink: 0; }
+        .back-btn { padding: 8px 25px; border-radius: 20px; border: none; background: var(--dark-green); color: white; font-weight: bold; }
 
-        .brick-scroll-viewport {
-            flex: 1; overflow-y: auto; overflow-x: hidden; padding: 40px 10px;
-            display: flex; flex-direction: column; align-items: center;
-        }
+        .brick-scroll-viewport { flex: 1; overflow-y: auto; padding: 40px 5px; display: flex; flex-direction: column; align-items: center; }
 
         .brick-row {
             display: flex;
             justify-content: center;
-            gap: 1.5vw;
-            margin-bottom: 1.5vw;
+            gap: 1vw;
+            margin-bottom: 1vw;
             width: 100%;
+            align-items: stretch; /* Keeps bricks in a row same height */
         }
 
         .brick-unit {
@@ -104,46 +78,30 @@
             font-size: 7px;
             font-weight: bold;
             border-radius: 2px;
-            padding: 2px;
-            width: 14vw;
-            max-width: 75px;
-            height: 9vw;
-            max-height: 45px;
-            word-wrap: break-word;
-            overflow: hidden;
+            padding: 4px 2px;
+            width: 15vw;
+            max-width: 80px;
+            min-height: 40px; /* Base height for "brick" look */
+            word-break: break-word; /* Allows text to wrap properly */
+            line-height: 1.1;
             box-shadow: inset 0 -1px 0 rgba(0,0,0,0.2);
             flex-shrink: 0;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.2s ease;
         }
 
-        /* BETTER POP-OUT EFFECT */
         .brick-unit.current-focus {
-            outline: 3px solid white;
-            outline-offset: 1px;
+            outline: 2px solid white;
             background: var(--highlight);
-            transform: scale(2.2); /* Significant scale-up */
-            z-index: 999;
-            font-size: 8px; /* Slightly bigger text */
-            line-height: 1.1;
-            padding: 6px; /* Extra room inside */
-            height: auto; /* Let it grow vertically if needed */
-            min-height: 11vw;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.6), 0 0 15px rgba(255, 59, 59, 0.4);
+            transform: scale(1.4); /* Reduced scale to prevent "TOO big" feeling */
+            z-index: 99;
+            font-size: 9px; 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
             position: relative;
-            overflow: visible; /* Ensure text never gets clipped */
         }
 
-        .brick-unit.is-blank { 
-            background: #dcd7cc; border: 1px dashed #bbb; color: transparent; box-shadow: none;
-        }
+        .brick-unit.is-blank { background: #dcd7cc; border: 1px dashed #bbb; color: transparent; box-shadow: none; }
 
-        .mini-lawn-row { 
-            background: var(--fig-green); color: white; padding: 10px; 
-            text-align: center; border-radius: 25px; font-weight: bold; 
-            font-size: 13px; margin: 25px 0; width: 80%; max-width: 280px; 
-            border: 2px solid var(--dark-green); 
-        }
-        
+        .mini-lawn-row { background: var(--fig-green); color: white; padding: 10px; text-align: center; border-radius: 25px; font-weight: bold; font-size: 13px; margin: 20px 0; width: 80%; border: 2px solid var(--dark-green); }
         .path-title-text { color: var(--dark-green); font-size: 20px; font-weight: bold; }
     </style>
 </head>
@@ -158,12 +116,10 @@
             <button id="main-next-btn">Next</button>
         </div>
     </div>
-
     <div id="preview-card" onclick="triggerGridFromPreview()">
         <div id="preview-text" style="font-weight:bold; color:var(--brick); font-size: 16px;"></div>
         <div style="font-size: 10px; color: var(--dark-green); margin-top: 4px;">Tap to find on path ↑</div>
     </div>
-
     <div class="main-map-area">
         <div id="map-dot"></div>
         <img src="rendering%20of%20garden.avif" alt="Garden Map">
@@ -171,12 +127,9 @@
 </div>
 
 <div id="brick-overlay">
-    <div class="overlay-nav">
-        <button class="back-btn" onclick="closeBricks()">← Back to Map</button>
-    </div>
-    <div class="brick-scroll-viewport" id="scroll-area">
+    <div class="overlay-nav"><button class="back-btn" onclick="closeBricks()">← Back to Map</button></div>
+    <div class="brick-scroll-viewport">
         <div id="path-label" class="path-title-text"></div>
-        <div style="font-size: 11px; color: #666; margin-bottom: 15px;">Facing the Island Inn Commons</div>
         <div id="top-lawn" class="mini-lawn-row" style="display:none;">CENTRAL LAWN (This Way ↑)</div>
         <div id="brick-container" style="width: 100%;"></div>
         <div id="bottom-lawn" class="mini-lawn-row" style="display:none;">CENTRAL LAWN (This Way ↓)</div>
@@ -195,104 +148,59 @@
     async function loadData() {
         const { data, error } = await gardenClient.from('Ocracoke Bricks -').select('*');
         if (error) return;
-        allBricks = data.map(row => {
-            let rawSec = (row.section || row.Section || "").toString().toLowerCase();
-            return {
-                ...row,
-                MappedSec: rawSec.includes("north") ? "Front Fig Garden" : "Back Fig Garden",
-                R: parseInt(row.row || row.Row) || 0,
-                C: parseInt(row.col || row.Col) || 0,
-                Inscr: row.inscription || row.Inscription || ""
-            };
-        });
+        allBricks = data.map(row => ({
+            ...row,
+            MappedSec: (row.section || row.Section || "").toLowerCase().includes("north") ? "Front Fig Garden" : "Back Fig Garden",
+            R: parseInt(row.row || row.Row) || 0,
+            C: parseInt(row.col || row.Col) || 0,
+            Inscr: row.inscription || row.Inscription || ""
+        }));
     }
 
     document.getElementById('search').oninput = (e) => {
         const t = e.target.value.toLowerCase().trim();
-        const dot = document.getElementById('map-dot');
-        const nextBtn = document.getElementById('main-next-btn');
-        const preview = document.getElementById('preview-card');
-        
-        if (t === "") {
-            dot.style.display = "none"; nextBtn.style.display = "none"; preview.style.display = "none";
-            return;
-        }
-
+        if (t === "") { document.getElementById('map-dot').style.display = "none"; document.getElementById('preview-card').style.display = "none"; return; }
         currentMatches = allBricks.filter(b => b.Inscr.toLowerCase().includes(t));
         matchIndex = 0;
-
-        if (currentMatches.length > 0) {
-            updateUI();
-            nextBtn.style.display = currentMatches.length > 1 ? "block" : "none";
-            preview.style.display = "block";
-        } else {
-            dot.style.display = "none"; nextBtn.style.display = "none"; preview.style.display = "none";
-        }
+        if (currentMatches.length > 0) { updateUI(); document.getElementById('preview-card').style.display = "block"; }
     };
 
     function updateUI() {
-        const dot = document.getElementById('map-dot');
-        const previewText = document.getElementById('preview-text');
         const match = currentMatches[matchIndex];
+        const dot = document.getElementById('map-dot');
         dot.style.display = "block";
         dot.style.left = "54%";
         dot.style.top = (match.MappedSec === "Front Fig Garden") ? "66%" : "41%";
-        previewText.innerText = match.Inscr;
+        document.getElementById('preview-text').innerText = match.Inscr;
     }
 
-    document.getElementById('main-next-btn').onclick = (e) => {
-        e.stopPropagation();
-        matchIndex = (matchIndex + 1) % currentMatches.length;
-        updateUI();
-    };
-
-    function triggerGridFromPreview() {
-        if (currentMatches.length > 0) showBrickGrid(currentMatches[matchIndex]);
-    }
-
-    document.getElementById('map-dot').onclick = () => {
-        showBrickGrid(currentMatches[matchIndex]);
-    };
+    function triggerGridFromPreview() { showBrickGrid(currentMatches[matchIndex]); }
 
     function showBrickGrid(targetMatch) {
         const container = document.getElementById('brick-container');
-        const pathLabel = document.getElementById('path-label');
-        const topLawn = document.getElementById('top-lawn');
-        const bottomLawn = document.getElementById('bottom-lawn');
-        
         container.innerHTML = "";
-        pathLabel.innerText = targetMatch.MappedSec;
-        
+        document.getElementById('path-label').innerText = targetMatch.MappedSec;
         const isFront = targetMatch.MappedSec === "Front Fig Garden";
-        topLawn.style.display = isFront ? "block" : "none";
-        bottomLawn.style.display = isFront ? "none" : "block";
+        document.getElementById('top-lawn').style.display = isFront ? "block" : "none";
+        document.getElementById('bottom-lawn').style.display = isFront ? "none" : "block";
 
         const sectionBricks = allBricks.filter(b => b.MappedSec === targetMatch.MappedSec);
-        let maxR = 0;
+        let maxR = Math.max(...sectionBricks.map(b => b.R));
         const rows = {};
-
-        sectionBricks.forEach(b => {
-            if (b.R > maxR) maxR = b.R;
-            if (!rows[b.R]) rows[b.R] = [];
-            rows[b.R].push(b);
-        });
+        sectionBricks.forEach(b => { if(!rows[b.R]) rows[b.R] = []; rows[b.R].push(b); });
 
         for (let r = maxR; r >= 1; r--) {
             if (!rows[r]) continue;
             const rowDiv = document.createElement('div');
             rowDiv.className = 'brick-row';
-            rows[r].sort((a, b) => a.C - b.C);
-
-            rows[r].forEach(b => {
+            rows[r].sort((a, b) => a.C - b.C).forEach(b => {
                 const brickDiv = document.createElement('div');
                 const isBlank = b.Inscr.includes("[BLANK]");
-                
                 brickDiv.className = isBlank ? 'brick-unit is-blank' : 'brick-unit';
                 if (!isBlank) {
                     brickDiv.innerText = b.Inscr;
                     if (b.id === targetMatch.id) {
                         brickDiv.classList.add('current-focus');
-                        // Center focus for the zoomed brick
                         setTimeout(() => brickDiv.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
                     }
                 }
@@ -303,10 +211,7 @@
         document.getElementById('brick-overlay').style.display = 'flex';
     }
 
-    function closeBricks() {
-        document.getElementById('brick-overlay').style.display = 'none';
-    }
-
+    function closeBricks() { document.getElementById('brick-overlay').style.display = 'none'; }
     loadData();
 </script>
 </body>
