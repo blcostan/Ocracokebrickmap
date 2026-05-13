@@ -38,7 +38,10 @@
         .brick.active-match { transform: scale(1.1); box-shadow: 0 0 15px rgba(0,0,0,0.4); z-index: 5; outline: 3px solid var(--highlight); }
         .brick.hidden { opacity: 0.15; filter: grayscale(1); }
         .brick.is-blank { background: #eeeae0; border: 1px dashed #ccc; color: transparent; pointer-events: none; }
-        .brick.center-stone { background: var(--wood); font-size: 11px; height: 70px; border: 4px double #fff; width: 100%; grid-column: 1 / -1; }
+        
+        /* Commons bricks now just look like standard bricks but perhaps a slightly different wood-tone */
+        .brick.is-commons { background: var(--wood); border: 2px solid #fff; }
+        
         .lawn { width: 90%; max-width: 500px; height: 50px; background: #8da58e; margin: 20px 0; border-radius: 25px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; border: 2px solid #6d8c6d; }
         
         @media (max-width: 850px) { 
@@ -100,9 +103,7 @@
                     row.Col = parseInt(row.Col);
                 });
 
-                // NORTH: Spreadsheet "South", limit set to 42, R1 near lawn
                 renderSection('north-section', data.filter(b => b.MappedSection === 'North'), 42, true); 
-                // SOUTH: Spreadsheet "North", limit updated to 42, R1 at Entrance
                 renderSection('south-section', data.filter(b => b.MappedSection === 'South'), 42, true);
             }
         });
@@ -134,69 +135,9 @@
                     if (brick) {
                         const isCommons = brick.Inscription && brick.Inscription.includes("COMMONS");
                         const isBlank = (brick.Inscription || "").includes("[BLANK]");
-                        bDiv.className = isCommons ? 'brick center-stone' : ('brick' + (isBlank ? ' is-blank' : ''));
+                        
+                        // COMMONS bricks now use standard brick sizing
+                        bDiv.className = isCommons ? 'brick is-commons' : ('brick' + (isBlank ? ' is-blank' : ''));
                         bDiv.innerText = isBlank ? "" : brick.Inscription;
                         bDiv.dataset.search = (brick.Inscription + " " + (brick["Searchable Names"] || "")).toLowerCase();
-                        bDiv.dataset.section = brick.MappedSection;
-                    } else { bDiv.className = 'brick is-blank'; }
-                    rowGrid.appendChild(bDiv);
-                }
-                rowWrapper.appendChild(rowGrid);
-                container.appendChild(rowWrapper);
-            }
-        }
-
-        function updateNavigation() {
-            const dot = document.getElementById('locator-dot');
-            const nextBtn = document.getElementById('next-btn');
-            const countLabel = document.getElementById('match-count');
-
-            document.querySelectorAll('.brick').forEach(b => b.classList.remove('active-match'));
-
-            if (matchedBricks.length > 0) {
-                const current = matchedBricks[currentMatchIndex];
-                current.classList.add('active-match');
-
-                dot.style.display = 'block';
-                const centerX = '54%'; 
-                dot.style.top = (current.dataset.section === 'North') ? '38%' : '72%';
-                dot.style.left = centerX;
-
-                nextBtn.style.display = matchedBricks.length > 1 ? 'block' : 'none';
-                countLabel.innerText = `${matchedBricks.length} results. Current: #${currentMatchIndex + 1}`;
-            } else {
-                dot.style.display = 'none';
-                nextBtn.style.display = 'none';
-                countLabel.innerText = "";
-            }
-        }
-
-        document.getElementById('search').addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase().trim();
-            matchedBricks = [];
-            currentMatchIndex = 0;
-
-            document.querySelectorAll('.brick').forEach(b => {
-                if (b.classList.contains('center-stone')) return;
-                const matches = term !== "" && b.dataset.search && b.dataset.search.includes(term);
-                b.classList.toggle('match', matches);
-                b.classList.toggle('hidden', term !== "" && !matches);
-                if (matches) matchedBricks.push(b);
-            });
-
-            updateNavigation();
-        });
-
-        document.getElementById('next-btn').addEventListener('click', () => {
-            currentMatchIndex = (currentMatchIndex + 1) % matchedBricks.length;
-            updateNavigation();
-        });
-
-        function scrollToPath() {
-            if (matchedBricks[currentMatchIndex]) {
-                matchedBricks[currentMatchIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        }
-    </script>
-</body>
-</html>
+                        bDiv.dataset.
