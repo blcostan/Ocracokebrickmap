@@ -8,34 +8,21 @@
     <style>
         :root { --fig-green: #2d5a27; --sand: #fdfaf5; --brick: #b06d50; --highlight: #ff3b3b; }
         body { font-family: 'Georgia', serif; background: var(--sand); margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        
-        /* Sidebar Layout */
         .map-sidebar { width: 320px; background: white; border-right: 2px solid #ddd; padding: 20px; display: flex; flex-direction: column; overflow-y: auto; z-index: 10; flex-shrink: 0; }
         .search-area { display: flex; gap: 8px; margin-bottom: 10px; }
         #search { padding: 12px; flex: 1; border-radius: 20px; border: 2px solid #ccc; font-size: 16px; outline: none; }
         #next-btn { padding: 10px 15px; border-radius: 20px; border: none; background: var(--fig-green); color: white; cursor: pointer; font-weight: bold; display: none; }
-        
-        /* Garden Layout */
         .main-content { flex: 1; overflow: auto; display: flex; flex-direction: column; align-items: center; padding: 40px; scroll-behavior: smooth; }
         .plaza { display: flex; flex-direction: column; gap: 8px; margin-bottom: 60px; align-items: center; }
         .row-container { display: flex; align-items: center; justify-content: center; position: relative; padding: 2px 0; }
         .row-label { position: absolute; left: -55px; font-size: 11px; font-weight: bold; color: #777; width: 45px; text-align: right; }
         .row-bricks { display: flex; gap: 6px; justify-content: center; align-items: stretch; }
-        
-        .brick { 
-            width: 105px; min-height: 60px; background: var(--brick); border: 1px solid #4a3728; 
-            color: white; display: flex; align-items: center; justify-content: center; 
-            text-align: center; font-size: 9px; font-weight: bold; padding: 8px; 
-            line-height: 1.3; box-sizing: border-box; flex-shrink: 0;
-        }
+        .brick { width: 105px; min-height: 60px; background: var(--brick); border: 1px solid #4a3728; color: white; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 9px; font-weight: bold; padding: 8px; line-height: 1.3; box-sizing: border-box; flex-shrink: 0; }
         .brick.match { background: #ffd54f !important; color: black !important; border: 2px solid orange; }
         .brick.active-match { transform: scale(1.1); box-shadow: 0 0 20px rgba(0,0,0,0.5); outline: 4px solid var(--highlight); z-index: 50; }
         .brick.hidden { opacity: 0.1; filter: grayscale(1); }
         .brick.is-blank { background: #e0dcd0; border: 1px dashed #bbb; color: transparent; }
-        
         .lawn { width: 450px; height: 70px; background: #8da58e; margin: 30px 0; border-radius: 35px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; border: 2px solid #6d8c6d; letter-spacing: 3px; font-size: 20px; }
-        
-        /* Locator Dot */
         #locator-dot { position: absolute; width: 22px; height: 22px; background: var(--highlight); border: 3px solid white; border-radius: 50%; display: none; transform: translate(-50%, -50%); z-index: 100; animation: pulse 1s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
     </style>
@@ -62,31 +49,123 @@
 </div>
 
 <script>
-    // PLUGGED IN CREDENTIALS
     const SUPABASE_URL = 'https://duanluepelrjjkulpenh.supabase.co'; 
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR1YW5sdWVwZWxyamprdWxwZW5oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2ODU5NDQsImV4cCI6MjA5NDI2MTk0NH0.uu6ZK7WG8Ec6O-reOf5bK9ygk92CfiT0Lv8bJNZlS74';
+    const SUPABASE_KEY = 'sb_publishable_WHslguojU3jb1GyQBqc_MA_2w35Y2ou';
 
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
     let matchedBricks = [];
     let currentMatchIndex = 0;
 
     async function fetchGarden() {
-        const { data, error } = await supabase
-            .from('bricks') 
-            .select('*');
-
+        const { data, error } = await supabase.from('bricks').select('*');
         if (error) {
-            document.getElementById('status-bar').innerText = "Database Error. Check RLS.";
+            document.getElementById('status-bar').innerText = "Access Denied. Fix RLS.";
             console.error(error);
             return;
         }
-
+        if (!data || data.length === 0) {
+            document.getElementById('status-bar').innerText = "Connected, but 0 bricks found.";
+            return;
+        }
         initApp(data);
     }
 
     function initApp(data) {
         data.forEach(row => {
-            // Note: If bricks aren't showing, check if your Supabase columns 
-            // are capitalized (e.g. row.Section instead of row.section)
-            let sec = (row.section || row.
+            // Flexible check for column names (caps or lowercase)
+            let sec = (row.section || row.Section || "").toLowerCase();
+            row.MappedSec = sec.includes("north") ? "South" : "North";
+            row.R = parseInt(row.row || row.Row) || 0;
+            row.C = parseInt(row.col || row.Col) || 0;
+            row.Inscr = row.inscription || row.Inscription || "";
+            row.SN = row.search_names || row.Search_Names || row["Searchable Names"] || "";
+        });
+
+        renderSection('north-section', data.filter(b => b.MappedSec === "North"), true, "NORTH PATH");
+        renderSection('south-section', data.filter(b => b.MappedSec === "South"), false, "SOUTH PATH (ENTRANCE)");
+        document.getElementById('status-bar').innerText = "Live: " + data.length + " bricks.";
+    }
+
+    function renderSection(id, bricks, isReversed, title) {
+        const container = document.getElementById(id);
+        container.innerHTML = `<h2 style="color:var(--fig-green); margin-bottom:20px;">${title}</h2>`;
+        const gridData = {};
+        let maxR = 0;
+        bricks.forEach(b => {
+            if (b.R > maxR) maxR = b.R;
+            if (!gridData[b.R]) gridData[b.R] = {};
+            gridData[b.R][b.C] = b;
+        });
+        const start = isReversed ? maxR : 1;
+        const end = isReversed ? 1 : maxR;
+        const step = isReversed ? -1 : 1;
+        for (let r = start; isReversed ? r >= end : r <= end; r += step) {
+            if (!gridData[r]) continue;
+            const rowWrapper = document.createElement('div');
+            rowWrapper.className = 'row-container';
+            rowWrapper.innerHTML = `<div class="row-label">R${r}</div>`;
+            const rowBricks = document.createElement('div');
+            rowBricks.className = 'row-bricks';
+            const colIndices = Object.keys(gridData[r]).map(Number);
+            const maxC = Math.max(...colIndices);
+            for (let c = 1; c <= maxC; c++) {
+                const b = gridData[r][c];
+                const div = document.createElement('div');
+                const isBlank = !b || (b.Inscr && b.Inscr.includes("[BLANK]"));
+                div.className = isBlank ? 'brick is-blank' : 'brick';
+                if (!isBlank) {
+                    div.innerHTML = b.Inscr;
+                    if (b.Inscr.length > 35) div.style.fontSize = '8px';
+                }
+                div.dataset.search = (b ? (b.Inscr + " " + b.SN) : "").toLowerCase();
+                div.dataset.sec = b ? b.MappedSec : "";
+                rowBricks.appendChild(div);
+            }
+            rowWrapper.appendChild(rowBricks);
+            container.appendChild(rowWrapper);
+        }
+    }
+
+    document.getElementById('search').oninput = function(e) {
+        const term = e.target.value.toLowerCase().trim();
+        matchedBricks = [];
+        currentMatchIndex = 0;
+        document.querySelectorAll('.brick').forEach(b => {
+            const match = term !== "" && b.dataset.search.includes(term);
+            b.classList.toggle('match', match);
+            b.classList.toggle('hidden', term !== "" && !match);
+            if(match) matchedBricks.push(b);
+        });
+        updateNav();
+    };
+
+    function updateNav() {
+        const dot = document.getElementById('locator-dot');
+        const nextBtn = document.getElementById('next-btn');
+        const countDisplay = document.getElementById('match-count');
+        document.querySelectorAll('.brick').forEach(b => b.classList.remove('active-match'));
+        if (matchedBricks.length > 0) {
+            const current = matchedBricks[currentMatchIndex];
+            current.classList.add('active-match');
+            dot.style.display = 'block';
+            dot.style.top = (current.dataset.sec === "North") ? "35%" : "70%";
+            dot.style.left = "50%";
+            nextBtn.style.display = matchedBricks.length > 1 ? 'block' : 'none';
+            countDisplay.innerText = `${matchedBricks.length} Found (#${currentMatchIndex+1})`;
+        } else {
+            dot.style.display = 'none';
+            nextBtn.style.display = 'none';
+            countDisplay.innerText = "";
+        }
+    }
+
+    document.getElementById('next-btn').onclick = () => {
+        currentMatchIndex = (currentMatchIndex + 1) % matchedBricks.length;
+        updateNav();
+        matchedBricks[currentMatchIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
+    fetchGarden();
+</script>
+</body>
+</html>
