@@ -8,20 +8,37 @@
     <style>
         :root { --fig-green: #2d5a27; --sand: #fdfaf5; --brick: #b06d50; --highlight: #ff3b3b; }
         body { font-family: 'Georgia', serif; background: var(--sand); margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        
+        /* Sidebar Styling */
         .map-sidebar { width: 320px; background: white; border-right: 2px solid #ddd; padding: 20px; display: flex; flex-direction: column; overflow-y: auto; z-index: 10; flex-shrink: 0; }
         .search-area { display: flex; gap: 8px; margin-bottom: 10px; }
         #search { padding: 12px; flex: 1; border-radius: 20px; border: 2px solid #ccc; font-size: 16px; outline: none; }
         #next-btn { padding: 10px 15px; border-radius: 20px; border: none; background: var(--fig-green); color: white; cursor: pointer; font-weight: bold; display: none; }
         #status-bar { font-weight:bold; color:var(--fig-green); margin-bottom:10px; font-size: 12px; }
+
+        /* Map Container & Dot */
+        .map-container { position: relative; width: 100%; margin-top: 10px; border-radius: 8px; overflow: hidden; border: 1px solid #ccc; }
+        .map-container img { width: 100%; display: block; }
+        #map-dot { 
+            position: absolute; width: 18px; height: 18px; background: var(--highlight); 
+            border: 3px solid white; border-radius: 50%; display: none; 
+            box-shadow: 0 0 10px rgba(0,0,0,0.5); z-index: 20; 
+            transform: translate(-50%, -50%); transition: all 0.3s ease; 
+        }
+
+        /* Main Content Layout */
         .main-content { flex: 1; overflow: auto; display: flex; flex-direction: column; align-items: center; padding: 40px; scroll-behavior: smooth; }
         .plaza { display: flex; flex-direction: column; gap: 8px; margin-bottom: 60px; align-items: center; }
         .row-container { display: flex; align-items: center; justify-content: center; position: relative; padding: 2px 0; }
         .row-label { position: absolute; left: -65px; font-size: 11px; font-weight: bold; color: #777; width: 55px; text-align: right; }
         .row-bricks { display: flex; gap: 6px; justify-content: center; align-items: stretch; }
+        
+        /* Brick Styling */
         .brick { width: 105px; min-height: 60px; background: var(--brick); border: 1px solid #4a3728; color: white; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 9px; font-weight: bold; padding: 8px; line-height: 1.3; box-sizing: border-box; flex-shrink: 0; }
         .brick.match { background: #ffd54f !important; color: black !important; border: 2px solid orange; transform: scale(1.05); z-index: 5; }
         .brick.current-match { border: 4px solid var(--highlight) !important; transform: scale(1.15); z-index: 10; }
         .brick.is-blank { background: #e0dcd0; border: 1px dashed #bbb; color: transparent; }
+        
         .lawn { width: 450px; height: 70px; background: #8da58e; margin: 30px 0; border-radius: 35px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px; border: 2px solid #6d8c6d; }
     </style>
 </head>
@@ -33,7 +50,10 @@
         <input type="text" id="search" placeholder="Search name...">
         <button id="next-btn">Next</button>
     </div>
-    <img src="rendering%20of%20garden.avif" style="width:100%; border-radius:8px; border: 1px solid #ccc;">
+    <div class="map-container">
+        <div id="map-dot"></div>
+        <img src="rendering%20of%20garden.avif" alt="Garden Map">
+    </div>
 </div>
 
 <div class="main-content">
@@ -62,6 +82,7 @@
     function renderGarden(data) {
         data.forEach(row => {
             let rawSec = (row.section || row.Section || "").toString().toLowerCase();
+            // Data Swap Logic
             if (rawSec.includes("north")) {
                 row.MappedSec = "South";
             } else {
@@ -113,6 +134,8 @@
                 d.className = isBlank ? 'brick is-blank' : 'brick';
                 if (!isBlank) d.innerText = b.Inscr;
                 d.dataset.search = (b ? b.Inscr : "").toLowerCase();
+                // Store the section so the search knows where to put the dot
+                d.dataset.section = b ? b.MappedSec : "";
                 brks.appendChild(d);
             }
             wrap.appendChild(brks);
@@ -120,9 +143,29 @@
         }
     }
 
+    function updateMapDot(brickElement) {
+        const dot = document.getElementById('map-dot');
+        const section = brickElement.dataset.section;
+        
+        if (!section) {
+            dot.style.display = "none";
+            return;
+        }
+
+        dot.style.display = "block";
+        dot.style.left = "50%"; // Centered horizontally on the path
+
+        if (section === "North") {
+            dot.style.top = "25%"; // Positioned on the North Path illustration
+        } else {
+            dot.style.top = "75%"; // Positioned on the South Path illustration
+        }
+    }
+
     document.getElementById('search').oninput = (e) => {
         const t = e.target.value.toLowerCase().trim();
         const nextBtn = document.getElementById('next-btn');
+        const dot = document.getElementById('map-dot');
         currentMatches = [];
         matchIndex = -1;
 
@@ -134,23 +177,27 @@
             if (isMatch) currentMatches.push(b);
         });
 
-        if (currentMatches.length > 1) {
-            nextBtn.style.display = "block";
+        if (currentMatches.length > 0 && t !== "") {
+            // Default dot to the first match
+            updateMapDot(currentMatches[0]);
         } else {
-            nextBtn.style.display = "none";
+            dot.style.display = "none";
         }
+
+        nextBtn.style.display = currentMatches.length > 1 ? "block" : "none";
     };
 
     document.getElementById('next-btn').onclick = () => {
         if (currentMatches.length === 0) return;
-        
         currentMatches.forEach(b => b.classList.remove('current-match'));
-        
         matchIndex = (matchIndex + 1) % currentMatches.length;
         const target = currentMatches[matchIndex];
         
         target.classList.add('current-match');
         target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Move the dot on the map rendering
+        updateMapDot(target);
     };
 
     fetchGarden();
