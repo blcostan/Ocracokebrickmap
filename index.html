@@ -15,40 +15,41 @@
         }
         
         body { 
-            font-family: 'Georgia', serif; 
-            background: var(--sand); 
-            margin: 0; 
-            display: flex; 
-            flex-direction: column; 
-            min-height: 100vh; 
-            color: #333; 
+            font-family: 'Georgia', serif; background: var(--sand); 
+            margin: 0; display: flex; flex-direction: column; 
+            min-height: 100vh; color: #333; 
         }
         
         #app-main-title {
             text-align: center; color: var(--dark-green); font-size: 24px; 
-            margin-top: 15px; margin-bottom: 5px; font-weight: bold;
-            letter-spacing: 1px; padding: 0 10px;
+            margin: 20px 0 10px 0; font-weight: bold; padding: 0 10px;
+            letter-spacing: 0.5px;
         }
 
         .hero-interface { 
             flex: 1; display: flex; flex-direction: column; align-items: center; 
-            justify-content: flex-start; padding: 15px; position: relative;
+            padding: 15px; position: relative;
         }
 
-        .search-area { width: 100%; max-width: 400px; z-index: 10; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; }
-        .input-row { display: flex; gap: 8px; width: 100%; }
+        .search-area { width: 100%; max-width: 400px; z-index: 10; margin-bottom: 10px; }
+        .input-row { display: flex; gap: 8px; }
 
-        #search { flex: 1; padding: 15px; border-radius: 30px; border: 2px solid var(--fig-green); font-size: 18px; outline: none; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; }
-        #main-next-btn { padding: 0 20px; border-radius: 30px; border: none; background: var(--fig-green); color: white; font-weight: bold; cursor: pointer; display: none; }
+        #search { 
+            flex: 1; padding: 15px; border-radius: 30px; border: 2px solid var(--fig-green); 
+            font-size: 16px; outline: none; box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+        }
+        
+        #main-next-btn { 
+            padding: 0 15px; border-radius: 30px; border: none; 
+            background: var(--fig-green); color: white; font-weight: bold; display: none; 
+        }
 
         #preview-card { 
             width: 100%; max-width: 360px; background: white; border-radius: 12px; 
-            padding: 15px; border-left: 5px solid var(--fig-green); 
+            padding: 12px; border-left: 5px solid var(--fig-green); 
             box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: none; 
             text-align: center; margin-bottom: 15px; cursor: pointer;
         }
-
-        #preview-text { font-weight: bold; font-size: 16px; color: var(--brick); margin-bottom: 4px; display: block; }
 
         .main-map-area { 
             position: relative; width: 100%; max-width: 800px; 
@@ -58,70 +59,90 @@
         .main-map-area img { width: 100%; display: block; border-radius: 10px; }
 
         #map-dot { 
-            position: absolute; width: 38px; height: 38px; background: var(--highlight); 
-            border: 5px solid white; border-radius: 50%; display: none; 
+            position: absolute; width: 34px; height: 34px; background: var(--highlight); 
+            border: 4px solid white; border-radius: 50%; display: none; 
             transform: translate(-50%, -50%); cursor: pointer; 
             animation: pulse 1.5s infinite; z-index: 20;
         }
 
-        @keyframes pulse { 0% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.15); } 100% { transform: translate(-50%, -50%) scale(1); } }
+        @keyframes pulse { 
+            0% { transform: translate(-50%, -50%) scale(1); } 
+            50% { transform: translate(-50%, -50%) scale(1.1); } 
+            100% { transform: translate(-50%, -50%) scale(1); } 
+        }
 
         #brick-overlay { 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: var(--sand); z-index: 1000; display: none; flex-direction: column; 
         }
         
-        .overlay-nav { width: 100%; background: white; padding: 15px; display: flex; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); flex-shrink: 0; }
-        .back-btn { padding: 10px 25px; border-radius: 20px; border: none; background: var(--dark-green); color: white; font-weight: bold; cursor: pointer; }
+        .overlay-nav { 
+            width: 100%; background: white; padding: 12px; display: flex; 
+            justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); flex-shrink: 0; 
+        }
+        
+        .back-btn { 
+            padding: 8px 25px; border-radius: 20px; border: none; 
+            background: var(--dark-green); color: white; font-weight: bold; cursor: pointer;
+        }
 
         .brick-scroll-viewport {
-            flex: 1;
-            overflow-y: auto;
-            padding: 10px;
+            flex: 1; overflow: auto; padding: 20px 10px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        .brick-row {
             display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        /* GRID FIX: The container is now a grid to keep columns aligned */
-        .brick-grid-container {
-            display: grid;
-            gap: 4px;
+            justify-content: center;
+            gap: 6px;
+            margin-bottom: 6px;
             width: 100%;
-            max-width: 500px; /* Keeps it from stretching too far on desktop */
-            margin: 0 auto;
         }
 
-        .brick { 
-            aspect-ratio: 3 / 2;
-            background: var(--brick); 
-            color: white; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            text-align: center; 
-            font-size: min(2.2vw, 10px); 
-            font-weight: bold; 
-            padding: 4px; 
-            box-sizing: border-box; 
-            border-radius: 2px; 
+        .brick-unit {
+            background: var(--brick);
+            color: white;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            font-weight: bold;
+            border-radius: 2px;
+            padding: 4px;
+            width: 75px; 
+            height: 45px; 
             word-wrap: break-word;
-            line-height: 1.1;
+            overflow: hidden;
+            box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2);
+            flex-shrink: 0;
         }
 
-        .brick.current-focus { 
-            outline: 4px solid var(--highlight);
-            outline-offset: -2px;
-            z-index: 10; 
+        .brick-unit.current-focus {
+            outline: 5px solid var(--highlight);
+            outline-offset: 2px;
             background: #d45b4a;
-            transform: scale(1.08);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            transform: scale(1.1);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            z-index: 50;
         }
 
-        .brick.is-blank { background: #dcd7cc; color: transparent; border: 1px dashed #bbb; outline: none !important; transform: none !important; }
+        .brick-unit.is-blank { 
+            background: #dcd7cc; 
+            border: 1px dashed #bbb; 
+            color: transparent; 
+            box-shadow: none;
+        }
 
-        .mini-lawn { grid-column: 1 / -1; background: var(--fig-green); color: white; padding: 10px; text-align: center; border-radius: 10px; font-weight: bold; font-size: 13px; margin: 15px 0; border: 2px solid var(--dark-green); }
-        .path-title-heading { grid-column: 1 / -1; color: var(--dark-green); font-size: 22px; margin-bottom: 5px; text-align: center; }
+        .mini-lawn-row { 
+            background: var(--fig-green); color: white; padding: 10px; 
+            text-align: center; border-radius: 25px; font-weight: bold; 
+            font-size: 13px; margin: 15px 0; width: 280px; 
+            border: 2px solid var(--dark-green); 
+        }
+        
+        .path-title-text { color: var(--dark-green); font-size: 22px; font-weight: bold; margin-bottom: 5px; }
+        .orientation-text { font-size: 12px; color: #666; font-style: italic; margin-bottom: 15px; }
     </style>
 </head>
 <body>
@@ -131,14 +152,14 @@
 <div class="hero-interface">
     <div class="search-area">
         <div class="input-row">
-            <input type="text" id="search" placeholder="Search a name...">
+            <input type="text" id="search" placeholder="Enter a name...">
             <button id="main-next-btn">Next</button>
         </div>
     </div>
 
     <div id="preview-card" onclick="triggerGridFromPreview()">
-        <span id="preview-text"></span>
-        <div style="font-size: 10px; color: var(--dark-green); margin-top: 5px;">Tap here to see path location ↑</div>
+        <span id="preview-text" style="font-weight:bold; color:var(--brick); font-size: 18px;"></span>
+        <div style="font-size: 11px; color: var(--dark-green); margin-top: 5px;">Tap to find on path ↑</div>
     </div>
 
     <div class="main-map-area">
@@ -151,8 +172,12 @@
     <div class="overlay-nav">
         <button class="back-btn" onclick="closeBricks()">← Back to Map</button>
     </div>
-    <div class="brick-scroll-viewport">
-        <div class="brick-grid-container" id="brick-content"></div>
+    <div class="brick-scroll-viewport" id="scroll-area">
+        <div id="path-label" class="path-title-text"></div>
+        <div class="orientation-text">Facing the Island Inn Commons</div>
+        <div id="top-lawn" class="mini-lawn-row" style="display:none;">CENTRAL LAWN (This Way ↑)</div>
+        <div id="brick-container" style="width: 100%;"></div>
+        <div id="bottom-lawn" class="mini-lawn-row" style="display:none;">CENTRAL LAWN (This Way ↓)</div>
     </div>
 </div>
 
@@ -228,52 +253,50 @@
     };
 
     function showBrickGrid(targetMatch) {
-        const container = document.getElementById('brick-content');
+        const container = document.getElementById('brick-container');
+        const pathLabel = document.getElementById('path-label');
+        const topLawn = document.getElementById('top-lawn');
+        const bottomLawn = document.getElementById('bottom-lawn');
+        
+        container.innerHTML = "";
+        pathLabel.innerText = targetMatch.MappedSec;
+        
         const isFront = targetMatch.MappedSec === "Front Fig Garden";
-        
+        topLawn.style.display = isFront ? "block" : "none";
+        bottomLawn.style.display = isFront ? "none" : "block";
+
         const sectionBricks = allBricks.filter(b => b.MappedSec === targetMatch.MappedSec);
-        
-        let maxR = 0, maxC = 0;
-        const gridData = {};
+        let maxR = 0;
+        const rows = {};
 
         sectionBricks.forEach(b => {
             if (b.R > maxR) maxR = b.R;
-            if (b.C > maxC) maxC = b.C;
-            if (!gridData[b.R]) gridData[b.R] = {};
-            gridData[b.R][b.C] = b;
+            if (!rows[b.R]) rows[b.R] = [];
+            rows[b.R].push(b);
         });
 
-        // Dynamic Grid setup to ensure columns align perfectly
-        container.style.gridTemplateColumns = `repeat(${maxC}, 1fr)`;
-        container.innerHTML = `<div class="path-title-heading">${targetMatch.MappedSec}</div>`;
-
-        if (isFront) {
-            container.innerHTML += `<div class="mini-lawn">CENTRAL LAWN (This Way ↑)</div>`;
-        }
-
-        // Generate Grid from top row to bottom row
         for (let r = maxR; r >= 1; r--) {
-            for (let c = 1; c <= maxC; c++) {
-                const b = gridData[r] ? gridData[r][c] : null;
-                const d = document.createElement('div');
-                const isBlank = !b || b.Inscr.includes("[BLANK]");
+            if (!rows[r]) continue;
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'brick-row';
+            rows[r].sort((a, b) => a.C - b.C);
+
+            rows[r].forEach(b => {
+                const brickDiv = document.createElement('div');
+                const isBlank = b.Inscr.includes("[BLANK]");
                 
-                d.className = isBlank ? 'brick is-blank' : 'brick';
+                brickDiv.className = isBlank ? 'brick-unit is-blank' : 'brick-unit';
                 if (!isBlank) {
-                    d.innerText = b.Inscr;
+                    brickDiv.innerText = b.Inscr;
                     if (b.id === targetMatch.id) {
-                        d.classList.add('current-focus');
-                        setTimeout(() => d.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+                        brickDiv.classList.add('current-focus');
+                        setTimeout(() => brickDiv.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
                     }
                 }
-                container.appendChild(d);
-            }
+                rowDiv.appendChild(brickDiv);
+            });
+            container.appendChild(rowDiv);
         }
-
-        if (!isFront) {
-            container.innerHTML += `<div class="mini-lawn">CENTRAL LAWN (This Way ↓)</div>`;
-        }
-
         document.getElementById('brick-overlay').style.display = 'flex';
     }
 
