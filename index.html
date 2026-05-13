@@ -9,9 +9,8 @@
         :root { --fig-green: #2d5a27; --sand: #fdfaf5; --brick: #b06d50; --highlight: #ff3b3b; }
         body { font-family: 'Georgia', serif; background: var(--sand); margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--fig-green); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Debug status display */
+        #debug-log { position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.8); color: #0f0; padding: 10px; font-size: 10px; z-index: 9999; border-radius: 5px; max-width: 250px; pointer-events: none; }
 
         .map-sidebar { width: 320px; background: white; border-right: 2px solid #ddd; padding: 20px; display: flex; flex-direction: column; overflow-y: auto; z-index: 10; flex-shrink: 0; }
         .map-container { position: relative; width: 100%; border: 2px solid #ccc; border-radius: 8px; overflow: hidden; cursor: pointer; }
@@ -21,19 +20,11 @@
         @keyframes pulse { 0% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.3); } 100% { transform: translate(-50%, -50%) scale(1); } }
 
         .main-content { flex: 1; overflow: auto; display: flex; flex-direction: column; align-items: center; padding: 40px; scroll-behavior: smooth; }
+        
         .search-area { display: flex; gap: 8px; margin-bottom: 10px; }
         #search { padding: 12px; flex: 1; border-radius: 20px; border: 2px solid #ccc; font-size: 16px; outline: none; }
         #next-btn { padding: 10px 15px; border-radius: 20px; border: none; background: var(--fig-green); color: white; cursor: pointer; font-weight: bold; display: none; }
         
-        .plaza { display: flex; flex-direction: column; gap: 8px; margin-bottom: 60px; align-items: center; }
+        .plaza { display: flex; flex-direction: column; gap: 8px; margin-bottom: 60px; align-items: center; min-height: 20px; }
         .row-container { display: flex; align-items: center; justify-content: center; position: relative; padding: 2px 0; }
-        .row-label { position: absolute; left: -55px; font-size: 11px; font-weight: bold; color: #777; width: 45px; text-align: right; }
-        
-        .row-bricks { display: flex; gap: 6px; justify-content: center; align-items: stretch; }
-        
-        .brick { 
-            width: 100px; 
-            min-height: 55px; /* Minimum height, but can grow if text is long */
-            background: var(--brick); 
-            border: 1px solid #4a3728; 
-            color: white;
+        .row-label { position: absolute; left: -55px; font-size: 11px; font-weight: bold; color: #777; width: 45px; text-align: right
