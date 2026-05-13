@@ -39,7 +39,7 @@
         .brick.current-match { border: 4px solid var(--highlight) !important; transform: scale(1.15); z-index: 10; }
         .brick.is-blank { background: #e0dcd0; border: 1px dashed #bbb; color: transparent; }
         
-        .lawn { width: 450px; height: 70px; background: #8da58e; margin: 30px 0; border-radius: 35px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px; border: 2px solid #6d8c6d; }
+        .lawn { width: 0px; height: 70px; background: #8da58e; margin: 30px 0; border-radius: 35px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px; border: 2px solid #6d8c6d; }
     </style>
 </head>
 <body>
@@ -156,7 +156,7 @@
         if (section === "North") {
             // ADJUSTED: 4% right from center (54%) and 10% down from original (45%)
             dot.style.left = "54%"; 
-            dot.style.top = "35%"; 
+            dot.style.top = "37%"; 
         } else {
             // Keeping South Path as is for now
             dot.style.left = "50%";
