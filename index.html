@@ -22,9 +22,7 @@
             justify-content: center; padding: 20px; position: relative;
         }
 
-        .search-container {
-            width: 100%; max-width: 400px; z-index: 10; margin-bottom: 20px;
-        }
+        .search-container { width: 100%; max-width: 400px; z-index: 10; margin-bottom: 20px; }
 
         #search { 
             width: 100%; padding: 15px; border-radius: 30px; border: 2px solid var(--fig-green); 
@@ -32,7 +30,7 @@
             box-sizing: border-box;
         }
 
-        /* Large Map Display */
+        /* Map Display */
         .main-map-area {
             position: relative; width: 100%; max-width: 600px; 
             background: white; padding: 10px; border-radius: 15px;
@@ -54,7 +52,7 @@
             100% { transform: translate(-50%, -50%) scale(1); }
         }
 
-        /* Full Screen Brick Overlay */
+        /* Brick Overlay */
         #brick-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: var(--sand); z-index: 1000; display: none;
@@ -62,32 +60,41 @@
             animation: slideUp 0.4s ease-out;
         }
 
-        @keyframes slideUp {
-            from { transform: translateY(100%); }
-            to { transform: translateY(0); }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        /* Overlay Navigation Controls */
+        .overlay-nav {
+            position: sticky; top: 0; width: 100%; background: white; 
+            padding: 15px; display: flex; justify-content: center; gap: 10px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1100;
         }
 
-        .close-overlay {
-            position: sticky; top: 20px; margin-bottom: 20px;
-            padding: 10px 25px; background: var(--dark-green); color: white;
-            border: none; border-radius: 20px; font-weight: bold; cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        .nav-btn {
+            padding: 10px 20px; border-radius: 20px; border: none; 
+            font-weight: bold; cursor: pointer; font-family: 'Georgia', serif;
         }
+        .back-btn { background: #eee; color: #333; }
+        .next-btn { background: var(--fig-green); color: white; }
 
-        /* Brick Grid Styling */
-        .brick-view { padding: 40px 20px; display: flex; flex-direction: column; align-items: center; }
-        .row-bricks { display: flex; gap: 6px; margin-bottom: 6px; }
+        /* Brick Grid */
+        .brick-view { padding: 40px 10px; display: flex; flex-direction: column; align-items: center; width: 100%; }
+        .row-bricks { display: flex; gap: 4px; margin-bottom: 4px; }
         .brick { 
-            width: 95px; min-height: 55px; background: var(--brick); color: white; 
+            width: 85px; min-height: 50px; background: var(--brick); color: white; 
             display: flex; align-items: center; justify-content: center; text-align: center; 
-            font-size: 8px; font-weight: bold; padding: 6px; box-sizing: border-box; border-radius: 2px;
+            font-size: 8px; font-weight: bold; padding: 4px; box-sizing: border-box; border-radius: 2px;
+            transition: all 0.3s;
         }
-        .brick.match { border: 4px solid var(--highlight); transform: scale(1.1); box-shadow: 0 0 15px rgba(0,0,0,0.3); }
+        .brick.match { opacity: 0.4; }
+        .brick.current-focus { 
+            opacity: 1 !important; border: 4px solid var(--highlight); 
+            transform: scale(1.15); z-index: 10; box-shadow: 0 0 15px rgba(0,0,0,0.4); 
+        }
         .brick.is-blank { background: #dcd7cc; color: transparent; border: 1px dashed #bbb; }
 
-        .path-title { color: var(--dark-green); font-size: 22px; margin-bottom: 30px; }
-
+        .path-title { color: var(--dark-green); font-size: 20px; margin-bottom: 20px; text-align: center; }
         #status-bar { font-size: 10px; color: var(--dark-green); margin-top: 10px; opacity: 0.7; }
+        #match-counter { font-size: 14px; font-weight: bold; color: var(--dark-green); align-self: center; }
     </style>
 </head>
 <body>
@@ -102,13 +109,16 @@
         <img src="rendering%20of%20garden.avif" alt="Garden Map">
     </div>
     
-    <div id="status-bar">Connecting to Garden Registry...</div>
+    <div id="status-bar">Syncing with Garden...</div>
 </div>
 
 <div id="brick-overlay">
-    <button class="close-overlay" onclick="closeBricks()">← Back to Map</button>
-    <div class="brick-view" id="brick-content">
-        </div>
+    <div class="overlay-nav">
+        <button class="nav-btn back-btn" onclick="closeBricks()">← Map</button>
+        <div id="match-counter"></div>
+        <button id="overlay-next" class="nav-btn next-btn" style="display:none;">Next Match</button>
+    </div>
+    <div class="brick-view" id="brick-content"></div>
 </div>
 
 <script>
@@ -117,11 +127,13 @@
     const gardenClient = window.supabase.createClient(S_URL, S_KEY);
 
     let allBricks = [];
+    let currentMatches = [];
+    let matchIndex = 0;
     let currentSearchTerm = "";
 
     async function loadData() {
         const { data, error } = await gardenClient.from('Ocracoke Bricks -').select('*');
-        if (error) { console.error(error); return; }
+        if (error) return;
         
         allBricks = data.map(row => {
             let rawSec = (row.section || row.Section || "").toString().toLowerCase();
@@ -133,7 +145,7 @@
                 Inscr: row.inscription || row.Inscription || ""
             };
         });
-        document.getElementById('status-bar').innerText = "Registry Loaded.";
+        document.getElementById('status-bar').innerText = "Garden Synchronized.";
     }
 
     document.getElementById('search').oninput = (e) => {
@@ -145,26 +157,28 @@
             return;
         }
 
-        const match = allBricks.find(b => b.Inscr.toLowerCase().includes(currentSearchTerm));
+        currentMatches = allBricks.filter(b => b.Inscr.toLowerCase().includes(currentSearchTerm));
         
-        if (match) {
+        if (currentMatches.length > 0) {
             dot.style.display = "block";
+            // Map the dot to the first match found
             dot.style.left = "54%";
-            dot.style.top = (match.MappedSec === "North") ? "41%" : "66%";
+            dot.style.top = (currentMatches[0].MappedSec === "North") ? "41%" : "66%";
         } else {
             dot.style.display = "none";
         }
     };
 
     document.getElementById('map-dot').onclick = () => {
-        const match = allBricks.find(b => b.Inscr.toLowerCase().includes(currentSearchTerm));
-        if (match) {
-            showBrickGrid(match.MappedSec);
+        if (currentMatches.length > 0) {
+            matchIndex = 0;
+            showBrickGrid();
         }
     };
 
-    function showBrickGrid(sectionName) {
+    function showBrickGrid() {
         const container = document.getElementById('brick-content');
+        const sectionName = currentMatches[matchIndex].MappedSec;
         container.innerHTML = `<div class="path-title">${sectionName.toUpperCase()} PATH</div>`;
         
         const sectionBricks = allBricks.filter(b => b.MappedSec === sectionName);
@@ -177,7 +191,6 @@
             grid[b.R][b.C] = b;
         });
 
-        // Draw rows
         for (let r = maxR; r >= 1; r--) {
             if (!grid[r]) continue;
             const rowDiv = document.createElement('div');
@@ -190,19 +203,57 @@
                 const b = grid[r][c];
                 const d = document.createElement('div');
                 const isBlank = !b || b.Inscr.includes("[BLANK]");
-                const isMatch = !isBlank && b.Inscr.toLowerCase().includes(currentSearchTerm);
                 
-                d.className = isBlank ? 'brick is-blank' : (isMatch ? 'brick match' : 'brick');
-                d.innerText = isBlank ? "" : b.Inscr;
-                
+                d.className = isBlank ? 'brick is-blank' : 'brick';
+                if (!isBlank) {
+                    d.innerText = b.Inscr;
+                    // Check if this specific brick is one of our search matches
+                    if (currentMatches.some(m => m.id === b.id)) {
+                        d.classList.add('match');
+                        d.id = `match-${b.id}`;
+                    }
+                }
                 rowDiv.appendChild(d);
-                if (isMatch) setTimeout(() => d.scrollIntoView({behavior: 'smooth', block: 'center'}), 100);
             }
             container.appendChild(rowDiv);
         }
 
         document.getElementById('brick-overlay').style.display = 'flex';
+        updateFocus();
     }
+
+    function updateFocus() {
+        // Clear old focus
+        document.querySelectorAll('.brick').forEach(b => b.classList.remove('current-focus'));
+        
+        const currentBrick = currentMatches[matchIndex];
+        const brickElement = document.getElementById(`match-${currentBrick.id}`);
+        
+        if (brickElement) {
+            brickElement.classList.add('current-focus');
+            brickElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // Update Counter and Next Button
+        const counter = document.getElementById('match-counter');
+        const nextBtn = document.getElementById('overlay-next');
+        
+        counter.innerText = `${matchIndex + 1} of ${currentMatches.length}`;
+        nextBtn.style.display = currentMatches.length > 1 ? "block" : "none";
+    }
+
+    document.getElementById('overlay-next').onclick = () => {
+        const oldSection = currentMatches[matchIndex].MappedSec;
+        matchIndex = (matchIndex + 1) % currentMatches.length;
+        const newSection = currentMatches[matchIndex].MappedSec;
+
+        if (oldSection !== newSection) {
+            // If the next duplicate is in a different path, redraw the grid
+            showBrickGrid();
+        } else {
+            updateFocus();
+        }
+    };
 
     function closeBricks() {
         document.getElementById('brick-overlay').style.display = 'none';
