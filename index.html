@@ -14,18 +14,28 @@
             --highlight: #ff3b3b; 
         }
         
-        body { font-family: 'Georgia', serif; background: var(--sand); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; color: #333; }
+        /* FIX: Changed overflow from hidden to auto to allow scrolling */
+        body { 
+            font-family: 'Georgia', serif; 
+            background: var(--sand); 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            min-height: 100vh; 
+            overflow-y: auto; 
+            color: #333; 
+        }
         
-        /* Main Title Styling */
         #app-main-title {
             text-align: center; color: var(--dark-green); font-size: 26px; 
             margin-top: 15px; margin-bottom: 5px; font-weight: bold;
-            letter-spacing: 1px;
+            letter-spacing: 1px; padding: 0 10px;
         }
 
         .hero-interface { 
             flex: 1; display: flex; flex-direction: column; align-items: center; 
             justify-content: flex-start; padding: 20px; position: relative;
+            padding-bottom: 50px; /* Extra space at bottom for scrolling comfort */
         }
 
         .search-area { width: 100%; max-width: 400px; z-index: 10; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; }
@@ -38,29 +48,25 @@
         #preview-text { font-weight: bold; font-size: 16px; color: var(--brick); margin-bottom: 4px; display: block; }
         #preview-meta { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* Larger Map Area styling */
         .main-map-area { 
             position: relative; 
-            width: 95%; /* Make it wider */
-            max-width: 800px; /* Increased max size */
+            width: 95%; 
+            max-width: 800px; 
             height: auto; 
             background: white; 
             padding: 10px; 
             border-radius: 15px; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
             border: 1px solid #ddd; 
-            overflow: visible; /* Ensure dot isn't cut off */
         }
         .main-map-area img { width: 100%; display: block; border-radius: 10px; }
 
-        /* Slightly larger dot, positioned within bounds */
         #map-dot { 
             position: absolute; width: 38px; height: 38px; background: var(--highlight); 
             border: 5px solid white; border-radius: 50%; display: none; 
             box-shadow: 0 0 20px rgba(255, 59, 59, 0.8); z-index: 20; 
             transform: translate(-50%, -50%); cursor: pointer; 
             animation: pulse 1.5s infinite;
-            /* Prevent dot going outside parent padding */
             box-sizing: border-box; 
         }
 
@@ -84,7 +90,7 @@
 </head>
 <body>
 
-<h1 id="app-main-title">Island Inn Commons Brick Finder</h1>
+<h1 id="app-main-title">Island Inn Commons Fig Garden</h1>
 
 <div class="hero-interface">
     <div class="search-area">
@@ -129,9 +135,6 @@
             let rawSec = (row.section || row.Section || "").toString().toLowerCase();
             return {
                 ...row,
-                // KEEPING SAME CORRECT LOGIC:
-                // Sheet "North" -> Front Fig Garden (Misty Dawn)
-                // Sheet "South" -> Back Fig Garden (Catherine Holloman)
                 MappedSec: rawSec.includes("north") ? "Front Fig Garden" : "Back Fig Garden",
                 R: parseInt(row.row || row.Row) || 0,
                 C: parseInt(row.col || row.Col) || 0,
@@ -170,10 +173,6 @@
 
         dot.style.display = "block";
         dot.style.left = "54%";
-        
-        // KEEPING SAME CORRECT COORDINATE MAPPING:
-        // Front Fig Garden (Sheet North) = BOTTOM DOT (66%)
-        // Back Fig Garden (Sheet South) = TOP DOT (41%)
         dot.style.top = (match.MappedSec === "Front Fig Garden") ? "66%" : "41%";
         
         previewText.innerText = match.Inscr;
@@ -198,8 +197,6 @@
             <div class="orientation-hint">Facing the Island Inn Commons</div>
         `;
 
-        // Front (Bottom Dot) -> Lawn is ABOVE (Up)
-        // Back (Top Dot) -> Lawn is BELOW (Down)
         if (isFront) {
             container.innerHTML += `<div class="mini-lawn">CENTRAL LAWN (This Way ↑)</div>`;
         }
