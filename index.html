@@ -17,10 +17,10 @@
         .row-container { display: flex; align-items: center; justify-content: center; position: relative; padding: 2px 0; }
         .row-label { position: absolute; left: -65px; font-size: 11px; font-weight: bold; color: #777; width: 55px; text-align: right; }
         .row-bricks { display: flex; gap: 6px; justify-content: center; align-items: stretch; }
-        .brick { width: 105px; min-height: 60px; background: var(--brick); border: 1px solid #4a3728; color: white; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 9px; font-weight: bold; padding: 8px; line-height: 1.3; box-sizing: border-box; flex-shrink: 0; }
-        .brick.match { background: #ffd54f !important; color: black !important; border: 2px solid orange; transform: scale(1.02); }
+        .brick { width: 105px; min-height: 60px; background: var(--brick); border: 1px solid #4a3728; color: white; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 9px; font-weight: bold; padding: 8px; line-height: 1.3; box-sizing: border-box; flex-shrink: 0; transition: transform 0.2s; }
+        .brick.match { background: #ffd54f !important; color: black !important; border: 2px solid orange; transform: scale(1.05); z-index: 5; }
         .brick.is-blank { background: #e0dcd0; border: 1px dashed #bbb; color: transparent; }
-        .lawn { width: 450px; height: 70px; background: #8da58e; margin: 30px 0; border-radius: 35px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px; border: 2px solid #6d8c6d; }
+        .lawn { width: 450px; height: 70px; background: #8da58e; margin: 30px 0; border-radius: 35px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px; border: 2px solid #6d8c6d; letter-spacing: 2px; }
     </style>
 </head>
 <body>
@@ -28,7 +28,7 @@
 <div class="map-sidebar">
     <div id="status-bar">Syncing with Garden...</div>
     <div class="search-area">
-        <input type="text" id="search" placeholder="Search for a name...">
+        <input type="text" id="search" placeholder="Search name...">
     </div>
     <img src="rendering%20of%20garden.avif" style="width:100%; border-radius:8px; border: 1px solid #ccc;">
 </div>
@@ -57,13 +57,9 @@
 
     function renderGarden(data) {
         data.forEach(row => {
-            // Find the Section column regardless of capitalization
             let rawSec = (row.section || row.Section || "").toString().toLowerCase();
             
-            /** * SWAP LOGIC:
-             * If DB says "North", we put it in the South Path.
-             * Otherwise (if DB says "South" or anything else), we put it in the North Path.
-             */
+            // APPLYING YOUR SWAP: DB "North" -> South Path | DB "South" -> North Path
             if (rawSec.includes("north")) {
                 row.MappedSec = "South";
             } else {
@@ -75,11 +71,12 @@
             row.Inscr = row.inscription || row.Inscription || "";
         });
 
-        // Show bricks in the layout
-        // North Path (Labels: Row 1 near Lawn)
+        // NORTH PATH: Database labeled "South". 
+        // Logic: Row 1 is near Lawn. We use 'true' to reverse the order (Max Row at top).
         draw('north-section', data.filter(b => b.MappedSec === "North"), true, "NORTH PATH");
         
-        // South Path (Labels: Row 1 at Entrance)
+        // SOUTH PATH: Database labeled "North". 
+        // Logic: Row 1 is at Entrance. We use 'false' to render 1 -> Max (Top to Bottom).
         draw('south-section', data.filter(b => b.MappedSec === "South"), false, "SOUTH PATH (ENTRANCE)");
         
         document.getElementById('status-bar').innerText = "Live: " + data.length + " bricks.";
@@ -100,6 +97,9 @@
             grid[b.R][b.C] = b;
         });
 
+        // Reversal logic:
+        // North Path (isReversed=true): Start at Highest Row, end at 1.
+        // South Path (isReversed=false): Start at 1, end at Highest Row.
         const start = isReversed ? maxR : 1;
         const end = isReversed ? 1 : maxR;
         const step = isReversed ? -1 : 1;
@@ -132,7 +132,9 @@
     document.getElementById('search').oninput = (e) => {
         const t = e.target.value.toLowerCase().trim();
         document.querySelectorAll('.brick').forEach(b => {
-            b.classList.toggle('match', t !== "" && b.dataset.search.includes(t));
+            const isMatch = t !== "" && b.dataset.search.includes(t);
+            b.classList.toggle('match', isMatch);
+            b.style.opacity = (t !== "" && !isMatch) ? "0.3" : "1";
         });
     };
 
