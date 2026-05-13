@@ -1,229 +1,56 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Island Inn Garden Finder</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        :root { --fig-green: #2d5a27; --sand: #fdfaf5; --brick: #b06d50; --highlight: #ff3b3b; }
-        body { font-family: 'Georgia', serif; background: var(--sand); margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        
-        /* Sidebar Styling */
-        .map-sidebar { width: 320px; background: white; border-right: 2px solid #ddd; padding: 20px; display: flex; flex-direction: column; overflow-y: auto; z-index: 10; flex-shrink: 0; }
-        .search-area { display: flex; gap: 8px; margin-bottom: 10px; }
-        #search { padding: 12px; flex: 1; border-radius: 20px; border: 2px solid #ccc; font-size: 16px; outline: none; }
-        #next-btn { padding: 10px 15px; border-radius: 20px; border: none; background: var(--fig-green); color: white; cursor: pointer; font-weight: bold; display: none; }
-        #status-bar { font-weight:bold; color:var(--fig-green); margin-bottom:10px; font-size: 12px; }
+<style>
+    :root { --fig-green: #2d5a27; --sand: #fdfaf5; --brick: #b06d50; --highlight: #ff3b3b; }
+    body { font-family: 'Georgia', serif; background: var(--sand); margin: 0; display: flex; height: 100vh; overflow: hidden; }
+    
+    /* Sidebar Styling */
+    .map-sidebar { width: 320px; background: white; border-right: 2px solid #ddd; padding: 20px; display: flex; flex-direction: column; overflow-y: auto; z-index: 10; flex-shrink: 0; }
+    .search-area { display: flex; gap: 8px; margin-bottom: 10px; }
+    #search { padding: 12px; flex: 1; border-radius: 20px; border: 2px solid #ccc; font-size: 16px; outline: none; }
+    #next-btn { padding: 10px 15px; border-radius: 20px; border: none; background: var(--fig-green); color: white; cursor: pointer; font-weight: bold; display: none; }
+    #status-bar { font-weight:bold; color:var(--fig-green); margin-bottom:10px; font-size: 12px; }
 
-        /* Map Container & Interactive Dot */
-        .map-container { position: relative; width: 100%; margin-top: 10px; border-radius: 8px; overflow: hidden; border: 1px solid #ccc; }
-        .map-container img { width: 100%; display: block; }
-        #map-dot { 
-            position: absolute; width: 22px; height: 22px; background: var(--highlight); 
-            border: 3px solid white; border-radius: 50%; display: none; 
-            box-shadow: 0 0 15px rgba(255, 59, 59, 0.6); z-index: 20; 
-            transform: translate(-50%, -50%); transition: all 0.3s ease; 
-            cursor: pointer;
-        }
-
-        /* Main Content Layout */
-        .main-content { flex: 1; overflow: auto; display: flex; flex-direction: column; align-items: center; padding: 40px; scroll-behavior: smooth; }
-        
-        /* Collapsible Section Styling */
-        .plaza-wrapper { width: 100%; display: none; flex-direction: column; align-items: center; }
-        .plaza-wrapper.active { display: flex; }
-        
-        .plaza { display: flex; flex-direction: column; gap: 8px; margin-bottom: 60px; align-items: center; }
-        .row-container { display: flex; align-items: center; justify-content: center; position: relative; padding: 2px 0; }
-        .row-bricks { display: flex; gap: 6px; justify-content: center; align-items: stretch; }
-        
-        /* Brick Styling */
-        .brick { width: 105px; min-height: 60px; background: var(--brick); border: 1px solid #4a3728; color: white; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 9px; font-weight: bold; padding: 8px; line-height: 1.3; box-sizing: border-box; flex-shrink: 0; }
-        .brick.match { background: #ffd54f !important; color: black !important; border: 2px solid orange; transform: scale(1.05); z-index: 5; }
-        .brick.current-match { border: 4px solid var(--highlight) !important; transform: scale(1.15); z-index: 10; }
-        .brick.is-blank { background: #e0dcd0; border: 1px dashed #bbb; color: transparent; }
-        
-        .lawn { width: 450px; height: 70px; background: #8da58e; margin: 30px 0; border-radius: 35px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px; border: 2px solid #6d8c6d; }
-        
-        .instruction-hint { font-size: 13px; color: #666; font-style: italic; margin-top: 10px; text-align: center; }
-    </style>
-</head>
-<body>
-
-<div class="map-sidebar">
-    <div id="status-bar">Syncing Garden...</div>
-    <div class="search-area">
-        <input type="text" id="search" placeholder="Search name...">
-        <button id="next-btn">Next</button>
-    </div>
-    <div class="map-container">
-        <div id="map-dot"></div>
-        <img src="rendering%20of%20garden.avif" alt="Garden Map">
-    </div>
-    <div class="instruction-hint" id="hint">Search a name to begin.</div>
-</div>
-
-<div class="main-content">
-    <div id="north-wrapper" class="plaza-wrapper">
-        <div id="north-section" class="plaza"></div>
-    </div>
-    <div class="lawn" id="central-lawn" style="display:none;">CENTRAL LAWN</div>
-    <div id="south-wrapper" class="plaza-wrapper">
-        <div id="south-section" class="plaza"></div>
-    </div>
-</div>
-
-<script>
-    // CLEANED INITIALIZATION
-    const S_URL = 'https://duanluepelrjjkulpenh.supabase.co'; 
-    const S_KEY = 'sb_publishable_WHslguojU3jb1GyQBqc_MA_2w35Y2ou';
-    const gardenClient = window.supabase.createClient(S_URL, S_KEY);
-
-    let matchIndex = -1;
-    let currentMatches = [];
-
-    async function fetchGarden() {
-        // Double check this table name matches your Supabase dashboard exactly
-        const { data, error } = await gardenClient.from('Ocracoke Bricks -').select('*');
-        
-        if (error) {
-            document.getElementById('status-bar').innerText = "Status: " + error.message;
-            console.error("Supabase error:", error);
-            return;
-        }
-        renderGarden(data);
+    /* Map & Dot */
+    .map-container { position: relative; width: 100%; margin-top: 10px; border-radius: 8px; overflow: hidden; border: 1px solid #ccc; }
+    .map-container img { width: 100%; display: block; }
+    #map-dot { 
+        position: absolute; width: 22px; height: 22px; background: var(--highlight); 
+        border: 3px solid white; border-radius: 50%; display: none; 
+        box-shadow: 0 0 15px rgba(255, 59, 59, 0.6); z-index: 20; 
+        transform: translate(-50%, -50%); transition: all 0.3s ease; 
+        cursor: pointer;
     }
 
-    function renderGarden(data) {
-        data.forEach(row => {
-            let rawSec = (row.section || row.Section || "").toString().toLowerCase();
-            if (rawSec.includes("north")) {
-                row.MappedSec = "South";
-            } else {
-                row.MappedSec = "North";
-            }
-            row.R = parseInt(row.row || row.Row) || 0;
-            row.C = parseInt(row.col || row.Col) || 0;
-            row.Inscr = row.inscription || row.Inscription || "";
-        });
+    /* Main Content */
+    .main-content { flex: 1; overflow: auto; display: flex; flex-direction: column; align-items: center; padding: 40px; scroll-behavior: smooth; }
+    .plaza-wrapper { width: 100%; display: none; flex-direction: column; align-items: center; }
+    .plaza-wrapper.active { display: flex; }
+    .plaza { display: flex; flex-direction: column; gap: 8px; margin-bottom: 60px; align-items: center; }
+    .row-container { display: flex; align-items: center; justify-content: center; position: relative; padding: 2px 0; }
+    .row-bricks { display: flex; gap: 6px; justify-content: center; align-items: stretch; }
+    
+    .brick { width: 105px; min-height: 60px; background: var(--brick); border: 1px solid #4a3728; color: white; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 9px; font-weight: bold; padding: 8px; line-height: 1.3; box-sizing: border-box; flex-shrink: 0; }
+    .brick.match { background: #ffd54f !important; color: black !important; border: 2px solid orange; transform: scale(1.05); z-index: 5; }
+    .brick.current-match { border: 4px solid var(--highlight) !important; transform: scale(1.15); z-index: 10; }
+    .brick.is-blank { background: #e0dcd0; border: 1px dashed #bbb; color: transparent; }
+    
+    .lawn { width: 450px; height: 70px; background: #8da58e; margin: 30px 0; border-radius: 35px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px; border: 2px solid #6d8c6d; }
+    .instruction-hint { font-size: 13px; color: #666; font-style: italic; margin-top: 10px; text-align: center; }
 
-        draw('north-section', data.filter(b => b.MappedSec === "North"), true, "NORTH PATH");
-        draw('south-section', data.filter(b => b.MappedSec === "South"), true, "SOUTH PATH (ENTRANCE)");
-        
-        document.getElementById('status-bar').innerText = "Live: " + data.length + " bricks loaded.";
-    }
-
-    function draw(id, bricks, isReversed, title) {
-        const div = document.getElementById(id);
-        div.innerHTML = `<h2 style="color:var(--fig-green)">${title}</h2>`;
-        if (bricks.length === 0) return;
-
-        const grid = {};
-        let maxR = 0;
-        bricks.forEach(b => {
-            if (b.R > maxR) maxR = b.R;
-            if (!grid[b.R]) grid[b.R] = {};
-            grid[b.R][b.C] = b;
-        });
-
-        const start = isReversed ? maxR : 1;
-        const end = isReversed ? 1 : maxR;
-        const step = isReversed ? -1 : 1;
-
-        for (let r = start; isReversed ? r >= end : r <= end; r += step) {
-            if (!grid[r]) continue;
-            const wrap = document.createElement('div');
-            wrap.className = 'row-container';
-            const brks = document.createElement('div');
-            brks.className = 'row-bricks';
-            
-            const cols = Object.keys(grid[r]).map(Number);
-            const maxC = Math.max(...cols);
-            
-            for (let c = 1; c <= maxC; c++) {
-                const b = grid[r][c];
-                const d = document.createElement('div');
-                const isBlank = !b || (b.Inscr && b.Inscr.includes("[BLANK]"));
-                d.className = isBlank ? 'brick is-blank' : 'brick';
-                if (!isBlank) d.innerText = b.Inscr;
-                d.dataset.search = (b ? b.Inscr : "").toLowerCase();
-                d.dataset.section = b ? b.MappedSec : "";
-                brks.appendChild(d);
-            }
-            wrap.appendChild(brks);
-            div.appendChild(wrap);
+    /* --- MOBILE RESPONSIVENESS --- */
+    @media (max-width: 768px) {
+        body { flex-direction: column; overflow: auto; height: auto; }
+        .map-sidebar { 
+            width: 100%; 
+            border-right: none; 
+            border-bottom: 2px solid #ddd; 
+            box-sizing: border-box; 
+            height: auto; 
+            position: sticky; 
+            top: 0; 
         }
+        .main-content { padding: 20px 10px; width: 100%; box-sizing: border-box; }
+        .lawn { width: 90%; font-size: 16px; }
+        .brick { width: 80px; min-height: 50px; font-size: 8px; }
+        .map-container { max-width: 400px; margin: 10px auto; }
     }
-
-    function goToMatch() {
-        if (currentMatches.length === 0) return;
-        
-        document.getElementById('north-wrapper').classList.add('active');
-        document.getElementById('south-wrapper').classList.add('active');
-        document.getElementById('central-lawn').style.display = 'flex';
-
-        currentMatches.forEach(b => b.classList.remove('current-match'));
-        matchIndex = (matchIndex + 1) % currentMatches.length;
-        const target = currentMatches[matchIndex];
-        
-        target.classList.add('current-match');
-        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        
-        updateMapDot(target);
-    }
-
-    function updateMapDot(brickElement) {
-        const dot = document.getElementById('map-dot');
-        const section = brickElement.dataset.section;
-        if (!section) { dot.style.display = "none"; return; }
-        dot.style.display = "block";
-        dot.style.left = "54%"; 
-        dot.style.top = (section === "North") ? "41%" : "66%";
-    }
-
-    document.getElementById('map-dot').onclick = goToMatch;
-
-    document.getElementById('search').oninput = (e) => {
-        const t = e.target.value.toLowerCase().trim();
-        const nextBtn = document.getElementById('next-btn');
-        const dot = document.getElementById('map-dot');
-        const hint = document.getElementById('hint');
-        currentMatches = [];
-        matchIndex = -1;
-
-        if (t === "") {
-            document.getElementById('north-wrapper').classList.remove('active');
-            document.getElementById('south-wrapper').classList.remove('active');
-            document.getElementById('central-lawn').style.display = 'none';
-            hint.innerText = "Search a name to begin.";
-            dot.style.display = "none";
-            nextBtn.style.display = "none";
-            return;
-        }
-
-        document.querySelectorAll('.brick').forEach(b => {
-            const isMatch = b.dataset.search.includes(t);
-            b.classList.remove('current-match');
-            b.classList.toggle('match', isMatch);
-            b.style.opacity = !isMatch ? "0.3" : "1";
-            if (isMatch) currentMatches.push(b);
-        });
-
-        if (currentMatches.length > 0) {
-            updateMapDot(currentMatches[0]);
-            hint.innerHTML = `Found ${currentMatches.length} match(es).<br>Click the <b>red dot</b> to see where!`;
-        } else {
-            dot.style.display = "none";
-            hint.innerText = "No matches found.";
-        }
-
-        nextBtn.style.display = currentMatches.length > 1 ? "block" : "none";
-    };
-
-    document.getElementById('next-btn').onclick = goToMatch;
-
-    fetchGarden();
-</script>
-</body>
-</html>
+</style>
