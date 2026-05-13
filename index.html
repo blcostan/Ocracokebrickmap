@@ -50,4 +50,179 @@
         .brick.current-focus { border: 4px solid var(--highlight); transform: scale(1.1); z-index: 10; box-shadow: 0 0 15px rgba(0,0,0,0.4); }
         .brick.is-blank { background: #dcd7cc; color: transparent; border: 1px dashed #bbb; }
 
-        .path-title { color: var(--dark-green
+        .path-title { color: var(--dark-green); font-size: 22px; margin-bottom: 5px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="hero-interface">
+    <div class="search-area">
+        <div class="input-row">
+            <input type="text" id="search" placeholder="Type a name...">
+            <button id="main-next-btn">Next</button>
+        </div>
+    </div>
+
+    <div id="preview-card">
+        <span id="preview-meta">Selected Brick:</span>
+        <span id="preview-text"></span>
+        <div style="font-size: 10px; color: var(--dark-green); margin-top: 8px;">Tap red dot to see path location ↑</div>
+    </div>
+
+    <div class="main-map-area">
+        <div id="map-dot"></div>
+        <img src="rendering%20of%20garden.avif" alt="Garden Map">
+    </div>
+</div>
+
+<div id="brick-overlay">
+    <div class="overlay-nav">
+        <button class="back-btn" onclick="closeBricks()">← Back to Map</button>
+    </div>
+    <div class="brick-view" id="brick-content"></div>
+</div>
+
+<script>
+    const S_URL = 'https://duanluepelrjjkulpenh.supabase.co'; 
+    const S_KEY = 'sb_publishable_WHslguojU3jb1GyQBqc_MA_2w35Y2ou';
+    const gardenClient = window.supabase.createClient(S_URL, S_KEY);
+
+    let allBricks = [];
+    let currentMatches = [];
+    let matchIndex = 0;
+
+    async function loadData() {
+        const { data, error } = await gardenClient.from('Ocracoke Bricks -').select('*');
+        if (error) return;
+        allBricks = data.map(row => {
+            let rawSec = (row.section || row.Section || "").toString().toLowerCase();
+            // MAPPING: North -> Back Fig Garden, South -> Front Fig Garden
+            return {
+                ...row,
+                MappedSec: rawSec.includes("north") ? "Back Fig Garden" : "Front Fig Garden",
+                R: parseInt(row.row || row.Row) || 0,
+                C: parseInt(row.col || row.Col) || 0,
+                Inscr: row.inscription || row.Inscription || ""
+            };
+        });
+    }
+
+    document.getElementById('search').oninput = (e) => {
+        const t = e.target.value.toLowerCase().trim();
+        const dot = document.getElementById('map-dot');
+        const nextBtn = document.getElementById('main-next-btn');
+        const preview = document.getElementById('preview-card');
+        
+        if (t === "") {
+            dot.style.display = "none"; nextBtn.style.display = "none"; preview.style.display = "none";
+            return;
+        }
+
+        currentMatches = allBricks.filter(b => b.Inscr.toLowerCase().includes(t));
+        matchIndex = 0;
+
+        if (currentMatches.length > 0) {
+            updateUI();
+            nextBtn.style.display = currentMatches.length > 1 ? "block" : "none";
+            preview.style.display = "block";
+        } else {
+            dot.style.display = "none"; nextBtn.style.display = "none"; preview.style.display = "none";
+        }
+    };
+
+    function updateUI() {
+        const dot = document.getElementById('map-dot');
+        const previewText = document.getElementById('preview-text');
+        const match = currentMatches[matchIndex];
+
+        dot.style.display = "block";
+        dot.style.left = "54%";
+        // Back Fig Garden (North) is at top dot, Front (South) is at bottom dot
+        dot.style.top = (match.MappedSec === "Back Fig Garden") ? "41%" : "66%";
+        previewText.innerText = match.Inscr;
+    }
+
+    document.getElementById('main-next-btn').onclick = () => {
+        matchIndex = (matchIndex + 1) % currentMatches.length;
+        updateUI();
+    };
+
+    document.getElementById('map-dot').onclick = () => {
+        const match = currentMatches[matchIndex];
+        showBrickGrid(match);
+    };
+
+    function showBrickGrid(targetMatch) {
+        const container = document.getElementById('brick-content');
+        const isBack = targetMatch.MappedSec === "Back Fig Garden";
+
+        container.innerHTML = `
+            <div class="path-title">${targetMatch.MappedSec}</div>
+            <div class="orientation-hint">Facing the Island Inn Commons</div>
+        `;
+
+        // Orientation logic: 
+        // If in Front Garden, lawn is UP (behind you). 
+        // If in Back Garden, lawn is DOWN (behind you).
+        if (isBack) {
+            // Bricks are further away, lawn is "Below" them on the map
+            // We'll place the lawn indicator based on that logic
+        } else {
+            container.innerHTML += `<div class="mini-lawn">CENTRAL LAWN (This Way ↑)</div>`;
+        }
+        
+        const sectionBricks = allBricks.filter(b => b.MappedSec === targetMatch.MappedSec);
+        const grid = {};
+        let maxR = 0;
+        
+        sectionBricks.forEach(b => {
+            if (b.R > maxR) maxR = b.R;
+            if (!grid[b.R]) grid[b.R] = {};
+            grid[b.R][b.C] = b;
+        });
+
+        const brickGridContainer = document.createElement('div');
+        brickGridContainer.style.display = "flex";
+        brickGridContainer.style.flexDirection = "column";
+        brickGridContainer.style.alignItems = "center";
+
+        for (let r = maxR; r >= 1; r--) {
+            if (!grid[r]) continue;
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'row-bricks';
+            const cols = Object.keys(grid[r]).map(Number);
+            const maxC = Math.max(...cols);
+
+            for (let c = 1; c <= maxC; c++) {
+                const b = grid[r][c];
+                const d = document.createElement('div');
+                const isBlank = !b || b.Inscr.includes("[BLANK]");
+                d.className = isBlank ? 'brick is-blank' : 'brick';
+                if (!isBlank) {
+                    d.innerText = b.Inscr;
+                    if (b.id === targetMatch.id) {
+                        d.classList.add('current-focus');
+                        setTimeout(() => d.scrollIntoView({ behavior: 'smooth', block: 'center' }), 200);
+                    }
+                }
+                rowDiv.appendChild(d);
+            }
+            brickGridContainer.appendChild(rowDiv);
+        }
+        container.appendChild(brickGridContainer);
+
+        if (isBack) {
+            container.innerHTML += `<div class="mini-lawn">CENTRAL LAWN (This Way ↓)</div>`;
+        }
+
+        document.getElementById('brick-overlay').style.display = 'flex';
+    }
+
+    function closeBricks() {
+        document.getElementById('brick-overlay').style.display = 'none';
+    }
+
+    loadData();
+</script>
+</body>
+</html>
