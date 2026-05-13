@@ -55,7 +55,7 @@
 <div class="hero-interface">
     <div class="search-area">
         <div class="input-row">
-            <input type="text" id="search" placeholder="Search for a name...">
+            <input type="text" id="search" placeholder="Enter name...">
             <button id="main-next-btn">Next</button>
         </div>
     </div>
@@ -95,8 +95,10 @@
             let rawSec = (row.section || row.Section || "").toString().toLowerCase();
             return {
                 ...row,
-                // MAP DATA: North -> Back (Catherine), South -> Front (Misty Dawn)
-                MappedSec: rawSec.includes("north") ? "Back Fig Garden" : "Front Fig Garden",
+                // THE BIG FIX: Swap the mapping to match spreadsheet-to-layout reversal
+                // Sheet "North" -> Front Fig Garden (Misty Dawn)
+                // Sheet "South" -> Back Fig Garden (Catherine Holloman)
+                MappedSec: rawSec.includes("north") ? "Front Fig Garden" : "Back Fig Garden",
                 R: parseInt(row.row || row.Row) || 0,
                 C: parseInt(row.col || row.Col) || 0,
                 Inscr: row.inscription || row.Inscription || ""
@@ -135,10 +137,10 @@
         dot.style.display = "block";
         dot.style.left = "54%";
         
-        // COORDINATE FIX:
-        // Back Fig Garden (Catherine) = TOP DOT (41%)
-        // Front Fig Garden (Misty Dawn) = BOTTOM DOT (66%)
-        dot.style.top = (match.MappedSec === "Back Fig Garden") ? "41%" : "66%";
+        // DOT COORDINATE MAPPING:
+        // Front Fig Garden (Sheet North) = BOTTOM DOT (66%)
+        // Back Fig Garden (Sheet South) = TOP DOT (41%)
+        dot.style.top = (match.MappedSec === "Front Fig Garden") ? "66%" : "41%";
         
         previewText.innerText = match.Inscr;
     }
@@ -155,17 +157,17 @@
 
     function showBrickGrid(targetMatch) {
         const container = document.getElementById('brick-content');
-        const isBack = targetMatch.MappedSec === "Back Fig Garden";
+        const isFront = targetMatch.MappedSec === "Front Fig Garden";
 
         container.innerHTML = `
             <div class="path-title">${targetMatch.MappedSec}</div>
             <div class="orientation-hint">Facing the Island Inn Commons</div>
         `;
 
-        // Orientation logic for the Lawn indicator:
-        // If in Back Garden (Top Dot), Lawn is "Below" (Down)
-        // If in Front Garden (Bottom Dot), Lawn is "Above" (Up)
-        if (!isBack) {
+        // Orientation logic for Lawn indicator:
+        // Front (Bottom Dot) -> Lawn is ABOVE (Up)
+        // Back (Top Dot) -> Lawn is BELOW (Down)
+        if (isFront) {
             container.innerHTML += `<div class="mini-lawn">CENTRAL LAWN (This Way ↑)</div>`;
         }
         
@@ -209,7 +211,7 @@
         }
         container.appendChild(brickGridContainer);
 
-        if (isBack) {
+        if (!isFront) {
             container.innerHTML += `<div class="mini-lawn">CENTRAL LAWN (This Way ↓)</div>`;
         }
 
