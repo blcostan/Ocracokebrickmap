@@ -78,11 +78,11 @@
         
         .back-btn { 
             padding: 8px 25px; border-radius: 20px; border: none; 
-            background: var(--dark-green); color: white; font-weight: bold;
+            background: var(--dark-green); color: white; font-weight: bold; cursor: pointer;
         }
 
         .brick-scroll-viewport {
-            flex: 1; overflow-y: auto; overflow-x: hidden; padding: 20px 5px;
+            flex: 1; overflow-y: auto; overflow-x: hidden; padding: 40px 10px;
             display: flex; flex-direction: column; align-items: center;
         }
 
@@ -94,7 +94,6 @@
             width: 100%;
         }
 
-        /* DYNAMIC BRICK SIZE */
         .brick-unit {
             background: var(--brick);
             color: white;
@@ -102,31 +101,36 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 7px; /* Small default for global view */
+            font-size: 7px;
             font-weight: bold;
             border-radius: 2px;
             padding: 2px;
-            width: 14vw; /* Scales with screen width */
+            width: 14vw;
             max-width: 75px;
-            height: 9vw; /* Keeps aspect ratio */
+            height: 9vw;
             max-height: 45px;
             word-wrap: break-word;
             overflow: hidden;
             box-shadow: inset 0 -1px 0 rgba(0,0,0,0.2);
             flex-shrink: 0;
-            transition: transform 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        /* POP-UP STYLE FOR CHOSEN BRICK */
+        /* BETTER POP-OUT EFFECT */
         .brick-unit.current-focus {
-            outline: 3px solid var(--highlight);
-            outline-offset: 2px;
-            background: #d45b4a;
-            transform: scale(1.6); /* Makes it pop out big */
-            z-index: 100;
-            font-size: 10px; /* Larger text for readability */
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            outline: 3px solid white;
+            outline-offset: 1px;
+            background: var(--highlight);
+            transform: scale(2.2); /* Significant scale-up */
+            z-index: 999;
+            font-size: 8px; /* Slightly bigger text */
+            line-height: 1.1;
+            padding: 6px; /* Extra room inside */
+            height: auto; /* Let it grow vertically if needed */
+            min-height: 11vw;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6), 0 0 15px rgba(255, 59, 59, 0.4);
             position: relative;
+            overflow: visible; /* Ensure text never gets clipped */
         }
 
         .brick-unit.is-blank { 
@@ -136,7 +140,7 @@
         .mini-lawn-row { 
             background: var(--fig-green); color: white; padding: 10px; 
             text-align: center; border-radius: 25px; font-weight: bold; 
-            font-size: 13px; margin: 15px 0; width: 80%; max-width: 280px; 
+            font-size: 13px; margin: 25px 0; width: 80%; max-width: 280px; 
             border: 2px solid var(--dark-green); 
         }
         
@@ -156,7 +160,7 @@
     </div>
 
     <div id="preview-card" onclick="triggerGridFromPreview()">
-        <span id="preview-text" style="font-weight:bold; color:var(--brick); font-size: 16px;"></span>
+        <div id="preview-text" style="font-weight:bold; color:var(--brick); font-size: 16px;"></div>
         <div style="font-size: 10px; color: var(--dark-green); margin-top: 4px;">Tap to find on path ↑</div>
     </div>
 
