@@ -25,14 +25,17 @@
         .lawn { width: 450px; height: 70px; background: #8da58e; margin: 30px 0; border-radius: 35px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; border: 2px solid #6d8c6d; letter-spacing: 3px; font-size: 20px; }
         #locator-dot { position: absolute; width: 22px; height: 22px; background: var(--highlight); border: 3px solid white; border-radius: 50%; display: none; transform: translate(-50%, -50%); z-index: 100; animation: pulse 1s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
+        #debug-log { position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.8); color: #0f0; padding: 10px; font-family: monospace; font-size: 10px; border-radius: 5px; max-width: 250px; display: none; }
     </style>
 </head>
 <body>
 
+<div id="debug-log"></div>
+
 <div class="map-sidebar">
-    <div id="status-bar" style="font-weight:bold; color:var(--fig-green); margin-bottom:10px; font-size: 12px;">Connecting to Garden...</div>
+    <div id="status-bar" style="font-weight:bold; color:var(--fig-green); margin-bottom:10px; font-size: 12px;">Connecting...</div>
     <div class="search-area">
-        <input type="text" id="search" placeholder="Search name...">
+        <input type="text" id="search" placeholder="Search Inscription...">
         <button id="next-btn">NEXT</button>
     </div>
     <div id="match-count" style="font-size:13px; margin-bottom:10px; font-weight: bold; color: var(--highlight);"></div>
@@ -52,27 +55,43 @@
     const SUPABASE_URL = 'https://duanluepelrjjkulpenh.supabase.co'; 
     const SUPABASE_KEY = 'sb_publishable_WHslguojU3jb1GyQBqc_MA_2w35Y2ou';
 
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // 2026 Connection Fix: Required Global Headers for sb_ keys
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+        global: { headers: { 'apikey': SUPABASE_KEY } }
+    });
+
     let matchedBricks = [];
     let currentMatchIndex = 0;
 
     async function fetchGarden() {
-        const { data, error } = await supabase.from('bricks').select('*');
-        if (error) {
-            document.getElementById('status-bar').innerText = "Access Denied. Fix RLS.";
-            console.error(error);
-            return;
+        const debug = document.getElementById('debug-log');
+        try {
+            const { data, error, status } = await supabase.from('bricks').select('*');
+            
+            if (error) {
+                document.getElementById('status-bar').innerText = "Connection Failed.";
+                debug.style.display = 'block';
+                debug.innerText = `ERROR ${status}: ${error.message}\nCheck RLS policies in Supabase!`;
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                document.getElementById('status-bar').innerText = "0 Bricks Found.";
+                debug.style.display = 'block';
+                debug.innerText = "SUCCESS but NO DATA. Is your table named 'bricks'?";
+                return;
+            }
+
+            initApp(data);
+        } catch (err) {
+            debug.style.display = 'block';
+            debug.innerText = "Network Error: " + err.message;
         }
-        if (!data || data.length === 0) {
-            document.getElementById('status-bar').innerText = "Connected, but 0 bricks found.";
-            return;
-        }
-        initApp(data);
     }
 
     function initApp(data) {
         data.forEach(row => {
-            // Flexible check for column names (caps or lowercase)
+            // Flexible naming to catch Row vs row, Inscription vs inscription, etc.
             let sec = (row.section || row.Section || "").toLowerCase();
             row.MappedSec = sec.includes("north") ? "South" : "North";
             row.R = parseInt(row.row || row.Row) || 0;
@@ -83,6 +102,7 @@
 
         renderSection('north-section', data.filter(b => b.MappedSec === "North"), true, "NORTH PATH");
         renderSection('south-section', data.filter(b => b.MappedSec === "South"), false, "SOUTH PATH (ENTRANCE)");
+        
         document.getElementById('status-bar').innerText = "Live: " + data.length + " bricks.";
     }
 
@@ -91,14 +111,17 @@
         container.innerHTML = `<h2 style="color:var(--fig-green); margin-bottom:20px;">${title}</h2>`;
         const gridData = {};
         let maxR = 0;
+
         bricks.forEach(b => {
             if (b.R > maxR) maxR = b.R;
             if (!gridData[b.R]) gridData[b.R] = {};
             gridData[b.R][b.C] = b;
         });
+
         const start = isReversed ? maxR : 1;
         const end = isReversed ? 1 : maxR;
         const step = isReversed ? -1 : 1;
+
         for (let r = start; isReversed ? r >= end : r <= end; r += step) {
             if (!gridData[r]) continue;
             const rowWrapper = document.createElement('div');
@@ -106,8 +129,10 @@
             rowWrapper.innerHTML = `<div class="row-label">R${r}</div>`;
             const rowBricks = document.createElement('div');
             rowBricks.className = 'row-bricks';
+            
             const colIndices = Object.keys(gridData[r]).map(Number);
             const maxC = Math.max(...colIndices);
+
             for (let c = 1; c <= maxC; c++) {
                 const b = gridData[r][c];
                 const div = document.createElement('div');
@@ -144,6 +169,7 @@
         const nextBtn = document.getElementById('next-btn');
         const countDisplay = document.getElementById('match-count');
         document.querySelectorAll('.brick').forEach(b => b.classList.remove('active-match'));
+
         if (matchedBricks.length > 0) {
             const current = matchedBricks[currentMatchIndex];
             current.classList.add('active-match');
