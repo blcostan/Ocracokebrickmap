@@ -16,18 +16,25 @@
         #next-btn { padding: 10px 15px; border-radius: 20px; border: none; background: var(--fig-green); color: white; cursor: pointer; font-weight: bold; display: none; }
         #status-bar { font-weight:bold; color:var(--fig-green); margin-bottom:10px; font-size: 12px; }
 
-        /* Map Container & Dot */
+        /* Map Container & Interactive Dot */
         .map-container { position: relative; width: 100%; margin-top: 10px; border-radius: 8px; overflow: hidden; border: 1px solid #ccc; }
         .map-container img { width: 100%; display: block; }
         #map-dot { 
-            position: absolute; width: 18px; height: 18px; background: var(--highlight); 
+            position: absolute; width: 22px; height: 22px; background: var(--highlight); 
             border: 3px solid white; border-radius: 50%; display: none; 
-            box-shadow: 0 0 10px rgba(0,0,0,0.5); z-index: 20; 
+            box-shadow: 0 0 15px rgba(255, 59, 59, 0.6); z-index: 20; 
             transform: translate(-50%, -50%); transition: all 0.3s ease; 
+            cursor: pointer;
         }
+        #map-dot:hover { transform: translate(-50%, -50%) scale(1.2); background: #ff0000; }
 
         /* Main Content Layout */
         .main-content { flex: 1; overflow: auto; display: flex; flex-direction: column; align-items: center; padding: 40px; scroll-behavior: smooth; }
+        
+        /* Collapsible Section Styling */
+        .plaza-wrapper { width: 100%; display: none; flex-direction: column; align-items: center; }
+        .plaza-wrapper.active { display: flex; }
+        
         .plaza { display: flex; flex-direction: column; gap: 8px; margin-bottom: 60px; align-items: center; }
         .row-container { display: flex; align-items: center; justify-content: center; position: relative; padding: 2px 0; }
         .row-bricks { display: flex; gap: 6px; justify-content: center; align-items: stretch; }
@@ -39,6 +46,8 @@
         .brick.is-blank { background: #e0dcd0; border: 1px dashed #bbb; color: transparent; }
         
         .lawn { width: 450px; height: 70px; background: #8da58e; margin: 30px 0; border-radius: 35px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px; border: 2px solid #6d8c6d; }
+        
+        .instruction-hint { font-size: 13px; color: #666; font-style: italic; margin-top: 10px; text-align: center; }
     </style>
 </head>
 <body>
@@ -50,15 +59,22 @@
         <button id="next-btn">Next</button>
     </div>
     <div class="map-container">
-        <div id="map-dot"></div>
+        <div id="map-dot" title="Click to show bricks in this path"></div>
         <img src="rendering%20of%20garden.avif" alt="Garden Map">
     </div>
+    <div class="instruction-hint" id="hint">Search a name to begin.</div>
 </div>
 
-<div class="main-content">
-    <div id="north-section" class="plaza"></div>
-    <div class="lawn">CENTRAL LAWN</div>
-    <div id="south-section" class="plaza"></div>
+<div class="main-content" id="viewer">
+    <div id="north-wrapper" class="plaza-wrapper">
+        <div id="north-section" class="plaza"></div>
+    </div>
+
+    <div class="lawn" id="central-lawn" style="display:none;">CENTRAL LAWN</div>
+
+    <div id="south-wrapper" class="plaza-wrapper">
+        <div id="south-section" class="plaza"></div>
+    </div>
 </div>
 
 <script>
@@ -139,63 +155,18 @@
         }
     }
 
-    function updateMapDot(brickElement) {
-        const dot = document.getElementById('map-dot');
-        const section = brickElement.dataset.section;
-        
-        if (!section) {
-            dot.style.display = "none";
-            return;
-        }
-
-        dot.style.display = "block";
-
-        if (section === "North") {
-            dot.style.left = "54%"; 
-            dot.style.top = "41%"; 
-        } else {
-            dot.style.left = "54%";
-            dot.style.top = "66%"; 
-        }
-    }
-
-    document.getElementById('search').oninput = (e) => {
-        const t = e.target.value.toLowerCase().trim();
-        const nextBtn = document.getElementById('next-btn');
-        const dot = document.getElementById('map-dot');
-        currentMatches = [];
-        matchIndex = -1;
-
-        document.querySelectorAll('.brick').forEach(b => {
-            const isMatch = t !== "" && b.dataset.search.includes(t);
-            b.classList.remove('current-match');
-            b.classList.toggle('match', isMatch);
-            b.style.opacity = (t !== "" && !isMatch) ? "0.3" : "1";
-            if (isMatch) currentMatches.push(b);
-        });
-
-        if (currentMatches.length > 0 && t !== "") {
-            updateMapDot(currentMatches[0]);
-        } else {
-            dot.style.display = "none";
-        }
-
-        nextBtn.style.display = currentMatches.length > 1 ? "block" : "none";
-    };
-
-    document.getElementById('next-btn').onclick = () => {
+    function goToMatch() {
         if (currentMatches.length === 0) return;
+        
+        // Auto-show sections and lawn
+        document.getElementById('north-wrapper').classList.add('active');
+        document.getElementById('south-wrapper').classList.add('active');
+        document.getElementById('central-lawn').style.display = 'flex';
+        document.getElementById('hint').innerText = "Click the red dot to cycle through matches.";
+
         currentMatches.forEach(b => b.classList.remove('current-match'));
         matchIndex = (matchIndex + 1) % currentMatches.length;
         const target = currentMatches[matchIndex];
         
         target.classList.add('current-match');
-        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        
-        updateMapDot(target);
-    };
-
-    fetchGarden();
-</script>
-</body>
-</html>
+        target.scrollIntoView({ behavior: 'smooth',
