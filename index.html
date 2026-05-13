@@ -58,16 +58,19 @@
     function renderGarden(data) {
         data.forEach(row => {
             let sec = (row.section || row.Section || "").toLowerCase();
-            row.MappedSec = sec.includes("north") ? "North" : "South";
+            
+            // CORRECTION: Database North = South Path | Database South = North Path
+            row.MappedSec = sec.includes("north") ? "South" : "North";
+            
             row.R = parseInt(row.row || row.Row) || 0;
             row.C = parseInt(row.col || row.Col) || 0;
             row.Inscr = row.inscription || row.Inscription || "";
         });
 
-        // NORTH PATH: Row 1 is near the lawn (Reversed rendering)
+        // NORTH PATH (Database says "South"): Row 1 is near the lawn (Reversed)
         draw('north-section', data.filter(b => b.MappedSec === "North"), true, "NORTH PATH");
         
-        // SOUTH PATH: Row 1 is at the entrance (Normal rendering)
+        // SOUTH PATH (Database says "North"): Row 1 is at the entrance (Normal)
         draw('south-section', data.filter(b => b.MappedSec === "South"), false, "SOUTH PATH (ENTRANCE)");
         
         document.getElementById('status-bar').innerText = "Live: " + data.length + " bricks.";
@@ -85,9 +88,6 @@
             grid[b.R][b.C] = b;
         });
 
-        // Loop through rows
-        // If isReversed is true, we count DOWN (MaxR to 1)
-        // If isReversed is false, we count UP (1 to MaxR)
         const start = isReversed ? maxR : 1;
         const end = isReversed ? 1 : maxR;
         const step = isReversed ? -1 : 1;
@@ -96,35 +96,4 @@
             if (!grid[r]) continue;
             const wrap = document.createElement('div');
             wrap.className = 'row-container';
-            wrap.innerHTML = `<div class="row-label">Row ${r}</div>`;
-            const brks = document.createElement('div');
-            brks.className = 'row-bricks';
-            
-            const cols = Object.keys(grid[r]).map(Number);
-            const maxC = Math.max(...cols);
-            
-            for (let c = 1; c <= maxC; c++) {
-                const b = grid[r][c];
-                const d = document.createElement('div');
-                const isBlank = !b || (b.Inscr && b.Inscr.includes("[BLANK]"));
-                d.className = isBlank ? 'brick is-blank' : 'brick';
-                if (!isBlank) d.innerText = b.Inscr;
-                d.dataset.search = (b ? b.Inscr : "").toLowerCase();
-                brks.appendChild(d);
-            }
-            wrap.appendChild(brks);
-            div.appendChild(wrap);
-        }
-    }
-
-    document.getElementById('search').oninput = (e) => {
-        const t = e.target.value.toLowerCase().trim();
-        document.querySelectorAll('.brick').forEach(b => {
-            b.classList.toggle('match', t !== "" && b.dataset.search.includes(t));
-        });
-    };
-
-    fetchGarden();
-</script>
-</body>
-</html>
+            wrap.innerHTML = `<div class="row-
