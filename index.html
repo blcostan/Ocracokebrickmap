@@ -9,6 +9,11 @@
         :root { --fig-green: #2d5a27; --sand: #fdfaf5; --brick: #b06d50; --wood: #7d6e64; --highlight: #ff3b3b; }
         body { font-family: 'Georgia', serif; background: var(--sand); margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
+        /* Loading Screen */
+        #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--fig-green); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
         .map-sidebar { width: 320px; background: white; border-right: 2px solid #ddd; padding: 20px; display: flex; flex-direction: column; overflow-y: auto; z-index: 10; }
         .map-container { position: relative; width: 100%; border: 2px solid #ccc; border-radius: 8px; overflow: hidden; cursor: pointer; }
         .map-container img { width: 100%; display: block; }
@@ -21,7 +26,7 @@
         #search { padding: 12px; flex: 1; border-radius: 20px; border: 2px solid #ccc; font-size: 16px; outline: none; }
         #next-btn { padding: 10px 15px; border-radius: 20px; border: none; background: var(--fig-green); color: white; cursor: pointer; font-weight: bold; display: none; }
         
-        .plaza { display: inline-flex; flex-direction: column; gap: 4px; margin-bottom: 40px; align-items: center; }
+        .plaza { display: inline-flex; flex-direction: column; gap: 4px; margin-bottom: 40px; align-items: center; min-height: 50px; }
         .row-container { display: flex; align-items: center; justify-content: center; position: relative; margin-bottom: 2px; }
         .row-label { position: absolute; left: -45px; font-size: 10px; color: #999; }
         .row-grid { display: grid; gap: 4px; }
@@ -32,18 +37,26 @@
         .brick.hidden { opacity: 0.1; filter: grayscale(1); }
         .brick.is-blank { background: #eeeae0; border: 1px dashed #ccc; color: transparent; }
         .lawn { width: 300px; height: 50px; background: #8da58e; margin: 20px 0; border-radius: 25px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; border: 2px solid #6d8c6d; letter-spacing: 2px; }
+        
+        .refresh-btn { margin-top: 10px; padding: 5px 10px; font-size: 10px; cursor: pointer; border: 1px solid #ccc; background: #f9f9f9; border-radius: 4px; }
     </style>
 </head>
 <body>
 
+<div id="loader">
+    <div class="spinner"></div>
+    <p>Loading Garden Bricks...</p>
+</div>
+
 <div class="map-sidebar">
-    <div id="status-bar" style="font-weight:bold; color:var(--fig-green); margin-bottom:10px; font-size: 12px;">Syncing Garden...</div>
+    <div id="status-bar" style="font-weight:bold; color:var(--fig-green); margin-bottom:5px; font-size: 12px;">Syncing...</div>
+    <button class="refresh-btn" onclick="location.reload()">Reload Data</button>
+    <hr style="width:100%; border:0; border-top:1px solid #eee; margin:15px 0;">
     <div class="search-area">
         <input type="text" id="search" placeholder="Search a name...">
         <button id="next-btn">NEXT</button>
     </div>
     <div id="match-count" style="font-size:12px; margin-bottom:10px; font-weight: bold;"></div>
-    
     <div class="map-container" onclick="scrollToCurrent()">
         <img src="rendering%20of%20garden.avif">
         <div id="locator-dot"></div>
@@ -53,46 +66,57 @@
 <div class="main-content">
     <h3 style="color:var(--fig-green)">NORTHERN GARDEN SECTION</h3>
     <div id="north-section" class="plaza"></div>
-    
     <div class="lawn">CENTRAL LAWN</div>
-    
     <h3 style="color:var(--fig-green)">SOUTHERN ENTRANCE SECTION</h3>
     <div id="south-section" class="plaza"></div>
 </div>
 
 <script>
-    const REAL_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ3j2xmIEyMKMz7nwsVM4HaZuXtBTQmyyJijPGkhQULJQbB2NcD0ZnrW_WWTKYe4FmD6WsZjD_TXh6-/pub?output=csv';
-    
+    // Primary link plus a secondary "Export" fallback
+    const LINK_1 = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ3j2xmIEyMKMz7nwsVM4HaZuXtBTQmyyJijPGkhQULJQbB2NcD0ZnrW_WWTKYe4FmD6WsZjD_TXh6-/pub?output=csv';
+    const LINK_2 = 'https://docs.google.com/spreadsheets/d/1B-P8hK6S8rXvXUo5m-C0Ea6lSIn6j8L2u_6Y7n6Q_Xg/export?format=csv'; // Example fallback format
+
     let matchedBricks = [];
     let currentMatchIndex = 0;
 
-    Papa.parse(REAL_URL, {
-        download: true,
-        header: true,
-        skipEmptyLines: true,
-        complete: function(results) {
-            const data = results.data;
-            if(!data || data.length === 0) {
-                document.getElementById('status-bar').innerText = "Error: No data found.";
-                return;
+    function fetchGardenData(url) {
+        Papa.parse(url + '&cb=' + Date.now(), {
+            download: true,
+            header: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+                if (results.data && results.data.length > 5) {
+                    processBricks(results.data);
+                } else {
+                    console.error("Link 1 returned empty, trying fallback...");
+                    // Try second method if first fails
+                    if (url === LINK_1) fetchGardenData(LINK_2);
+                }
+            },
+            error: function() {
+                if (url === LINK_1) fetchGardenData(LINK_2);
+                else document.getElementById('status-bar').innerText = "Connection Error. Use Reload.";
             }
-            
-            document.getElementById('status-bar').innerText = "Loaded " + data.length + " bricks.";
-            
-            data.forEach(row => {
-                let sec = String(row.Section || "").trim().toLowerCase();
-                // Flip Logic: Spreadsheet "North" = Physical South Path
-                row.MappedSec = sec.includes("north") ? "South" : "North";
-                row.R = parseInt(row.Row) || 0;
-                row.C = parseInt(row.Col) || 0;
-            });
+        });
+    }
 
-            // NORTH PATH: Row 1 near lawn (Reversed: 42 to 1)
-            renderSection('north-section', data.filter(b => b.MappedSec === "North"), true);
-            // SOUTH PATH: Row 1 at entrance (Standard: 1 to 42)
-            renderSection('south-section', data.filter(b => b.MappedSec === "South"), false);
-        }
-    });
+    function processBricks(data) {
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('status-bar').innerText = "Loaded " + data.length + " bricks.";
+        
+        data.forEach(row => {
+            let sec = String(row.Section || "").trim().toLowerCase();
+            // Map Logic
+            row.MappedSec = sec.includes("north") ? "South" : "North";
+            row.R = parseInt(row.Row) || 0;
+            row.C = parseInt(row.Col) || 0;
+        });
+
+        // North: R1 near lawn (bottom) -> Reversed
+        renderSection('north-section', data.filter(b => b.MappedSec === "North"), true);
+        // South: R1 at entrance (bottom) -> Standard
+        renderSection('south-section', data.filter(b => b.MappedSec === "South"), false);
+    }
 
     function renderSection(id, bricks, isReversed) {
         const container = document.getElementById(id);
@@ -136,6 +160,7 @@
         }
     }
 
+    // Navigation and Search logic remains the same
     document.getElementById('search').addEventListener('input', function(e) {
         const term = e.target.value.toLowerCase().trim();
         matchedBricks = [];
@@ -178,3 +203,12 @@
 
     function scrollToCurrent() {
         if (matchedBricks[currentMatchIndex]) {
+            matchedBricks[currentMatchIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
+    // Start the fetch
+    fetchGardenData(LINK_1);
+</script>
+</body>
+</html>
