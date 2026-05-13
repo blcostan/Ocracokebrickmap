@@ -117,7 +117,7 @@
 <div class="hero-interface">
     <div class="search-area">
         <div class="input-row">
-            <input type="text" id="search" placeholder="Enter a name...">
+            <input type="text" id="search" placeholder="Loading bricks..." disabled>
             <button id="main-next-btn">Next</button>
         </div>
     </div>
@@ -144,4 +144,120 @@
 <script>
     const S_URL = 'https://duanluepelrjjkulpenh.supabase.co'; 
     const S_KEY = 'sb_publishable_WHslguojU3jb1GyQBqc_MA_2w35Y2ou';
-    const gardenClient = window.supabase.createClient(S_URL, S
+    const gardenClient = window.supabase.createClient(S_URL, S_KEY);
+
+    let allBricks = [];
+    let currentMatches = [];
+    let matchIndex = 0;
+
+    async function loadData() {
+        const searchInput = document.getElementById('search');
+        try {
+            const { data, error } = await gardenClient.from('Ocracoke Bricks -').select('*');
+            if (error) throw error;
+            
+            allBricks = data.map(row => ({
+                ...row,
+                MappedSec: (row.section || row.Section || "").toLowerCase().includes("north") ? "Front Fig Garden" : "Back Fig Garden",
+                R: parseInt(row.row || row.Row) || 0,
+                C: parseInt(row.col || row.Col) || 0,
+                Inscr: row.inscription || row.Inscription || ""
+            }));
+
+            searchInput.placeholder = "Enter a name...";
+            searchInput.disabled = false;
+        } catch (err) {
+            searchInput.placeholder = "Error loading data.";
+            console.error("Supabase error:", err);
+        }
+    }
+
+    document.getElementById('search').oninput = (e) => {
+        const t = e.target.value.toLowerCase().trim();
+        const dot = document.getElementById('map-dot');
+        const preview = document.getElementById('preview-card');
+        const nextBtn = document.getElementById('main-next-btn');
+
+        if (t.length < 2) { 
+            dot.style.display = "none"; 
+            preview.style.display = "none"; 
+            nextBtn.style.display = "none";
+            return; 
+        }
+
+        currentMatches = allBricks.filter(b => b.Inscr.toLowerCase().includes(t));
+        matchIndex = 0;
+
+        if (currentMatches.length > 0) { 
+            updateUI(); 
+            preview.style.display = "block";
+            nextBtn.style.display = currentMatches.length > 1 ? "block" : "none";
+        } else {
+            dot.style.display = "none";
+            preview.style.display = "none";
+            nextBtn.style.display = "none";
+        }
+    };
+
+    document.getElementById('main-next-btn').onclick = (e) => {
+        e.stopPropagation();
+        if (currentMatches.length > 1) {
+            matchIndex = (matchIndex + 1) % currentMatches.length;
+            updateUI();
+        }
+    };
+
+    function updateUI() {
+        if (!currentMatches[matchIndex]) return;
+        const match = currentMatches[matchIndex];
+        const dot = document.getElementById('map-dot');
+        dot.style.display = "block";
+        dot.style.left = "54%";
+        dot.style.top = (match.MappedSec === "Front Fig Garden") ? "66%" : "41%";
+        document.getElementById('preview-text').innerText = match.Inscr;
+    }
+
+    function triggerGridFromPreview() { 
+        if (currentMatches[matchIndex]) showBrickGrid(currentMatches[matchIndex]); 
+    }
+
+    function showBrickGrid(targetMatch) {
+        const container = document.getElementById('brick-container');
+        container.innerHTML = "";
+        document.getElementById('path-label').innerText = targetMatch.MappedSec;
+        const isFront = targetMatch.MappedSec === "Front Fig Garden";
+        document.getElementById('top-lawn').style.display = isFront ? "block" : "none";
+        document.getElementById('bottom-lawn').style.display = isFront ? "none" : "block";
+
+        const sectionBricks = allBricks.filter(b => b.MappedSec === targetMatch.MappedSec);
+        let maxR = Math.max(...sectionBricks.map(b => b.R), 0);
+        const rows = {};
+        sectionBricks.forEach(b => { if(!rows[b.R]) rows[b.R] = []; rows[b.R].push(b); });
+
+        for (let r = maxR; r >= 1; r--) {
+            if (!rows[r]) continue;
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'brick-row';
+            rows[r].sort((a, b) => a.C - b.C).forEach(b => {
+                const brickDiv = document.createElement('div');
+                const isBlank = b.Inscr.includes("[BLANK]");
+                brickDiv.className = isBlank ? 'brick-unit is-blank' : 'brick-unit';
+                if (!isBlank) {
+                    brickDiv.innerText = b.Inscr;
+                    if (b.id === targetMatch.id) {
+                        brickDiv.classList.add('current-focus');
+                        setTimeout(() => brickDiv.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+                    }
+                }
+                rowDiv.appendChild(brickDiv);
+            });
+            container.appendChild(rowDiv);
+        }
+        document.getElementById('brick-overlay').style.display = 'flex';
+    }
+
+    function closeBricks() { document.getElementById('brick-overlay').style.display = 'none'; }
+    loadData();
+</script>
+</body>
+</html>
