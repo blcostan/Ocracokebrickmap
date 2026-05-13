@@ -16,7 +16,6 @@
         
         body { font-family: 'Georgia', serif; background: var(--sand); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; color: #333; }
         
-        /* Main Landing Screen */
         .hero-interface { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 20px; position: relative; }
         .search-area { width: 100%; max-width: 400px; z-index: 10; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; }
         .input-row { display: flex; gap: 8px; width: 100%; }
@@ -35,12 +34,10 @@
 
         @keyframes pulse { 0% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.15); } 100% { transform: translate(-50%, -50%) scale(1); } }
 
-        /* Brick Detail Overlay */
         #brick-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--sand); z-index: 1000; display: none; flex-direction: column; align-items: center; overflow-y: auto; }
         .overlay-nav { position: sticky; top: 0; width: 100%; background: white; padding: 15px; display: flex; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1100; }
         .back-btn { padding: 10px 25px; border-radius: 20px; border: none; background: var(--dark-green); color: white; font-weight: bold; cursor: pointer; }
 
-        /* ORIENTATION ANCHORS */
         .mini-lawn { width: 90%; max-width: 400px; background: var(--fig-green); color: white; padding: 10px; text-align: center; border-radius: 20px; font-weight: bold; font-size: 14px; margin: 20px 0; border: 2px solid var(--dark-green); }
         .orientation-hint { font-size: 12px; color: #666; font-style: italic; margin-bottom: 20px; }
 
@@ -96,7 +93,8 @@
         if (error) return;
         allBricks = data.map(row => {
             let rawSec = (row.section || row.Section || "").toString().toLowerCase();
-            // MAPPING: North -> Back Fig Garden, South -> Front Fig Garden
+            // FIXED: RESTORED ORIGINAL NORTH/SOUTH PLACEMENT
+            // BUT RENAMED THE LABELS
             return {
                 ...row,
                 MappedSec: rawSec.includes("north") ? "Back Fig Garden" : "Front Fig Garden",
@@ -137,7 +135,8 @@
 
         dot.style.display = "block";
         dot.style.left = "54%";
-        // Back Fig Garden (North) is at top dot, Front (South) is at bottom dot
+        // BACK GARDEN = TOP DOT (41%)
+        // FRONT GARDEN = BOTTOM DOT (66%)
         dot.style.top = (match.MappedSec === "Back Fig Garden") ? "41%" : "66%";
         previewText.innerText = match.Inscr;
     }
@@ -161,13 +160,9 @@
             <div class="orientation-hint">Facing the Island Inn Commons</div>
         `;
 
-        // Orientation logic: 
-        // If in Front Garden, lawn is UP (behind you). 
-        // If in Back Garden, lawn is DOWN (behind you).
-        if (isBack) {
-            // Bricks are further away, lawn is "Below" them on the map
-            // We'll place the lawn indicator based on that logic
-        } else {
+        // Front path has lawn ABOVE (Up)
+        // Back path has lawn BELOW (Down)
+        if (!isBack) {
             container.innerHTML += `<div class="mini-lawn">CENTRAL LAWN (This Way ↑)</div>`;
         }
         
