@@ -9,7 +9,7 @@
         :root { --fig-green: #2d5a27; --sand: #fdfaf5; --brick: #b06d50; --ocean: #0077be; --wood: #7d6e64; --highlight: #ff3b3b; }
         body { font-family: 'Georgia', serif; background-color: var(--sand); margin: 0; display: flex; height: 100vh; overflow: hidden; }
 
-        /* Sidebar (Desktop) / Top Section (Mobile) */
+        /* Sidebar/Map Header */
         .map-sidebar { 
             width: 320px; background: white; border-right: 2px solid #ddd; 
             display: flex; flex-direction: column; padding: 20px; z-index: 10; overflow-y: auto;
@@ -28,16 +28,9 @@
 
         /* Main Content */
         .main-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; scroll-behavior: smooth; }
-        .header { position: sticky; top: 0; width: 100%; background: white; padding: 15px 0; z-index: 1000; text-align: center; border-bottom: 4px solid var(--ocean); }
-        
         .search-controls { display: flex; gap: 8px; justify-content: center; align-items: center; width: 95%; max-width: 500px; margin: 0 auto; }
         #search { padding: 12px 15px; flex: 1; border-radius: 25px; border: 2px solid #aec4c2; font-size: 16px; outline: none; }
-        
-        #next-btn { 
-            padding: 10px 15px; border-radius: 20px; border: none; 
-            background: var(--fig-green); color: white; cursor: pointer; 
-            font-weight: bold; display: none; font-size: 14px;
-        }
+        #next-btn { padding: 10px 15px; border-radius: 20px; border: none; background: var(--fig-green); color: white; cursor: pointer; font-weight: bold; display: none; font-size: 14px; }
         #match-count { font-size: 12px; color: #666; margin-top: 5px; min-height: 15px; }
 
         .container { padding: 20px; width: 100%; display: flex; flex-direction: column; align-items: center; }
@@ -46,20 +39,14 @@
         .row-label { position: absolute; left: -40px; font-size: 9px; color: #bbb; }
         .row-grid { display: grid; gap: 4px; justify-content: center; }
         
-        .brick { 
-            width: 80px; height: 42px; background: var(--brick); border: 1px solid #4a3728; 
-            display: flex; align-items: center; justify-content: center; padding: 4px; 
-            font-size: 8px; font-weight: bold; text-align: center; color: white; line-height: 1.1; 
-        }
+        .brick { width: 80px; height: 42px; background: var(--brick); border: 1px solid #4a3728; display: flex; align-items: center; justify-content: center; padding: 4px; font-size: 8px; font-weight: bold; text-align: center; color: white; line-height: 1.1; }
         .brick.match { background: #ffd54f !important; color: #000 !important; border: 2px solid orange; }
         .brick.active-match { transform: scale(1.1); box-shadow: 0 0 15px rgba(0,0,0,0.4); z-index: 5; outline: 3px solid var(--highlight); }
         .brick.hidden { opacity: 0.15; filter: grayscale(1); }
         .brick.is-blank { background: #eeeae0; border: 1px dashed #ccc; color: transparent; pointer-events: none; }
         .brick.center-stone { background: var(--wood); font-size: 11px; height: 70px; border: 4px double #fff; width: 100%; grid-column: 1 / -1; }
-        
         .lawn { width: 90%; max-width: 500px; height: 50px; background: #8da58e; margin: 20px 0; border-radius: 25px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; border: 2px solid #6d8c6d; }
         
-        /* MOBILE OVERRIDE */
         @media (max-width: 850px) { 
             body { flex-direction: column; overflow-y: auto; height: auto; } 
             .map-sidebar { width: 100%; border-right: none; border-bottom: 2px solid #ddd; padding: 15px; box-sizing: border-box; }
@@ -83,16 +70,19 @@
             <div id="locator-dot"></div>
         </div>
         <p style="font-size:0.75rem; color:#666; text-align:center; margin-top:10px;">
-            Click the map to jump to the bricks.
+            <b>North Path is Top | South Path is Bottom</b><br>
+            Tap map to jump to brick.
         </p>
     </div>
 
     <div class="main-content">
         <div class="container">
-            <h3 style="color:var(--fig-green); font-size: 1rem;">NORTHERN SECTION</h3>
+            <h3 style="color:var(--fig-green); font-size: 1rem;">NORTHERN GARDEN SECTION</h3>
             <div id="north-section" class="plaza"></div>
+            
             <div class="lawn">Central Lawn Area</div>
-            <h3 style="color:var(--fig-green); font-size: 1rem;">SOUTHERN SECTION</h3>
+            
+            <h3 style="color:var(--fig-green); font-size: 1rem;">SOUTHERN ENTRANCE SECTION</h3>
             <div id="south-section" class="plaza"></div>
         </div>
     </div>
@@ -107,12 +97,19 @@
             complete: function(results) {
                 const data = results.data;
                 data.forEach(row => {
-                    row.Section = String(row.Section || "").trim().split(' ')[0];
+                    // THE CORRECTION: Swap the labels coming from the CSV
+                    let rawSection = String(row.Section || "").trim().split(' ')[0];
+                    if (rawSection === 'North') row.MappedSection = 'South';
+                    else if (rawSection === 'South') row.MappedSection = 'North';
+                    else row.MappedSection = rawSection;
+
                     row.Row = parseInt(row.Row);
                     row.Col = parseInt(row.Col);
                 });
-                renderSection('north-section', data.filter(b => b.Section === 'North'), 42); 
-                renderSection('south-section', data.filter(b => b.Section === 'South'), 40);
+
+                // Display bricks according to their corrected MappedSection
+                renderSection('north-section', data.filter(b => b.MappedSection === 'North'), 42); 
+                renderSection('south-section', data.filter(b => b.MappedSection === 'South'), 40);
             }
         });
 
@@ -142,7 +139,7 @@
                         bDiv.className = isCommons ? 'brick center-stone' : ('brick' + (isBlank ? ' is-blank' : ''));
                         bDiv.innerText = isBlank ? "" : brick.Inscription;
                         bDiv.dataset.search = (brick.Inscription + " " + (brick["Searchable Names"] || "")).toLowerCase();
-                        bDiv.dataset.section = brick.Section;
+                        bDiv.dataset.section = brick.MappedSection; // Use Corrected Section
                     } else { bDiv.className = 'brick is-blank'; }
                     rowGrid.appendChild(bDiv);
                 }
@@ -164,7 +161,8 @@
 
                 dot.style.display = 'block';
                 const centerX = '54%'; 
-                dot.style.top = (current.dataset.section === 'North') ? '72%' : '38%';
+                // Map Rendering: North is at top (38%), South is at bottom (72%)
+                dot.style.top = (current.dataset.section === 'North') ? '38%' : '72%';
                 dot.style.left = centerX;
 
                 nextBtn.style.display = matchedBricks.length > 1 ? 'block' : 'none';
