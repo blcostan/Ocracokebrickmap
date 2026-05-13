@@ -26,7 +26,7 @@
         }
 
         .hero-interface { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px; }
-        .search-area { width: 100%; max-width: 400px; margin-bottom: 10px; }
+        .search-area { width: 100%; max-width: 400px; margin-bottom: 10px; z-index: 100; }
         .input-row { display: flex; gap: 8px; }
 
         #search { 
@@ -34,12 +34,17 @@
             font-size: 16px; outline: none; box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
         }
         
-        #main-next-btn { padding: 0 15px; border-radius: 30px; border: none; background: var(--fig-green); color: white; font-weight: bold; display: none; }
+        #main-next-btn { 
+            padding: 0 15px; border-radius: 30px; border: none; 
+            background: var(--fig-green); color: white; font-weight: bold; 
+            display: none; cursor: pointer;
+        }
 
         #preview-card { 
             width: 90%; max-width: 360px; background: white; border-radius: 12px; 
             padding: 12px; border-left: 5px solid var(--fig-green); 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: none; text-align: center; margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: none; 
+            text-align: center; margin-bottom: 15px; cursor: pointer;
         }
 
         .main-map-area { position: relative; width: 100%; max-width: 800px; background: white; padding: 5px; border-radius: 15px; border: 1px solid #ddd; }
@@ -55,7 +60,7 @@
 
         #brick-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--sand); z-index: 1000; display: none; flex-direction: column; }
         .overlay-nav { width: 100%; background: white; padding: 10px; display: flex; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); flex-shrink: 0; }
-        .back-btn { padding: 8px 25px; border-radius: 20px; border: none; background: var(--dark-green); color: white; font-weight: bold; }
+        .back-btn { padding: 8px 25px; border-radius: 20px; border: none; background: var(--dark-green); color: white; font-weight: bold; cursor: pointer; }
 
         .brick-scroll-viewport { flex: 1; overflow-y: auto; padding: 40px 5px; display: flex; flex-direction: column; align-items: center; }
 
@@ -65,7 +70,7 @@
             gap: 1vw;
             margin-bottom: 1vw;
             width: 100%;
-            align-items: stretch; /* Keeps bricks in a row same height */
+            align-items: stretch;
         }
 
         .brick-unit {
@@ -81,8 +86,8 @@
             padding: 4px 2px;
             width: 15vw;
             max-width: 80px;
-            min-height: 40px; /* Base height for "brick" look */
-            word-break: break-word; /* Allows text to wrap properly */
+            min-height: 40px;
+            word-break: break-word;
             line-height: 1.1;
             box-shadow: inset 0 -1px 0 rgba(0,0,0,0.2);
             flex-shrink: 0;
@@ -92,7 +97,7 @@
         .brick-unit.current-focus {
             outline: 2px solid white;
             background: var(--highlight);
-            transform: scale(1.4); /* Reduced scale to prevent "TOO big" feeling */
+            transform: scale(1.4);
             z-index: 99;
             font-size: 9px; 
             box-shadow: 0 8px 20px rgba(0,0,0,0.4);
@@ -139,80 +144,4 @@
 <script>
     const S_URL = 'https://duanluepelrjjkulpenh.supabase.co'; 
     const S_KEY = 'sb_publishable_WHslguojU3jb1GyQBqc_MA_2w35Y2ou';
-    const gardenClient = window.supabase.createClient(S_URL, S_KEY);
-
-    let allBricks = [];
-    let currentMatches = [];
-    let matchIndex = 0;
-
-    async function loadData() {
-        const { data, error } = await gardenClient.from('Ocracoke Bricks -').select('*');
-        if (error) return;
-        allBricks = data.map(row => ({
-            ...row,
-            MappedSec: (row.section || row.Section || "").toLowerCase().includes("north") ? "Front Fig Garden" : "Back Fig Garden",
-            R: parseInt(row.row || row.Row) || 0,
-            C: parseInt(row.col || row.Col) || 0,
-            Inscr: row.inscription || row.Inscription || ""
-        }));
-    }
-
-    document.getElementById('search').oninput = (e) => {
-        const t = e.target.value.toLowerCase().trim();
-        if (t === "") { document.getElementById('map-dot').style.display = "none"; document.getElementById('preview-card').style.display = "none"; return; }
-        currentMatches = allBricks.filter(b => b.Inscr.toLowerCase().includes(t));
-        matchIndex = 0;
-        if (currentMatches.length > 0) { updateUI(); document.getElementById('preview-card').style.display = "block"; }
-    };
-
-    function updateUI() {
-        const match = currentMatches[matchIndex];
-        const dot = document.getElementById('map-dot');
-        dot.style.display = "block";
-        dot.style.left = "54%";
-        dot.style.top = (match.MappedSec === "Front Fig Garden") ? "66%" : "41%";
-        document.getElementById('preview-text').innerText = match.Inscr;
-    }
-
-    function triggerGridFromPreview() { showBrickGrid(currentMatches[matchIndex]); }
-
-    function showBrickGrid(targetMatch) {
-        const container = document.getElementById('brick-container');
-        container.innerHTML = "";
-        document.getElementById('path-label').innerText = targetMatch.MappedSec;
-        const isFront = targetMatch.MappedSec === "Front Fig Garden";
-        document.getElementById('top-lawn').style.display = isFront ? "block" : "none";
-        document.getElementById('bottom-lawn').style.display = isFront ? "none" : "block";
-
-        const sectionBricks = allBricks.filter(b => b.MappedSec === targetMatch.MappedSec);
-        let maxR = Math.max(...sectionBricks.map(b => b.R));
-        const rows = {};
-        sectionBricks.forEach(b => { if(!rows[b.R]) rows[b.R] = []; rows[b.R].push(b); });
-
-        for (let r = maxR; r >= 1; r--) {
-            if (!rows[r]) continue;
-            const rowDiv = document.createElement('div');
-            rowDiv.className = 'brick-row';
-            rows[r].sort((a, b) => a.C - b.C).forEach(b => {
-                const brickDiv = document.createElement('div');
-                const isBlank = b.Inscr.includes("[BLANK]");
-                brickDiv.className = isBlank ? 'brick-unit is-blank' : 'brick-unit';
-                if (!isBlank) {
-                    brickDiv.innerText = b.Inscr;
-                    if (b.id === targetMatch.id) {
-                        brickDiv.classList.add('current-focus');
-                        setTimeout(() => brickDiv.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
-                    }
-                }
-                rowDiv.appendChild(brickDiv);
-            });
-            container.appendChild(rowDiv);
-        }
-        document.getElementById('brick-overlay').style.display = 'flex';
-    }
-
-    function closeBricks() { document.getElementById('brick-overlay').style.display = 'none'; }
-    loadData();
-</script>
-</body>
-</html>
+    const gardenClient = window.supabase.createClient(S_URL, S
