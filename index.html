@@ -96,7 +96,7 @@
         draw('north-section', data.filter(b => b.MappedSec === "North"), true, "NORTH PATH");
         draw('south-section', data.filter(b => b.MappedSec === "South"), true, "SOUTH PATH (ENTRANCE)");
         
-        document.getElementById('status-bar').innerText = "Live: " + data.length + " bricks.";
+        document.getElementById('status-bar').innerText = "Live: " + data.length + " bricks loaded.";
     }
 
     function draw(id, bricks, isReversed, title) {
@@ -134,7 +134,6 @@
                 d.className = isBlank ? 'brick is-blank' : 'brick';
                 if (!isBlank) d.innerText = b.Inscr;
                 d.dataset.search = (b ? b.Inscr : "").toLowerCase();
-                // Store the section so the search knows where to put the dot
                 d.dataset.section = b ? b.MappedSec : "";
                 brks.appendChild(d);
             }
@@ -153,12 +152,15 @@
         }
 
         dot.style.display = "block";
-        dot.style.left = "50%"; // Centered horizontally on the path
 
         if (section === "North") {
-            dot.style.top = "25%"; // Positioned on the North Path illustration
+            // ADJUSTED: 4% right from center (54%) and 10% down from original (35%)
+            dot.style.left = "54%"; 
+            dot.style.top = "35%"; 
         } else {
-            dot.style.top = "75%"; // Positioned on the South Path illustration
+            // Keeping South Path as is for now
+            dot.style.left = "50%";
+            dot.style.top = "75%"; 
         }
     }
 
@@ -178,7 +180,6 @@
         });
 
         if (currentMatches.length > 0 && t !== "") {
-            // Default dot to the first match
             updateMapDot(currentMatches[0]);
         } else {
             dot.style.display = "none";
@@ -196,7 +197,6 @@
         target.classList.add('current-match');
         target.scrollIntoView({ behavior: 'smooth', block: 'center' });
         
-        // Move the dot on the map rendering
         updateMapDot(target);
     };
 
