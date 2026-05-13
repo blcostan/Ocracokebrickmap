@@ -53,52 +53,49 @@
 <div class="main-content">
     <h3 style="color:var(--fig-green)">NORTHERN GARDEN SECTION</h3>
     <div id="north-section" class="plaza"></div>
+    
     <div class="lawn">CENTRAL LAWN</div>
+    
     <h3 style="color:var(--fig-green)">SOUTHERN ENTRANCE SECTION</h3>
     <div id="south-section" class="plaza"></div>
 </div>
 
 <script>
-    // We use a proxy to bypass potential browser blocking (CORS)
     const REAL_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ3j2xmIEyMKMz7nwsVM4HaZuXtBTQmyyJijPGkhQULJQbB2NcD0ZnrW_WWTKYe4FmD6WsZjD_TXh6-/pub?output=csv';
     
-    function loadData() {
-        Papa.parse(REAL_URL, {
-            download: true,
-            header: true,
-            skipEmptyLines: true,
-            complete: function(results) {
-                if(results.data && results.data.length > 0) {
-                    initApp(results.data);
-                } else {
-                    document.getElementById('status-bar').innerText = "Data loaded but empty.";
-                }
-            },
-            error: function() {
-                document.getElementById('status-bar').innerHTML = "Connection Blocked. <button onclick='location.reload()'>Retry</button>";
-            }
-        });
-    }
-
     let matchedBricks = [];
     let currentMatchIndex = 0;
 
-    function initApp(data) {
-        document.getElementById('status-bar').innerText = "Loaded " + data.length + " bricks.";
-        data.forEach(row => {
-            let sec = String(row.Section || "").trim().toLowerCase();
-            row.MappedSec = sec.includes("south") ? "North" : "South";
-            row.R = parseInt(row.Row) || 0;
-            row.C = parseInt(row.Col) || 0;
-        });
+    Papa.parse(REAL_URL, {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+            const data = results.data;
+            if(!data || data.length === 0) {
+                document.getElementById('status-bar').innerText = "Error: No data found.";
+                return;
+            }
+            
+            document.getElementById('status-bar').innerText = "Loaded " + data.length + " bricks.";
+            
+            data.forEach(row => {
+                let sec = String(row.Section || "").trim().toLowerCase();
+                // Flip Logic: Spreadsheet "North" = Physical South Path
+                row.MappedSec = sec.includes("north") ? "South" : "North";
+                row.R = parseInt(row.Row) || 0;
+                row.C = parseInt(row.Col) || 0;
+            });
 
-        renderSection('north-section', data.filter(b => b.MappedSec === "North"), true);
-        renderSection('south-section', data.filter(b => b.MappedSec === "South"), false);
-    }
+            // NORTH PATH: Row 1 near lawn (Reversed: 42 to 1)
+            renderSection('north-section', data.filter(b => b.MappedSec === "North"), true);
+            // SOUTH PATH: Row 1 at entrance (Standard: 1 to 42)
+            renderSection('south-section', data.filter(b => b.MappedSec === "South"), false);
+        }
+    });
 
     function renderSection(id, bricks, isReversed) {
         const container = document.getElementById(id);
-        container.innerHTML = "";
         const gridData = {};
         let maxR = 0;
 
@@ -181,11 +178,3 @@
 
     function scrollToCurrent() {
         if (matchedBricks[currentMatchIndex]) {
-            matchedBricks[currentMatchIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }
-
-    loadData();
-</script>
-</body>
-</html>
