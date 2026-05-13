@@ -9,12 +9,7 @@
         :root { --fig-green: #2d5a27; --sand: #fdfaf5; --brick: #b06d50; --ocean: #0077be; --wood: #7d6e64; --highlight: #ff3b3b; }
         body { font-family: 'Georgia', serif; background-color: var(--sand); margin: 0; display: flex; height: 100vh; overflow: hidden; }
 
-        /* Sidebar/Map Header */
-        .map-sidebar { 
-            width: 320px; background: white; border-right: 2px solid #ddd; 
-            display: flex; flex-direction: column; padding: 20px; z-index: 10; overflow-y: auto;
-        }
-        
+        .map-sidebar { width: 320px; background: white; border-right: 2px solid #ddd; display: flex; flex-direction: column; padding: 20px; z-index: 10; overflow-y: auto; }
         .map-container { position: relative; width: 100%; border: 3px solid #ccc; border-radius: 8px; overflow: hidden; cursor: pointer; background: #eee; }
         .map-container img { width: 100%; display: block; pointer-events: none; }
         
@@ -26,7 +21,6 @@
         }
         @keyframes pulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.3); } }
 
-        /* Main Content */
         .main-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; scroll-behavior: smooth; }
         .search-controls { display: flex; gap: 8px; justify-content: center; align-items: center; width: 95%; max-width: 500px; margin: 0 auto; }
         #search { padding: 12px 15px; flex: 1; border-radius: 25px; border: 2px solid #aec4c2; font-size: 16px; outline: none; }
@@ -70,7 +64,7 @@
             <div id="locator-dot"></div>
         </div>
         <p style="font-size:0.75rem; color:#666; text-align:center; margin-top:10px;">
-            <b>North Path is Top | South Path is Bottom</b><br>
+            <b>North is Top | South is Bottom</b><br>
             Tap map to jump to brick.
         </p>
     </div>
@@ -97,8 +91,8 @@
             complete: function(results) {
                 const data = results.data;
                 data.forEach(row => {
-                    // THE CORRECTION: Swap the labels coming from the CSV
                     let rawSection = String(row.Section || "").trim().split(' ')[0];
+                    // Correcting spreadsheet labels
                     if (rawSection === 'North') row.MappedSection = 'South';
                     else if (rawSection === 'South') row.MappedSection = 'North';
                     else row.MappedSection = rawSection;
@@ -107,18 +101,23 @@
                     row.Col = parseInt(row.Col);
                 });
 
-                // Display bricks according to their corrected MappedSection
-                renderSection('north-section', data.filter(b => b.MappedSection === 'North'), 42); 
-                renderSection('south-section', data.filter(b => b.MappedSection === 'South'), 40);
+                // North (Spreadsheet "South"): R1 at bottom (Near Lawn)
+                renderSection('north-section', data.filter(b => b.MappedSection === 'North'), 42, true); 
+                // South (Spreadsheet "North"): R1 at bottom (Entrance / Opposite Lawn)
+                renderSection('south-section', data.filter(b => b.MappedSection === 'South'), 40, true);
             }
         });
 
-        function renderSection(id, bricks, maxRow) {
+        function renderSection(id, bricks, maxRow, rowOneAtBottom) {
             const container = document.getElementById(id);
             const grid = {};
             bricks.forEach(b => { if (!grid[b.Row]) grid[b.Row] = {}; grid[b.Row][b.Col] = b; });
 
-            for (let r = 1; r <= maxRow; r++) {
+            const start = rowOneAtBottom ? maxRow : 1;
+            const end = rowOneAtBottom ? 1 : maxRow;
+            const step = rowOneAtBottom ? -1 : 1;
+
+            for (let r = start; rowOneAtBottom ? r >= end : r <= end; r += step) {
                 const rowData = grid[r] || {};
                 if (Object.keys(rowData).length === 0) continue;
                 const maxCol = Math.max(...Object.keys(rowData).map(Number));
@@ -139,7 +138,7 @@
                         bDiv.className = isCommons ? 'brick center-stone' : ('brick' + (isBlank ? ' is-blank' : ''));
                         bDiv.innerText = isBlank ? "" : brick.Inscription;
                         bDiv.dataset.search = (brick.Inscription + " " + (brick["Searchable Names"] || "")).toLowerCase();
-                        bDiv.dataset.section = brick.MappedSection; // Use Corrected Section
+                        bDiv.dataset.section = brick.MappedSection;
                     } else { bDiv.className = 'brick is-blank'; }
                     rowGrid.appendChild(bDiv);
                 }
@@ -161,7 +160,6 @@
 
                 dot.style.display = 'block';
                 const centerX = '54%'; 
-                // Map Rendering: North is at top (38%), South is at bottom (72%)
                 dot.style.top = (current.dataset.section === 'North') ? '38%' : '72%';
                 dot.style.left = centerX;
 
