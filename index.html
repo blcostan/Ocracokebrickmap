@@ -11,7 +11,7 @@
 
         .map-sidebar { width: 320px; background: white; border-right: 2px solid #ddd; display: flex; flex-direction: column; padding: 20px; z-index: 10; overflow-y: auto; }
         .map-container { position: relative; width: 100%; border: 3px solid #ccc; border-radius: 8px; overflow: hidden; cursor: pointer; background: #eee; }
-        .map-container img { width: 100%; display: block; pointer-events: none; }
+        .map-container img { width: 100%; display: block; }
         
         #locator-dot {
             position: absolute; width: 24px; height: 24px; background: var(--highlight); 
@@ -24,11 +24,13 @@
         .main-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; scroll-behavior: smooth; }
         .search-controls { display: flex; gap: 8px; justify-content: center; align-items: center; width: 95%; max-width: 500px; margin: 0 auto; }
         #search { padding: 12px 15px; flex: 1; border-radius: 25px; border: 2px solid #aec4c2; font-size: 16px; outline: none; }
-        #next-btn { padding: 10px 15px; border-radius: 20px; border: none; background: var(--fig-green); color: white; cursor: pointer; font-weight: bold; display: none; font-size: 14px; }
-        #match-count { font-size: 12px; color: #666; margin-top: 5px; min-height: 15px; }
+        #next-btn { padding: 10px 15px; border-radius: 20px; border: none; background: var(--fig-green); color: white; cursor: pointer; font-weight: bold; display: none; }
+        
+        /* Debug Status Bar */
+        #status-bar { font-size: 10px; color: #888; margin-bottom: 10px; text-align: center; }
 
         .container { padding: 20px; width: 100%; display: flex; flex-direction: column; align-items: center; }
-        .plaza { display: inline-flex; flex-direction: column; gap: 4px; padding: 10px; margin-bottom: 30px; align-items: center; }
+        .plaza { display: inline-flex; flex-direction: column; gap: 4px; padding: 10px; margin-bottom: 30px; align-items: center; min-height: 50px; }
         .row-container { display: flex; align-items: center; justify-content: center; width: 100%; position: relative; margin-bottom: 2px; }
         .row-label { position: absolute; left: -40px; font-size: 9px; color: #bbb; }
         .row-grid { display: grid; gap: 4px; justify-content: center; }
@@ -38,48 +40,33 @@
         .brick.active-match { transform: scale(1.1); box-shadow: 0 0 15px rgba(0,0,0,0.4); z-index: 5; outline: 3px solid var(--highlight); }
         .brick.hidden { opacity: 0.15; filter: grayscale(1); }
         .brick.is-blank { background: #eeeae0; border: 1px dashed #ccc; color: transparent; pointer-events: none; }
-        
-        /* Commons bricks now just look like standard bricks but perhaps a slightly different wood-tone */
         .brick.is-commons { background: var(--wood); border: 2px solid #fff; }
         
         .lawn { width: 90%; max-width: 500px; height: 50px; background: #8da58e; margin: 20px 0; border-radius: 25px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; border: 2px solid #6d8c6d; }
-        
-        @media (max-width: 850px) { 
-            body { flex-direction: column; overflow-y: auto; height: auto; } 
-            .map-sidebar { width: 100%; border-right: none; border-bottom: 2px solid #ddd; padding: 15px; box-sizing: border-box; }
-            .main-content { overflow-y: visible; height: auto; }
-            .brick { width: 15vw; height: 10vw; font-size: 1.5vw; } 
-            .row-label { left: -25px; }
-        }
     </style>
 </head>
 <body>
 
     <div class="map-sidebar">
+        <div id="status-bar">Connecting to Spreadsheet...</div>
         <div class="search-controls" style="margin-bottom:15px;">
             <input type="text" id="search" placeholder="Search a name...">
             <button id="next-btn">NEXT</button>
         </div>
-        <div id="match-count" style="text-align:center; margin-bottom:10px;"></div>
+        <div id="match-count" style="text-align:center; margin-bottom:10px; font-size:12px;"></div>
 
         <div class="map-container" onclick="scrollToPath()">
             <img src="rendering%20of%20garden.avif" alt="Garden Map">
             <div id="locator-dot"></div>
         </div>
-        <p style="font-size:0.75rem; color:#666; text-align:center; margin-top:10px;">
-            <b>North is Top | South is Bottom</b><br>
-            Tap map to jump to brick.
-        </p>
     </div>
 
     <div class="main-content">
         <div class="container">
-            <h3 style="color:var(--fig-green); font-size: 1rem;">NORTHERN GARDEN SECTION</h3>
+            <h3>NORTHERN GARDEN SECTION</h3>
             <div id="north-section" class="plaza"></div>
-            
             <div class="lawn">Central Lawn Area</div>
-            
-            <h3 style="color:var(--fig-green); font-size: 1rem;">SOUTHERN ENTRANCE SECTION</h3>
+            <h3>SOUTHERN ENTRANCE SECTION</h3>
             <div id="south-section" class="plaza"></div>
         </div>
     </div>
@@ -91,53 +78,71 @@
 
         Papa.parse(CSV_URL, {
             download: true, header: true, skipEmptyLines: true,
+            error: function(err) { document.getElementById('status-bar').innerText = "Error loading CSV: " + err; },
             complete: function(results) {
                 const data = results.data;
-                data.forEach(row => {
-                    let rawSection = String(row.Section || "").trim().split(' ')[0];
-                    if (rawSection === 'North') row.MappedSection = 'South';
-                    else if (rawSection === 'South') row.MappedSection = 'North';
-                    else row.MappedSection = rawSection;
+                document.getElementById('status-bar').innerText = "Loaded " + data.length + " rows from sheet.";
 
-                    row.Row = parseInt(row.Row);
-                    row.Col = parseInt(row.Col);
+                data.forEach(row => {
+                    let rawSec = String(row.Section || "").trim();
+                    // FLIP LOGIC
+                    if (rawSec.startsWith('North')) row.MappedSection = 'South';
+                    else if (rawSec.startsWith('South')) row.MappedSection = 'North';
+                    else row.MappedSection = rawSec;
+
+                    row.Row = parseInt(row.Row) || 0;
+                    row.Col = parseInt(row.Col) || 0;
                 });
 
-                renderSection('north-section', data.filter(b => b.MappedSection === 'North'), 42, true); 
-                renderSection('south-section', data.filter(b => b.MappedSection === 'South'), 42, true);
+                renderSection('north-section', data.filter(b => b.MappedSection === 'North'), true); 
+                renderSection('south-section', data.filter(b => b.MappedSection === 'South'), true);
             }
         });
 
-        function renderSection(id, bricks, maxRow, rowOneAtBottom) {
+        function renderSection(id, bricks, rowOneAtBottom) {
             const container = document.getElementById(id);
+            if (bricks.length === 0) { container.innerHTML = "<p style='color:red'>No data for this section</p>"; return; }
+
             const grid = {};
-            bricks.forEach(b => { if (!grid[b.Row]) grid[b.Row] = {}; grid[b.Row][b.Col] = b; });
+            let maxR = 0;
+            bricks.forEach(b => { 
+                if (b.Row > maxR) maxR = b.Row;
+                if (!grid[b.Row]) grid[b.Row] = {}; 
+                grid[b.Row][b.Col] = b; 
+            });
 
-            const start = rowOneAtBottom ? maxRow : 1;
-            const end = rowOneAtBottom ? 1 : maxRow;
-            const step = rowOneAtBottom ? -1 : 1;
+            // Loop through all possible rows found in data
+            for (let r = (rowOneAtBottom ? maxR : 1); rowOneAtBottom ? r >= 1 : r <= maxR; rowOneAtBottom ? r-- : r++) {
+                const rowData = grid[r];
+                if (!rowData) continue; 
 
-            for (let r = start; rowOneAtBottom ? r >= end : r <= end; r += step) {
-                const rowData = grid[r] || {};
-                if (Object.keys(rowData).length === 0) continue;
-                const maxCol = Math.max(...Object.keys(rowData).map(Number));
                 const rowWrapper = document.createElement('div');
                 rowWrapper.className = 'row-container';
-                const label = document.createElement('div'); label.className = 'row-label'; label.innerText = 'R' + r;
-                rowWrapper.appendChild(label);
+                rowWrapper.innerHTML = `<div class="row-label">R${r}</div>`;
+                
                 const rowGrid = document.createElement('div');
                 rowGrid.className = 'row-grid';
-                rowGrid.style.gridTemplateColumns = `repeat(${maxCol}, 1fr)`;
+                const cols = Object.keys(rowData).map(Number);
+                const maxC = Math.max(...cols);
+                rowGrid.style.gridTemplateColumns = `repeat(${maxC}, 1fr)`;
 
-                for (let c = 1; c <= maxCol; c++) {
+                for (let c = 1; c <= maxC; c++) {
                     const brick = rowData[c];
                     const bDiv = document.createElement('div');
                     if (brick) {
-                        const isCommons = brick.Inscription && brick.Inscription.includes("COMMONS");
+                        const isCommons = (brick.Inscription || "").includes("COMMONS");
                         const isBlank = (brick.Inscription || "").includes("[BLANK]");
-                        
-                        // COMMONS bricks now use standard brick sizing
                         bDiv.className = isCommons ? 'brick is-commons' : ('brick' + (isBlank ? ' is-blank' : ''));
                         bDiv.innerText = isBlank ? "" : brick.Inscription;
                         bDiv.dataset.search = (brick.Inscription + " " + (brick["Searchable Names"] || "")).toLowerCase();
-                        bDiv.dataset.
+                        bDiv.dataset.section = brick.MappedSection;
+                    } else { bDiv.className = 'brick is-blank'; }
+                    rowGrid.appendChild(bDiv);
+                }
+                rowWrapper.appendChild(rowGrid);
+                container.appendChild(rowWrapper);
+            }
+        }
+
+        document.getElementById('search').addEventListener('input', (e) => {
+            const term = e.target.value
