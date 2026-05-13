@@ -11,15 +11,9 @@
         
         .map-sidebar { width: 320px; background: white; border-right: 2px solid #ddd; padding: 20px; display: flex; flex-direction: column; overflow-y: auto; z-index: 10; }
         .map-container { position: relative; width: 100%; border: 2px solid #ccc; border-radius: 8px; overflow: hidden; cursor: pointer; }
-        .map-container img { width: 100%; display: block; pointer-events: none; }
+        .map-container img { width: 100%; display: block; }
         
-        #locator-dot { 
-            position: absolute; width: 22px; height: 22px; background: var(--highlight); 
-            border: 3px solid white; border-radius: 50%; display: none; 
-            transform: translate(-50%, -50%); z-index: 100; 
-            box-shadow: 0 0 15px rgba(255, 59, 59, 0.8);
-            animation: pulse 1s infinite;
-        }
+        #locator-dot { position: absolute; width: 22px; height: 22px; background: var(--highlight); border: 3px solid white; border-radius: 50%; display: none; transform: translate(-50%, -50%); z-index: 100; animation: pulse 1s infinite; }
         @keyframes pulse { 0% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.3); } 100% { transform: translate(-50%, -50%) scale(1); } }
 
         .main-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 20px; scroll-behavior: smooth; }
@@ -54,18 +48,144 @@
         <img src="rendering%20of%20garden.avif">
         <div id="locator-dot"></div>
     </div>
-    <p style="font-size:10px; color:#999; text-align:center; margin-top:10px;">Tap map to jump to brick</p>
 </div>
 
 <div class="main-content">
     <h3 style="color:var(--fig-green)">NORTHERN GARDEN SECTION</h3>
     <div id="north-section" class="plaza"></div>
-    
     <div class="lawn">CENTRAL LAWN</div>
-    
     <h3 style="color:var(--fig-green)">SOUTHERN ENTRANCE SECTION</h3>
     <div id="south-section" class="plaza"></div>
 </div>
 
 <script>
-    const CSV_URL = '
+    // We use a proxy to bypass potential browser blocking (CORS)
+    const REAL_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ3j2xmIEyMKMz7nwsVM4HaZuXtBTQmyyJijPGkhQULJQbB2NcD0ZnrW_WWTKYe4FmD6WsZjD_TXh6-/pub?output=csv';
+    
+    function loadData() {
+        Papa.parse(REAL_URL, {
+            download: true,
+            header: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+                if(results.data && results.data.length > 0) {
+                    initApp(results.data);
+                } else {
+                    document.getElementById('status-bar').innerText = "Data loaded but empty.";
+                }
+            },
+            error: function() {
+                document.getElementById('status-bar').innerHTML = "Connection Blocked. <button onclick='location.reload()'>Retry</button>";
+            }
+        });
+    }
+
+    let matchedBricks = [];
+    let currentMatchIndex = 0;
+
+    function initApp(data) {
+        document.getElementById('status-bar').innerText = "Loaded " + data.length + " bricks.";
+        data.forEach(row => {
+            let sec = String(row.Section || "").trim().toLowerCase();
+            row.MappedSec = sec.includes("south") ? "North" : "South";
+            row.R = parseInt(row.Row) || 0;
+            row.C = parseInt(row.Col) || 0;
+        });
+
+        renderSection('north-section', data.filter(b => b.MappedSec === "North"), true);
+        renderSection('south-section', data.filter(b => b.MappedSec === "South"), false);
+    }
+
+    function renderSection(id, bricks, isReversed) {
+        const container = document.getElementById(id);
+        container.innerHTML = "";
+        const gridData = {};
+        let maxR = 0;
+
+        bricks.forEach(b => {
+            if (b.R > maxR) maxR = b.R;
+            if (!gridData[b.R]) gridData[b.R] = {};
+            gridData[b.R][b.C] = b;
+        });
+
+        const start = isReversed ? maxR : 1;
+        const end = isReversed ? 1 : maxR;
+        const step = isReversed ? -1 : 1;
+
+        for (let r = start; isReversed ? r >= end : r <= end; r += step) {
+            if (!gridData[r]) continue;
+            const rowWrapper = document.createElement('div');
+            rowWrapper.className = 'row-container';
+            rowWrapper.innerHTML = `<div class="row-label">R${r}</div>`;
+            const rowGrid = document.createElement('div');
+            rowGrid.className = 'row-grid';
+            
+            const cols = Object.keys(gridData[r]).map(Number);
+            const maxC = Math.max(...cols);
+            rowGrid.style.gridTemplateColumns = `repeat(${maxC}, 1fr)`;
+
+            for (let c = 1; c <= maxC; c++) {
+                const b = gridData[r][c];
+                const div = document.createElement('div');
+                const isBlank = !b || (b.Inscription || "").includes("[BLANK]");
+                div.className = isBlank ? 'brick is-blank' : 'brick';
+                div.innerText = isBlank ? "" : b.Inscription;
+                div.dataset.search = (b ? (b.Inscription + " " + (b["Searchable Names"] || "")) : "").toLowerCase();
+                div.dataset.sec = b ? b.MappedSec : "";
+                rowGrid.appendChild(div);
+            }
+            rowWrapper.appendChild(rowGrid);
+            container.appendChild(rowWrapper);
+        }
+    }
+
+    document.getElementById('search').addEventListener('input', function(e) {
+        const term = e.target.value.toLowerCase().trim();
+        matchedBricks = [];
+        currentMatchIndex = 0;
+        document.querySelectorAll('.brick').forEach(b => {
+            const match = term !== "" && b.dataset.search.includes(term);
+            b.classList.toggle('match', match);
+            b.classList.toggle('hidden', term !== "" && !match);
+            if(match) matchedBricks.push(b);
+        });
+        updateNavigation();
+    });
+
+    function updateNavigation() {
+        const dot = document.getElementById('locator-dot');
+        const nextBtn = document.getElementById('next-btn');
+        const countDisplay = document.getElementById('match-count');
+        document.querySelectorAll('.brick').forEach(b => b.classList.remove('active-match'));
+
+        if (matchedBricks.length > 0) {
+            const current = matchedBricks[currentMatchIndex];
+            current.classList.add('active-match');
+            dot.style.display = 'block';
+            dot.style.left = "54%";
+            dot.style.top = (current.dataset.sec === "North") ? "35%" : "70%";
+            nextBtn.style.display = matchedBricks.length > 1 ? 'block' : 'none';
+            countDisplay.innerText = `${matchedBricks.length} results (#${currentMatchIndex + 1})`;
+        } else {
+            dot.style.display = 'none';
+            nextBtn.style.display = 'none';
+            countDisplay.innerText = "";
+        }
+    }
+
+    document.getElementById('next-btn').onclick = () => {
+        currentMatchIndex = (currentMatchIndex + 1) % matchedBricks.length;
+        updateNavigation();
+        scrollToCurrent();
+    };
+
+    function scrollToCurrent() {
+        if (matchedBricks[currentMatchIndex]) {
+            matchedBricks[currentMatchIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
+    loadData();
+</script>
+</body>
+</html>
