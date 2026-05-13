@@ -57,20 +57,29 @@
 
     function renderGarden(data) {
         data.forEach(row => {
-            let sec = (row.section || row.Section || "").toLowerCase();
+            // Find the Section column regardless of capitalization
+            let rawSec = (row.section || row.Section || "").toString().toLowerCase();
             
-            // CORRECTION: Database North = South Path | Database South = North Path
-            row.MappedSec = sec.includes("north") ? "South" : "North";
+            /** * SWAP LOGIC:
+             * If DB says "North", we put it in the South Path.
+             * Otherwise (if DB says "South" or anything else), we put it in the North Path.
+             */
+            if (rawSec.includes("north")) {
+                row.MappedSec = "South";
+            } else {
+                row.MappedSec = "North";
+            }
             
             row.R = parseInt(row.row || row.Row) || 0;
             row.C = parseInt(row.col || row.Col) || 0;
             row.Inscr = row.inscription || row.Inscription || "";
         });
 
-        // NORTH PATH (Database says "South"): Row 1 is near the lawn (Reversed)
+        // Show bricks in the layout
+        // North Path (Labels: Row 1 near Lawn)
         draw('north-section', data.filter(b => b.MappedSec === "North"), true, "NORTH PATH");
         
-        // SOUTH PATH (Database says "North"): Row 1 is at the entrance (Normal)
+        // South Path (Labels: Row 1 at Entrance)
         draw('south-section', data.filter(b => b.MappedSec === "South"), false, "SOUTH PATH (ENTRANCE)");
         
         document.getElementById('status-bar').innerText = "Live: " + data.length + " bricks.";
@@ -79,6 +88,9 @@
     function draw(id, bricks, isReversed, title) {
         const div = document.getElementById(id);
         div.innerHTML = `<h2 style="color:var(--fig-green)">${title}</h2>`;
+        
+        if (bricks.length === 0) return;
+
         const grid = {};
         let maxR = 0;
         
@@ -96,4 +108,35 @@
             if (!grid[r]) continue;
             const wrap = document.createElement('div');
             wrap.className = 'row-container';
-            wrap.innerHTML = `<div class="row-
+            wrap.innerHTML = `<div class="row-label">Row ${r}</div>`;
+            const brks = document.createElement('div');
+            brks.className = 'row-bricks';
+            
+            const cols = Object.keys(grid[r]).map(Number);
+            const maxC = Math.max(...cols);
+            
+            for (let c = 1; c <= maxC; c++) {
+                const b = grid[r][c];
+                const d = document.createElement('div');
+                const isBlank = !b || (b.Inscr && b.Inscr.includes("[BLANK]"));
+                d.className = isBlank ? 'brick is-blank' : 'brick';
+                if (!isBlank) d.innerText = b.Inscr;
+                d.dataset.search = (b ? b.Inscr : "").toLowerCase();
+                brks.appendChild(d);
+            }
+            wrap.appendChild(brks);
+            div.appendChild(wrap);
+        }
+    }
+
+    document.getElementById('search').oninput = (e) => {
+        const t = e.target.value.toLowerCase().trim();
+        document.querySelectorAll('.brick').forEach(b => {
+            b.classList.toggle('match', t !== "" && b.dataset.search.includes(t));
+        });
+    };
+
+    fetchGarden();
+</script>
+</body>
+</html>
