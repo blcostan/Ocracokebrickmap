@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0">
     <title>Island Inn Garden Finder</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -21,44 +21,38 @@
             display: flex; 
             flex-direction: column; 
             min-height: 100vh; 
-            overflow-y: auto; 
             color: #333; 
         }
         
         #app-main-title {
-            text-align: center; color: var(--dark-green); font-size: 26px; 
+            text-align: center; color: var(--dark-green); font-size: 24px; 
             margin-top: 15px; margin-bottom: 5px; font-weight: bold;
             letter-spacing: 1px; padding: 0 10px;
         }
 
         .hero-interface { 
             flex: 1; display: flex; flex-direction: column; align-items: center; 
-            justify-content: flex-start; padding: 20px; position: relative;
-            padding-bottom: 50px;
+            justify-content: flex-start; padding: 15px; position: relative;
         }
 
         .search-area { width: 100%; max-width: 400px; z-index: 10; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; }
         .input-row { display: flex; gap: 8px; width: 100%; }
 
         #search { flex: 1; padding: 15px; border-radius: 30px; border: 2px solid var(--fig-green); font-size: 18px; outline: none; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; }
-        #main-next-btn { padding: 0 20px; border-radius: 30px; border: none; background: var(--fig-green); color: white; font-weight: bold; cursor: pointer; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        #main-next-btn { padding: 0 20px; border-radius: 30px; border: none; background: var(--fig-green); color: white; font-weight: bold; cursor: pointer; display: none; }
 
-        /* Preview Card is now visually clickable */
         #preview-card { 
             width: 100%; max-width: 360px; background: white; border-radius: 12px; 
             padding: 15px; border-left: 5px solid var(--fig-green); 
             box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: none; 
             text-align: center; margin-bottom: 15px; cursor: pointer;
-            transition: transform 0.1s ease;
         }
-        #preview-card:active { transform: scale(0.98); }
 
         #preview-text { font-weight: bold; font-size: 16px; color: var(--brick); margin-bottom: 4px; display: block; }
-        #preview-meta { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
 
         .main-map-area { 
-            position: relative; width: 95%; max-width: 800px; height: auto; 
-            background: white; padding: 10px; border-radius: 15px; 
+            position: relative; width: 100%; max-width: 800px; 
+            background: white; padding: 5px; border-radius: 15px; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #ddd; 
         }
         .main-map-area img { width: 100%; display: block; border-radius: 10px; }
@@ -66,27 +60,77 @@
         #map-dot { 
             position: absolute; width: 38px; height: 38px; background: var(--highlight); 
             border: 5px solid white; border-radius: 50%; display: none; 
-            box-shadow: 0 0 20px rgba(255, 59, 59, 0.8); z-index: 20; 
             transform: translate(-50%, -50%); cursor: pointer; 
-            animation: pulse 1.5s infinite; box-sizing: border-box; 
+            animation: pulse 1.5s infinite; z-index: 20;
         }
 
         @keyframes pulse { 0% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.15); } 100% { transform: translate(-50%, -50%) scale(1); } }
 
-        #brick-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--sand); z-index: 1000; display: none; flex-direction: column; align-items: center; overflow-y: auto; }
-        .overlay-nav { position: sticky; top: 0; width: 100%; background: white; padding: 15px; display: flex; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1100; }
+        /* BRICK OVERLAY - FULL SCREEN FIT */
+        #brick-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: var(--sand); z-index: 1000; display: none; flex-direction: column; 
+        }
+        
+        .overlay-nav { width: 100%; background: white; padding: 15px; display: flex; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); flex-shrink: 0; }
         .back-btn { padding: 10px 25px; border-radius: 20px; border: none; background: var(--dark-green); color: white; font-weight: bold; cursor: pointer; }
 
-        .mini-lawn { width: 90%; max-width: 400px; background: var(--fig-green); color: white; padding: 10px; text-align: center; border-radius: 20px; font-weight: bold; font-size: 14px; margin: 20px 0; border: 2px solid var(--dark-green); }
-        .orientation-hint { font-size: 12px; color: #666; font-style: italic; margin-bottom: 20px; }
+        .brick-scroll-viewport {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden; /* Prevent horizontal scroll, force fit */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+        }
 
-        .brick-view { padding: 20px 10px; display: flex; flex-direction: column; align-items: center; width: 100%; }
-        .row-bricks { display: flex; gap: 4px; margin-bottom: 4px; }
-        .brick { width: 85px; min-height: 50px; background: var(--brick); color: white; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 8px; font-weight: bold; padding: 4px; box-sizing: border-box; border-radius: 2px; }
-        .brick.current-focus { border: 4px solid var(--highlight); transform: scale(1.1); z-index: 10; box-shadow: 0 0 15px rgba(0,0,0,0.4); }
+        .brick-view { 
+            width: 100%;
+            max-width: 600px; /* Limits size on desktop so it doesn't get weirdly huge */
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+        }
+
+        .row-bricks { 
+            display: flex; 
+            gap: 2px; 
+            margin-bottom: 2px; 
+            width: 100%; /* Force row to match container width */
+        }
+
+        .brick { 
+            flex: 1; /* Each brick takes equal share of the row width */
+            aspect-ratio: 3 / 2; /* Maintains brick shape regardless of width */
+            background: var(--brick); 
+            color: white; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            text-align: center; 
+            font-size: min(2vw, 9px); /* Font scales based on screen width */
+            font-weight: bold; 
+            padding: 2px; 
+            box-sizing: border-box; 
+            border-radius: 2px; 
+            overflow: hidden;
+            word-wrap: break-word;
+        }
+
+        .brick.current-focus { 
+            outline: 3px solid var(--highlight);
+            outline-offset: -3px;
+            z-index: 10; 
+            background: #d45b4a; /* Slightly lighter to stand out */
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+
         .brick.is-blank { background: #dcd7cc; color: transparent; border: 1px dashed #bbb; }
 
-        .path-title { color: var(--dark-green); font-size: 22px; margin-bottom: 5px; text-align: center; }
+        .mini-lawn { width: 100%; background: var(--fig-green); color: white; padding: 8px; text-align: center; border-radius: 10px; font-weight: bold; font-size: 12px; margin: 15px 0; border: 2px solid var(--dark-green); }
+        .path-title { color: var(--dark-green); font-size: 20px; margin-bottom: 5px; text-align: center; }
     </style>
 </head>
 <body>
@@ -96,15 +140,14 @@
 <div class="hero-interface">
     <div class="search-area">
         <div class="input-row">
-            <input type="text" id="search" placeholder="Enter name...">
+            <input type="text" id="search" placeholder="Search a name...">
             <button id="main-next-btn">Next</button>
         </div>
     </div>
 
     <div id="preview-card" onclick="triggerGridFromPreview()">
-        <span id="preview-meta">Selected Brick (Tap to View Path):</span>
         <span id="preview-text"></span>
-        <div style="font-size: 10px; color: var(--dark-green); margin-top: 8px;">Tap here or red dot to see brick location ↑</div>
+        <div style="font-size: 10px; color: var(--dark-green); margin-top: 5px;">Tap to view on path ↑</div>
     </div>
 
     <div class="main-map-area">
@@ -117,7 +160,9 @@
     <div class="overlay-nav">
         <button class="back-btn" onclick="closeBricks()">← Back to Map</button>
     </div>
-    <div class="brick-view" id="brick-content"></div>
+    <div class="brick-scroll-viewport" id="scroll-area">
+        <div class="brick-view" id="brick-content"></div>
+    </div>
 </div>
 
 <script>
@@ -171,40 +216,31 @@
         const dot = document.getElementById('map-dot');
         const previewText = document.getElementById('preview-text');
         const match = currentMatches[matchIndex];
-
         dot.style.display = "block";
         dot.style.left = "54%";
         dot.style.top = (match.MappedSec === "Front Fig Garden") ? "66%" : "41%";
-        
         previewText.innerText = match.Inscr;
     }
 
     document.getElementById('main-next-btn').onclick = (e) => {
-        e.stopPropagation(); // Prevent triggering card click
+        e.stopPropagation();
         matchIndex = (matchIndex + 1) % currentMatches.length;
         updateUI();
     };
 
-    // Card click logic
     function triggerGridFromPreview() {
-        if (currentMatches.length > 0) {
-            showBrickGrid(currentMatches[matchIndex]);
-        }
+        if (currentMatches.length > 0) showBrickGrid(currentMatches[matchIndex]);
     }
 
     document.getElementById('map-dot').onclick = () => {
-        const match = currentMatches[matchIndex];
-        showBrickGrid(match);
+        showBrickGrid(currentMatches[matchIndex]);
     };
 
     function showBrickGrid(targetMatch) {
         const container = document.getElementById('brick-content');
         const isFront = targetMatch.MappedSec === "Front Fig Garden";
 
-        container.innerHTML = `
-            <div class="path-title">${targetMatch.MappedSec}</div>
-            <div class="orientation-hint">Facing the Island Inn Commons</div>
-        `;
+        container.innerHTML = `<div class="path-title">${targetMatch.MappedSec}</div>`;
 
         if (isFront) {
             container.innerHTML += `<div class="mini-lawn">CENTRAL LAWN (This Way ↑)</div>`;
@@ -213,27 +249,21 @@
         const sectionBricks = allBricks.filter(b => b.MappedSec === targetMatch.MappedSec);
         const grid = {};
         let maxR = 0;
+        let maxC = 0;
         
         sectionBricks.forEach(b => {
             if (b.R > maxR) maxR = b.R;
+            if (b.C > maxC) maxC = b.C;
             if (!grid[b.R]) grid[b.R] = {};
             grid[b.R][b.C] = b;
         });
 
-        const brickGridContainer = document.createElement('div');
-        brickGridContainer.style.display = "flex";
-        brickGridContainer.style.flexDirection = "column";
-        brickGridContainer.style.alignItems = "center";
-
         for (let r = maxR; r >= 1; r--) {
-            if (!grid[r]) continue;
             const rowDiv = document.createElement('div');
             rowDiv.className = 'row-bricks';
-            const cols = Object.keys(grid[r]).map(Number);
-            const maxC = Math.max(...cols);
 
             for (let c = 1; c <= maxC; c++) {
-                const b = grid[r][c];
+                const b = grid[r] ? grid[r][c] : null;
                 const d = document.createElement('div');
                 const isBlank = !b || b.Inscr.includes("[BLANK]");
                 d.className = isBlank ? 'brick is-blank' : 'brick';
@@ -241,14 +271,13 @@
                     d.innerText = b.Inscr;
                     if (b.id === targetMatch.id) {
                         d.classList.add('current-focus');
-                        setTimeout(() => d.scrollIntoView({ behavior: 'smooth', block: 'center' }), 200);
+                        setTimeout(() => d.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
                     }
                 }
                 rowDiv.appendChild(d);
             }
-            brickGridContainer.appendChild(rowDiv);
+            container.appendChild(rowDiv);
         }
-        container.appendChild(brickGridContainer);
 
         if (!isFront) {
             container.innerHTML += `<div class="mini-lawn">CENTRAL LAWN (This Way ↓)</div>`;
