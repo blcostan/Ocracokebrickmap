@@ -17,16 +17,16 @@
         .row-container { display: flex; align-items: center; justify-content: center; position: relative; padding: 2px 0; }
         .row-label { position: absolute; left: -65px; font-size: 11px; font-weight: bold; color: #777; width: 55px; text-align: right; }
         .row-bricks { display: flex; gap: 6px; justify-content: center; align-items: stretch; }
-        .brick { width: 105px; min-height: 60px; background: var(--brick); border: 1px solid #4a3728; color: white; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 9px; font-weight: bold; padding: 8px; line-height: 1.3; box-sizing: border-box; flex-shrink: 0; transition: transform 0.2s; }
+        .brick { width: 105px; min-height: 60px; background: var(--brick); border: 1px solid #4a3728; color: white; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 9px; font-weight: bold; padding: 8px; line-height: 1.3; box-sizing: border-box; flex-shrink: 0; }
         .brick.match { background: #ffd54f !important; color: black !important; border: 2px solid orange; transform: scale(1.05); z-index: 5; }
         .brick.is-blank { background: #e0dcd0; border: 1px dashed #bbb; color: transparent; }
-        .lawn { width: 450px; height: 70px; background: #8da58e; margin: 30px 0; border-radius: 35px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px; border: 2px solid #6d8c6d; letter-spacing: 2px; }
+        .lawn { width: 450px; height: 70px; background: #8da58e; margin: 30px 0; border-radius: 35px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px; border: 2px solid #6d8c6d; }
     </style>
 </head>
 <body>
 
 <div class="map-sidebar">
-    <div id="status-bar">Syncing with Garden...</div>
+    <div id="status-bar">Syncing Garden...</div>
     <div class="search-area">
         <input type="text" id="search" placeholder="Search name...">
     </div>
@@ -45,11 +45,9 @@
     const gardenClient = window.supabase.createClient(S_URL, S_KEY);
 
     async function fetchGarden() {
-        const status = document.getElementById('status-bar');
         const { data, error } = await gardenClient.from('Ocracoke Bricks -').select('*');
-
         if (error) {
-            status.innerHTML = `<span style="color:red">Error: ${error.message}</span>`;
+            document.getElementById('status-bar').innerText = "Error: " + error.message;
             return;
         }
         renderGarden(data);
@@ -58,26 +56,24 @@
     function renderGarden(data) {
         data.forEach(row => {
             let rawSec = (row.section || row.Section || "").toString().toLowerCase();
-            
-            // APPLYING YOUR SWAP: DB "North" -> South Path | DB "South" -> North Path
+            // Data Swap: DB North is South Path | DB South is North Path
             if (rawSec.includes("north")) {
                 row.MappedSec = "South";
             } else {
                 row.MappedSec = "North";
             }
-            
             row.R = parseInt(row.row || row.Row) || 0;
             row.C = parseInt(row.col || row.Col) || 0;
             row.Inscr = row.inscription || row.Inscription || "";
         });
 
-        // NORTH PATH: Database labeled "South". 
-        // Logic: Row 1 is near Lawn. We use 'true' to reverse the order (Max Row at top).
+        // NORTH PATH: Row 1 is near Lawn. 
+        // Rendering reversed (true) so Row 1 is at the bottom of this specific section (closest to lawn).
         draw('north-section', data.filter(b => b.MappedSec === "North"), true, "NORTH PATH");
         
-        // SOUTH PATH: Database labeled "North". 
-        // Logic: Row 1 is at Entrance. We use 'false' to render 1 -> Max (Top to Bottom).
-        draw('south-section', data.filter(b => b.MappedSec === "South"), false, "SOUTH PATH (ENTRANCE)");
+        // SOUTH PATH: Row 1 is at Entrance.
+        // Rendering reversed (true) so Row 1 is at the bottom of this specific section (furthest from lawn).
+        draw('south-section', data.filter(b => b.MappedSec === "South"), true, "SOUTH PATH (ENTRANCE)");
         
         document.getElementById('status-bar').innerText = "Live: " + data.length + " bricks.";
     }
@@ -85,21 +81,19 @@
     function draw(id, bricks, isReversed, title) {
         const div = document.getElementById(id);
         div.innerHTML = `<h2 style="color:var(--fig-green)">${title}</h2>`;
-        
         if (bricks.length === 0) return;
 
         const grid = {};
         let maxR = 0;
-        
         bricks.forEach(b => {
             if (b.R > maxR) maxR = b.R;
             if (!grid[b.R]) grid[b.R] = {};
             grid[b.R][b.C] = b;
         });
 
-        // Reversal logic:
-        // North Path (isReversed=true): Start at Highest Row, end at 1.
-        // South Path (isReversed=false): Start at 1, end at Highest Row.
+        // The "Flip" Logic: 
+        // By using isReversed=true for both, Row 1 will always be at the "bottom" 
+        // of its section relative to the text flow.
         const start = isReversed ? maxR : 1;
         const end = isReversed ? 1 : maxR;
         const step = isReversed ? -1 : 1;
