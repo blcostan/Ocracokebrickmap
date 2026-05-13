@@ -11,7 +11,7 @@
         .map-sidebar { width: 320px; background: white; border-right: 2px solid #ddd; padding: 20px; display: flex; flex-direction: column; overflow-y: auto; z-index: 10; flex-shrink: 0; }
         .search-area { display: flex; gap: 8px; margin-bottom: 10px; }
         #search { padding: 12px; flex: 1; border-radius: 20px; border: 2px solid #ccc; font-size: 16px; outline: none; }
-        #status-bar { font-weight:bold; color:var(--fig-green); margin-bottom:10px; font-size: 12px; border: 1px solid #eee; padding: 5px; }
+        #status-bar { font-weight:bold; color:var(--fig-green); margin-bottom:10px; font-size: 12px; }
         .main-content { flex: 1; overflow: auto; display: flex; flex-direction: column; align-items: center; padding: 40px; scroll-behavior: smooth; }
         .plaza { display: flex; flex-direction: column; gap: 8px; margin-bottom: 60px; align-items: center; }
         .row-container { display: flex; align-items: center; justify-content: center; position: relative; padding: 2px 0; }
@@ -25,7 +25,7 @@
 <body>
 
 <div class="map-sidebar">
-    <div id="status-bar">Starting connection...</div>
+    <div id="status-bar">Connecting...</div>
     <div class="search-area">
         <input type="text" id="search" placeholder="Search name...">
     </div>
@@ -39,32 +39,30 @@
 </div>
 
 <script>
-    const SUPABASE_URL = 'https://duanluepelrjjkulpenh.supabase.co'; 
-    const SUPABASE_KEY = 'sb_publishable_WHslguojU3jb1GyQBqc_MA_2w35Y2ou';
+    // Only declare these ONCE
+    const S_URL = 'https://duanluepelrjjkulpenh.supabase.co'; 
+    const S_KEY = 'sb_publishable_WHslguojU3jb1GyQBqc_MA_2w35Y2ou';
 
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // Renamed variable to avoid the "already declared" error
+    const gardenClient = window.supabase.createClient(S_URL, S_KEY);
 
     async function fetchGarden() {
         const status = document.getElementById('status-bar');
-        status.innerText = "Attempting to fetch data...";
-
-        // We use the exact name with the dash as shown in your screenshot
-        const { data, error } = await supabase
+        
+        const { data, error } = await gardenClient
             .from('Ocracoke Bricks -') 
             .select('*');
 
         if (error) {
-            console.error("SUPABASE ERROR:", error);
-            status.innerHTML = `<span style="color:red">Failed: ${error.message}</span>`;
+            status.innerHTML = `<span style="color:red">Error: ${error.message}</span>`;
             return;
         }
 
         if (!data || data.length === 0) {
-            status.innerText = "Connected, but no rows found in table.";
+            status.innerText = "Connected, but no bricks found.";
             return;
         }
 
-        status.innerText = "Data received! Rendering...";
         renderGarden(data);
     }
 
@@ -79,7 +77,7 @@
 
         draw('north-section', data.filter(b => b.MappedSec === "North"), true, "NORTH PATH");
         draw('south-section', data.filter(b => b.MappedSec === "South"), false, "SOUTH PATH (ENTRANCE)");
-        document.getElementById('status-bar').innerText = "Garden Live: " + data.length + " bricks.";
+        document.getElementById('status-bar').innerText = "Live: " + data.length + " bricks.";
     }
 
     function draw(id, bricks, rev, title) {
