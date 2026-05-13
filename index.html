@@ -129,4 +129,31 @@
         document.querySelectorAll('.brick').forEach(b => {
             const isMatch = t !== "" && b.dataset.search.includes(t);
             b.classList.remove('current-match');
-            b.classList.toggle('match', isMatch
+            b.classList.toggle('match', isMatch);
+            b.style.opacity = (t !== "" && !isMatch) ? "0.3" : "1";
+            if (isMatch) currentMatches.push(b);
+        });
+
+        if (currentMatches.length > 1) {
+            nextBtn.style.display = "block";
+        } else {
+            nextBtn.style.display = "none";
+        }
+    };
+
+    document.getElementById('next-btn').onclick = () => {
+        if (currentMatches.length === 0) return;
+        
+        currentMatches.forEach(b => b.classList.remove('current-match'));
+        
+        matchIndex = (matchIndex + 1) % currentMatches.length;
+        const target = currentMatches[matchIndex];
+        
+        target.classList.add('current-match');
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
+    fetchGarden();
+</script>
+</body>
+</html>
