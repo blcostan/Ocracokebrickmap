@@ -4,22 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Island Inn Garden Finder</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --fig-green: #2d5a27; --sand: #fdfaf5; --brick: #b06d50; --highlight: #ff3b3b; }
         body { font-family: 'Georgia', serif; background: var(--sand); margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        /* Side Navigation */
+        /* Sidebar Layout */
         .map-sidebar { width: 320px; background: white; border-right: 2px solid #ddd; padding: 20px; display: flex; flex-direction: column; overflow-y: auto; z-index: 10; flex-shrink: 0; }
         .search-area { display: flex; gap: 8px; margin-bottom: 10px; }
         #search { padding: 12px; flex: 1; border-radius: 20px; border: 2px solid #ccc; font-size: 16px; outline: none; }
         #next-btn { padding: 10px 15px; border-radius: 20px; border: none; background: var(--fig-green); color: white; cursor: pointer; font-weight: bold; display: none; }
         
-        /* Map UI */
-        .map-container { position: relative; width: 100%; border: 2px solid #ccc; border-radius: 8px; overflow: hidden; cursor: pointer; margin-top: 10px; }
-        .map-container img { width: 100%; display: block; }
-        #locator-dot { position: absolute; width: 22px; height: 22px; background: var(--highlight); border: 3px solid white; border-radius: 50%; display: none; transform: translate(-50%, -50%); z-index: 100; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.3); } 100% { transform: translate(-50%, -50%) scale(1); } }
-
         /* Garden Layout */
         .main-content { flex: 1; overflow: auto; display: flex; flex-direction: column; align-items: center; padding: 40px; scroll-behavior: smooth; }
         .plaza { display: flex; flex-direction: column; gap: 8px; margin-bottom: 60px; align-items: center; }
@@ -40,26 +35,22 @@
         
         .lawn { width: 450px; height: 70px; background: #8da58e; margin: 30px 0; border-radius: 35px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; border: 2px solid #6d8c6d; letter-spacing: 3px; font-size: 20px; }
         
-        #error-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:white; display:flex; align-items:center; justify-content:center; flex-direction:column; z-index:9999; display:none; }
+        /* Locator Dot */
+        #locator-dot { position: absolute; width: 22px; height: 22px; background: var(--highlight); border: 3px solid white; border-radius: 50%; display: none; transform: translate(-50%, -50%); z-index: 100; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
 
-<div id="error-overlay">
-    <h2 style="color:red">CONNECTION ERROR</h2>
-    <p id="error-text">Google Sheets is taking too long to respond.</p>
-    <button onclick="location.reload()" style="padding:10px 20px; cursor:pointer;">Retry Loading Bricks</button>
-</div>
-
 <div class="map-sidebar">
-    <div id="status-bar" style="font-weight:bold; color:var(--fig-green); margin-bottom:10px; font-size: 12px;">Initializing...</div>
+    <div id="status-bar" style="font-weight:bold; color:var(--fig-green); margin-bottom:10px; font-size: 12px;">Connecting to Garden...</div>
     <div class="search-area">
-        <input type="text" id="search" placeholder="Type a name...">
+        <input type="text" id="search" placeholder="Search name...">
         <button id="next-btn">NEXT</button>
     </div>
     <div id="match-count" style="font-size:13px; margin-bottom:10px; font-weight: bold; color: var(--highlight);"></div>
-    <div class="map-container" onclick="scrollToCurrent()">
-        <img src="rendering%20of%20garden.avif">
+    <div style="position:relative; border:2px solid #ccc; border-radius:8px;">
+        <img src="rendering%20of%20garden.avif" style="width:100%; display:block;">
         <div id="locator-dot"></div>
     </div>
 </div>
@@ -71,5 +62,31 @@
 </div>
 
 <script>
-/* PapaParse v5.3.0 Mini-Embedded */
-(function(e){"use strict";var t=function(e){return e};var n=function(e){return e};var r=function(e){return e};e.Papa=e.Papa||{};e.Papa.parse=function(o,i
+    // PLUGGED IN CREDENTIALS
+    const SUPABASE_URL = 'https://duanluepelrjjkulpenh.supabase.co'; 
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR1YW5sdWVwZWxyamprdWxwZW5oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2ODU5NDQsImV4cCI6MjA5NDI2MTk0NH0.uu6ZK7WG8Ec6O-reOf5bK9ygk92CfiT0Lv8bJNZlS74';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let matchedBricks = [];
+    let currentMatchIndex = 0;
+
+    async function fetchGarden() {
+        const { data, error } = await supabase
+            .from('bricks') 
+            .select('*');
+
+        if (error) {
+            document.getElementById('status-bar').innerText = "Database Error. Check RLS.";
+            console.error(error);
+            return;
+        }
+
+        initApp(data);
+    }
+
+    function initApp(data) {
+        data.forEach(row => {
+            // Note: If bricks aren't showing, check if your Supabase columns 
+            // are capitalized (e.g. row.Section instead of row.section)
+            let sec = (row.section || row.
