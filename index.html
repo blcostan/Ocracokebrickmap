@@ -242,4 +242,45 @@
         bottomLabel.innerText = isFront ? "FRONT OF FIG GARDEN (This Way ↓)" : "BACK OF FIG GARDEN (This Way ↓)";
 
         const sectionBricks = allBricks.filter(b => b.MappedSec === targetMatch.MappedSec);
-        let maxR = Math.max
+        let maxR = Math.max(...sectionBricks.map(b => b.R), 0);
+        const rows = {};
+        sectionBricks.forEach(b => { if(!rows[b.R]) rows[b.R] = []; rows[b.R].push(b); });
+
+        if (isFront) {
+            for (let r = maxR; r >= 1; r--) {
+                renderRow(r, rows, container, targetMatch);
+            }
+        } else {
+            for (let r = 1; r <= maxR; r++) {
+                renderRow(r, rows, container, targetMatch);
+            }
+        }
+        
+        document.getElementById('brick-overlay').style.display = 'flex';
+    }
+
+    function renderRow(r, rows, container, targetMatch) {
+        if (!rows[r]) return;
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'brick-row';
+        rows[r].sort((a, b) => a.C - b.C).forEach(b => {
+            const brickDiv = document.createElement('div');
+            const isBlank = b.Inscr.includes("[BLANK]");
+            brickDiv.className = isBlank ? 'brick-unit is-blank' : 'brick-unit';
+            if (!isBlank) {
+                brickDiv.innerText = b.Inscr;
+                if (b.id === targetMatch.id) {
+                    brickDiv.classList.add('current-focus');
+                    setTimeout(() => brickDiv.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+                }
+            }
+            rowDiv.appendChild(brickDiv);
+        });
+        container.appendChild(rowDiv);
+    }
+
+    function closeBricks() { document.getElementById('brick-overlay').style.display = 'none'; }
+    loadData();
+</script>
+</body>
+</html>
