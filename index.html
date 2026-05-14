@@ -107,7 +107,7 @@
         .brick-unit.is-blank { background: #dcd7cc; border: 1px dashed #bbb; color: transparent; box-shadow: none; }
 
         .mini-lawn-row { background: var(--fig-green); color: white; padding: 10px; text-align: center; border-radius: 25px; font-weight: bold; font-size: 13px; margin: 20px 0; width: 80%; border: 2px solid var(--dark-green); }
-        .path-title-text { color: var(--dark-green); font-size: 20px; font-weight: bold; }
+        .path-title-text { color: var(--dark-green); font-size: 20px; font-weight: bold; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -123,7 +123,7 @@
     </div>
 
     <div id="instruction-box" style="display: none; width: 90%; max-width: 360px; text-align: center; margin-bottom: 10px; font-size: 14px; color: var(--dark-green);">
-        📍 Red dot shows the general area.<br><b>Tap the name card below</b> to see the specific layout.
+        📍 Red dot shows the general area.<br><b>Tap the name card below</b> to see the specific layout!
     </div>
 
     <div id="preview-card" onclick="triggerGridFromPreview()">
@@ -140,9 +140,9 @@
     <div class="overlay-nav"><button class="back-btn" onclick="closeBricks()">← Back to Map</button></div>
     <div class="brick-scroll-viewport">
         <div id="path-label" class="path-title-text"></div>
-        <div id="top-lawn" class="mini-lawn-row" style="display:none;">CENTRAL LAWN (This Way ↑)</div>
+        <div id="top-lawn" class="mini-lawn-row">CENTRAL LAWN (This Way ↑)</div>
         <div id="brick-container" style="width: 100%;"></div>
-        <div id="bottom-lawn" class="mini-lawn-row" style="display:none;">CENTRAL LAWN (This Way ↓)</div>
+        <div id="bottom-orientation" class="mini-lawn-row" style="background: #ddd; color: #666; border-color: #bbb;">BACK OF FIG GARDEN (This Way ↓)</div>
     </div>
 </div>
 
@@ -234,39 +234,12 @@
         const container = document.getElementById('brick-container');
         container.innerHTML = "";
         document.getElementById('path-label').innerText = targetMatch.MappedSec;
+        
         const isFront = targetMatch.MappedSec === "Front Fig Garden";
-        document.getElementById('top-lawn').style.display = isFront ? "block" : "none";
-        document.getElementById('bottom-lawn').style.display = isFront ? "none" : "block";
+        
+        // Update labels based on section
+        const bottomLabel = document.getElementById('bottom-orientation');
+        bottomLabel.innerText = isFront ? "FRONT OF FIG GARDEN (This Way ↓)" : "BACK OF FIG GARDEN (This Way ↓)";
 
         const sectionBricks = allBricks.filter(b => b.MappedSec === targetMatch.MappedSec);
-        let maxR = Math.max(...sectionBricks.map(b => b.R), 0);
-        const rows = {};
-        sectionBricks.forEach(b => { if(!rows[b.R]) rows[b.R] = []; rows[b.R].push(b); });
-
-        for (let r = maxR; r >= 1; r--) {
-            if (!rows[r]) continue;
-            const rowDiv = document.createElement('div');
-            rowDiv.className = 'brick-row';
-            rows[r].sort((a, b) => a.C - b.C).forEach(b => {
-                const brickDiv = document.createElement('div');
-                const isBlank = b.Inscr.includes("[BLANK]");
-                brickDiv.className = isBlank ? 'brick-unit is-blank' : 'brick-unit';
-                if (!isBlank) {
-                    brickDiv.innerText = b.Inscr;
-                    if (b.id === targetMatch.id) {
-                        brickDiv.classList.add('current-focus');
-                        setTimeout(() => brickDiv.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
-                    }
-                }
-                rowDiv.appendChild(brickDiv);
-            });
-            container.appendChild(rowDiv);
-        }
-        document.getElementById('brick-overlay').style.display = 'flex';
-    }
-
-    function closeBricks() { document.getElementById('brick-overlay').style.display = 'none'; }
-    loadData();
-</script>
-</body>
-</html>
+        let maxR = Math.max
