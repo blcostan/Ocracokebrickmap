@@ -121,6 +121,11 @@
             <button id="main-next-btn">Next</button>
         </div>
     </div>
+
+    <div id="instruction-box" style="display: none; width: 90%; max-width: 360px; text-align: center; margin-bottom: 10px; font-size: 14px; color: var(--dark-green);">
+        📍 Red dot shows the general area.<br><b>Tap the name card below</b> to see the specific layout!
+    </div>
+
     <div id="preview-card" onclick="triggerGridFromPreview()">
         <div id="preview-text" style="font-weight:bold; color:var(--brick); font-size: 16px;"></div>
         <div style="font-size: 14px; color: var(--dark-green); margin-top: 4px;">Tap to find on path ↑</div>
@@ -177,11 +182,13 @@
         const dot = document.getElementById('map-dot');
         const preview = document.getElementById('preview-card');
         const nextBtn = document.getElementById('main-next-btn');
+        const instruction = document.getElementById('instruction-box');
 
         if (t.length < 2) { 
             dot.style.display = "none"; 
             preview.style.display = "none"; 
             nextBtn.style.display = "none";
+            instruction.style.display = "none";
             return; 
         }
 
@@ -192,10 +199,12 @@
             updateUI(); 
             preview.style.display = "block";
             nextBtn.style.display = currentMatches.length > 1 ? "block" : "none";
+            instruction.style.display = "block";
         } else {
             dot.style.display = "none";
             preview.style.display = "none";
             nextBtn.style.display = "none";
+            instruction.style.display = "none";
         }
     };
 
@@ -230,34 +239,4 @@
         document.getElementById('bottom-lawn').style.display = isFront ? "none" : "block";
 
         const sectionBricks = allBricks.filter(b => b.MappedSec === targetMatch.MappedSec);
-        let maxR = Math.max(...sectionBricks.map(b => b.R), 0);
-        const rows = {};
-        sectionBricks.forEach(b => { if(!rows[b.R]) rows[b.R] = []; rows[b.R].push(b); });
-
-        for (let r = maxR; r >= 1; r--) {
-            if (!rows[r]) continue;
-            const rowDiv = document.createElement('div');
-            rowDiv.className = 'brick-row';
-            rows[r].sort((a, b) => a.C - b.C).forEach(b => {
-                const brickDiv = document.createElement('div');
-                const isBlank = b.Inscr.includes("[BLANK]");
-                brickDiv.className = isBlank ? 'brick-unit is-blank' : 'brick-unit';
-                if (!isBlank) {
-                    brickDiv.innerText = b.Inscr;
-                    if (b.id === targetMatch.id) {
-                        brickDiv.classList.add('current-focus');
-                        setTimeout(() => brickDiv.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
-                    }
-                }
-                rowDiv.appendChild(brickDiv);
-            });
-            container.appendChild(rowDiv);
-        }
-        document.getElementById('brick-overlay').style.display = 'flex';
-    }
-
-    function closeBricks() { document.getElementById('brick-overlay').style.display = 'none'; }
-    loadData();
-</script>
-</body>
-</html>
+        let maxR =
