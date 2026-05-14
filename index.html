@@ -158,16 +158,29 @@
     async function loadData() {
         const searchInput = document.getElementById('search');
         try {
+            // Selecting all columns from the main table
             const { data, error } = await gardenClient.from('Ocracoke Bricks -').select('*');
             if (error) throw error;
             
-            allBricks = data.map(row => ({
-                ...row,
-                MappedSec: (row.section || row.Section || "").toLowerCase().includes("north") ? "Front Fig Garden" : "Back Fig Garden",
-                R: parseInt(row.row || row.Row) || 0,
-                C: parseInt(row.col || row.Col) || 0,
-                Inscr: row.inscription || row.Inscription || ""
-            }));
+            allBricks = data.map(row => {
+                const sec = (row.section || row.Section || "").toLowerCase();
+                let mapped = "";
+                
+                // Map only the two main sections currently in production
+                if (sec.includes("north")) {
+                    mapped = "Front Fig Garden";
+                } else if (sec.includes("south")) {
+                    mapped = "Back Fig Garden";
+                }
+
+                return {
+                    ...row,
+                    MappedSec: mapped,
+                    R: parseInt(row.row || row.Row) || 0,
+                    C: parseInt(row.col || row.Col) || 0,
+                    Inscr: row.inscription || row.Inscription || ""
+                };
+            });
 
             searchInput.placeholder = "Enter a name...";
             searchInput.disabled = false;
@@ -237,15 +250,18 @@
         
         const isFront = targetMatch.MappedSec === "Front Fig Garden";
         
-        // Update labels based on section
+        // Update orientation labels based on section
         const bottomLabel = document.getElementById('bottom-orientation');
         bottomLabel.innerText = isFront ? "FRONT OF FIG GARDEN (This Way ↓)" : "BACK OF FIG GARDEN (This Way ↓)";
 
         const sectionBricks = allBricks.filter(b => b.MappedSec === targetMatch.MappedSec);
         let maxR = Math.max(...sectionBricks.map(b => b.R), 0);
+        
+        // Group by row
         const rows = {};
         sectionBricks.forEach(b => { if(!rows[b.R]) rows[b.R] = []; rows[b.R].push(b); });
 
+        // Render rows (North/Front maps top-down, South/Back maps bottom-up)
         if (isFront) {
             for (let r = maxR; r >= 1; r--) {
                 renderRow(r, rows, container, targetMatch);
@@ -261,21 +277,33 @@
 
     function renderRow(r, rows, container, targetMatch) {
         if (!rows[r]) return;
+        
         const rowDiv = document.createElement('div');
         rowDiv.className = 'brick-row';
-        rows[r].sort((a, b) => a.C - b.C).forEach(b => {
+        
+        // CORE FIX: Sorting columns 1-6 Left-to-Right for all sections
+        const sortedBricks = rows[r].sort((a, b) => a.C - b.C);
+
+        sortedBricks.forEach(b => {
             const brickDiv = document.createElement('div');
             const isBlank = b.Inscr.includes("[BLANK]");
+            
             brickDiv.className = isBlank ? 'brick-unit is-blank' : 'brick-unit';
+            
             if (!isBlank) {
                 brickDiv.innerText = b.Inscr;
-                if (b.id === targetMatch.id) {
+                
+                // Highlight the specific brick found in search
+                // Comparing by ID and Inscription to ensure accuracy
+                if (b.id === targetMatch.id || (b.Inscr === targetMatch.Inscr && b.R === targetMatch.R && b.C === targetMatch.C)) {
                     brickDiv.classList.add('current-focus');
+                    // Delayed scroll to allow the overlay to open first
                     setTimeout(() => brickDiv.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
                 }
             }
             rowDiv.appendChild(brickDiv);
         });
+        
         container.appendChild(rowDiv);
     }
 
