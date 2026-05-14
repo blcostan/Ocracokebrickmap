@@ -73,6 +73,19 @@
             align-items: stretch;
         }
 
+        /* NEW: Row Number Styling */
+        .row-number-label {
+            width: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: var(--dark-green);
+            font-weight: bold;
+            opacity: 0.6;
+            margin-right: 5px;
+        }
+
         .brick-unit {
             background: var(--brick);
             color: white;
@@ -158,7 +171,6 @@
     async function loadData() {
         const searchInput = document.getElementById('search');
         try {
-            // Selecting all columns from the main table
             const { data, error } = await gardenClient.from('Ocracoke Bricks -').select('*');
             if (error) throw error;
             
@@ -166,7 +178,6 @@
                 const sec = (row.section || row.Section || "").toLowerCase();
                 let mapped = "";
                 
-                // Map only the two main sections currently in production
                 if (sec.includes("north")) {
                     mapped = "Front Fig Garden";
                 } else if (sec.includes("south")) {
@@ -249,27 +260,19 @@
         document.getElementById('path-label').innerText = targetMatch.MappedSec;
         
         const isFront = targetMatch.MappedSec === "Front Fig Garden";
-        
-        // Update orientation labels based on section
         const bottomLabel = document.getElementById('bottom-orientation');
         bottomLabel.innerText = isFront ? "FRONT OF FIG GARDEN (This Way ↓)" : "BACK OF FIG GARDEN (This Way ↓)";
 
         const sectionBricks = allBricks.filter(b => b.MappedSec === targetMatch.MappedSec);
         let maxR = Math.max(...sectionBricks.map(b => b.R), 0);
         
-        // Group by row
         const rows = {};
         sectionBricks.forEach(b => { if(!rows[b.R]) rows[b.R] = []; rows[b.R].push(b); });
 
-        // Render rows (North/Front maps top-down, South/Back maps bottom-up)
         if (isFront) {
-            for (let r = maxR; r >= 1; r--) {
-                renderRow(r, rows, container, targetMatch);
-            }
+            for (let r = maxR; r >= 1; r--) { renderRow(r, rows, container, targetMatch); }
         } else {
-            for (let r = 1; r <= maxR; r++) {
-                renderRow(r, rows, container, targetMatch);
-            }
+            for (let r = 1; r <= maxR; r++) { renderRow(r, rows, container, targetMatch); }
         }
         
         document.getElementById('brick-overlay').style.display = 'flex';
@@ -281,7 +284,12 @@
         const rowDiv = document.createElement('div');
         rowDiv.className = 'brick-row';
         
-        // CORE FIX: Sorting columns 1-6 Left-to-Right for all sections
+        // NEW: Add the Row Number Label to the start of the row
+        const rowLabel = document.createElement('div');
+        rowLabel.className = 'row-number-label';
+        rowLabel.innerText = "R" + r;
+        rowDiv.appendChild(rowLabel);
+
         const sortedBricks = rows[r].sort((a, b) => a.C - b.C);
 
         sortedBricks.forEach(b => {
@@ -292,12 +300,8 @@
             
             if (!isBlank) {
                 brickDiv.innerText = b.Inscr;
-                
-                // Highlight the specific brick found in search
-                // Comparing by ID and Inscription to ensure accuracy
                 if (b.id === targetMatch.id || (b.Inscr === targetMatch.Inscr && b.R === targetMatch.R && b.C === targetMatch.C)) {
                     brickDiv.classList.add('current-focus');
-                    // Delayed scroll to allow the overlay to open first
                     setTimeout(() => brickDiv.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
                 }
             }
