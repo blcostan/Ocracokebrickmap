@@ -152,7 +152,6 @@
 <div id="brick-overlay">
     <div class="overlay-nav"><button class="back-btn" onclick="closeBricks()">← Back to Map</button></div>
     <div class="brick-scroll-viewport">
-        <div id="path-label" class="path-title-text"></div>
         <div id="top-lawn" class="mini-lawn-row">CENTRAL LAWN (This Way ↑)</div>
         <div id="brick-container" style="width: 100%;"></div>
         <div id="bottom-orientation" class="mini-lawn-row" style="background: #ddd; color: #666; border-color: #bbb;">BACK OF FIG GARDEN (This Way ↓)</div>
@@ -257,7 +256,7 @@
     function showBrickGrid(targetMatch) {
         const container = document.getElementById('brick-container');
         container.innerHTML = "";
-        document.getElementById('path-label').innerText = targetMatch.MappedSec;
+      
         
         const isFront = targetMatch.MappedSec === "Front Fig Garden";
         const bottomLabel = document.getElementById('bottom-orientation');
