@@ -178,11 +178,7 @@
                 const sec = (row.section || row.Section || "").toLowerCase();
                 let mapped = "";
                 
-                if (sec.includes("north")) {
-                    mapped = "Front Fig Garden";
-                } else if (sec.includes("south")) {
-                    mapped = "Back Fig Garden";
-                }
+            
 
                 return {
                     ...row,
