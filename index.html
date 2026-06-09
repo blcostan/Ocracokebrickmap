@@ -73,7 +73,7 @@
             align-items: stretch;
         }
 
-        /* NEW: Row Number Styling */
+        /* Row Number Styling */
         .row-number-label {
             width: 30px;
             display: flex;
@@ -159,8 +159,8 @@
 </div>
 
 <script>
-    const S_URL = 'https://duanluepelrjjkulpenh.supabase.co'; 
-    const S_KEY = 'sb_publishable_WHslguojU3jb1GyQBqc_MA_2w35Y2ou';
+    const S_URL = 'https://fcizlimndpfpbkkxardp.supabase.co'; 
+    const S_KEY = 'sb_publishable_6VsgUICkD5_DhMkEEdRlDA_NQkTwj7b';
     const gardenClient = window.supabase.createClient(S_URL, S_KEY);
 
     let allBricks = [];
@@ -170,7 +170,7 @@
     async function loadData() {
         const searchInput = document.getElementById('search');
         try {
-            const { data, error } = await gardenClient.from('Ocracoke Bricks -').select('*');
+            const { data, error } = await gardenClient.from('Ocracoke Bricks').select('*');
             if (error) throw error;
             
             allBricks = data.map(row => {
@@ -283,7 +283,7 @@
         const rowDiv = document.createElement('div');
         rowDiv.className = 'brick-row';
         
-        // NEW: Add the Row Number Label to the start of the row
+        // Add the Row Number Label to the start of the row
         const rowLabel = document.createElement('div');
         rowLabel.className = 'row-number-label';
         rowLabel.innerText = "R" + r;
