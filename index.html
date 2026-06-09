@@ -170,8 +170,8 @@
     async function loadData() {
         const searchInput = document.getElementById('search');
         try {
-            // Point to the space-free table name
-            const { data, error } = await gardenClient.from('ocracoke_bricks').select('*');
+            // Using encoded space %20 for PostgREST compatibility
+            const { data, error } = await gardenClient.from('Ocracoke%20Bricks').select('*');
             if (error) throw error;
             
             allBricks = data.map(row => {
