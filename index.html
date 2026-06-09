@@ -170,8 +170,8 @@
     async function loadData() {
         const searchInput = document.getElementById('search');
         try {
-            // Using encoded space %20 for PostgREST compatibility
-            const { data, error } = await gardenClient.from('Ocracoke%20Bricks').select('*');
+            // Table name strictly matches the renamed lowercase version
+            const { data, error } = await gardenClient.from('ocracoke_bricks').select('*');
             if (error) throw error;
             
             allBricks = data.map(row => {
