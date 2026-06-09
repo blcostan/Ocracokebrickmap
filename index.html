@@ -170,7 +170,8 @@
     async function loadData() {
         const searchInput = document.getElementById('search');
         try {
-            const { data, error } = await gardenClient.from('Ocracoke Bricks').select('*');
+            // Point to the space-free table name
+            const { data, error } = await gardenClient.from('ocracoke_bricks').select('*');
             if (error) throw error;
             
             allBricks = data.map(row => {
