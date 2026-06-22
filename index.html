@@ -64,6 +64,7 @@
 
         .brick-scroll-viewport { flex: 1; overflow-y: auto; padding: 40px 5px; display: flex; flex-direction: column; align-items: center; }
 
+        /* Explicit Grid Settings for Staggered Bricks mapping */
         .brick-row {
             display: grid;
             grid-template-columns: 35px repeat(12, 1fr);
@@ -173,9 +174,10 @@
     async function loadData() {
         const searchInput = document.getElementById('search');
         try {
+            // Target the exact case-sensitive table path string
             const [res1, res2] = await Promise.all([
                 gardenClient.from('ocracoke_bricks').select('*'),
-                newGardenClient.from('ocracoke_bricks_v2').select('*')
+                newGardenClient.from('Ocracoke_Bricks_New').select('*')
             ]);
 
             if (res1.error) console.error("DB1 Fetch Error:", res1.error);
@@ -187,7 +189,7 @@
             console.log("Raw items loaded from original DB:", data1.length);
             console.log("Raw items loaded from new DB:", data2.length);
 
-            // Map database 1 format
+            // Parse Database 1 items
             let bricks1 = data1.map(row => {
                 const sec = (row.section || row.Section || "").toLowerCase();
                 let mapped = "";
@@ -209,7 +211,7 @@
                 };
             });
 
-            // Map database 2 format using the fallback properties
+            // Parse Database 2 items using adaptive structural logic
             let bricks2 = data2.map(row => {
                 const sec = (row.section || row.Section || "").toLowerCase();
                 let mapped = "";
@@ -222,7 +224,6 @@
                     mapped = "Back Fig Garden";
                 }
 
-                // Check standard headers, uppercase headers, or fallback straight inscription column names
                 const clearLines = [
                     row.inscription_line_1 || row.inscription_1 || row.Inscription_1,
                     row.inscription_line_2 || row.inscription_2 || row.Inscription_2,
@@ -240,21 +241,21 @@
                     MappedSec: mapped,
                     R: parseInt(row.row || row.Row) || 0,
                     C: parseInt(row.col || row.Col) || 0,
-                    RowSpan: parseInt(row.row_span || row.Row_span || row.row_span) || 1,
-                    ColSpan: parseInt(row.col_span || row.Col_span || row.col_span) || 1,
+                    RowSpan: parseInt(row.row_span || row.Row_span) || 1,
+                    ColSpan: parseInt(row.col_span || row.Col_span) || 1,
                     Inscr: searchableText || "[BLANK]",
                     Lines: clearLines.length > 0 ? clearLines : ["[BLANK]"]
                 };
             });
 
             allBricks = [...bricks1, ...bricks2];
-            console.log("Total master combined brick registry count:", allBricks.length);
+            console.log("Total combined catalog item count:", allBricks.length);
 
             searchInput.placeholder = "Enter a name...";
             searchInput.disabled = false;
         } catch (err) {
             searchInput.placeholder = "Error loading data.";
-            console.error("Critical execution error loading data arrays:", err);
+            console.error("Critical connection failure:", err);
         }
     }
 
@@ -273,11 +274,10 @@
             return; 
         }
 
-        // Global search checks text across combined fields
         currentMatches = allBricks.filter(b => b.Inscr.toLowerCase().includes(t));
         matchIndex = 0;
 
-        console.log(`Searching for "${t}" -> Found matches:`, currentMatches.length);
+        console.log(`Query "${t}" yielded matches count:`, currentMatches.length);
 
         if (currentMatches.length > 0) { 
             updateUI(); 
@@ -306,6 +306,7 @@
         const dot = document.getElementById('map-dot');
         dot.style.display = "block";
         
+        // Dynamic map dot assignment mapping
         if (match.MappedSec === "Front NE Section") {
             dot.style.left = "78%"; 
             dot.style.top = "52%";
