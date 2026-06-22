@@ -64,7 +64,7 @@
 
         .brick-scroll-viewport { flex: 1; overflow-y: auto; padding: 40px 5px; display: flex; flex-direction: column; align-items: center; }
 
-        /* PRESERVED: Your original, perfect center-justified row system */
+        /* Original Row Style */
         .brick-row {
             display: flex;
             justify-content: center;
@@ -74,15 +74,15 @@
             align-items: stretch;
         }
 
-        /* NEW: Isolated grid option ONLY applied if a row contains New Multi-Line entries */
+        /* Fixed Grid Row Style for New Bricks: Center aligned without auto stretching */
         .brick-row-grid-mode {
-            display: grid;
-            grid-template-columns: 35px repeat(12, 1fr);
-            gap: 4px;
-            margin-bottom: 6px;
-            width: 96%;
-            max-width: 600px;
+            display: flex;
+            justify-content: center;
             align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            width: 100%;
+            max-width: 600px;
         }
 
         .row-number-label {
@@ -98,7 +98,7 @@
             flex-shrink: 0;
         }
 
-        /* PRESERVED: Your perfect uniform square dimensions */
+        /* Uniform Square base for original dataset */
         .brick-unit {
             background: var(--brick);
             color: white;
@@ -121,15 +121,24 @@
             transition: all 0.2s ease;
         }
 
-        /* Override dynamic formatting settings ONLY when handling v2 entries */
+        /* Fixed Square dimensions for New Bricks Database to prevent rectangle stretching */
         .brick-unit.v2-style {
-            width: auto !important;
-            max-width: none !important;
-            min-height: 44px;
+            width: 75px !important;
+            height: 75px !important;
+            min-height: 75px !important;
             font-size: 8px;
-            border-radius: 3px;
-            padding: 4px 2px;
+            border-radius: 4px;
+            padding: 6px 4px;
+            box-sizing: border-box;
             box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2);
+        }
+
+        /* Dynamic scale adjustment for multi-column or multi-row entries in V2 */
+        .brick-unit.v2-style.large-span-col {
+            width: 156px !important; 
+        }
+        .brick-unit.v2-style.large-span-row {
+            height: 156px !important;
         }
 
         .brick-line { display: block; width: 100%; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
@@ -144,10 +153,9 @@
             position: relative;
         }
 
-        /* Focus scaling fallback adjustments if applied inside a grid container */
         .brick-row-grid-mode .brick-unit.current-focus {
             outline: 3px solid white;
-            transform: scale(1.1);
+            transform: scale(1.15);
             font-size: 10px;
             box-shadow: 0 8px 25px rgba(0,0,0,0.4);
         }
@@ -194,12 +202,10 @@
 </div>
 
 <script>
-    // DB 1
     const S_URL = 'https://fcizlimndpfpbkkxardp.supabase.co'; 
     const S_KEY = 'sb_publishable_6VsgUICkD5_DhMkEEdRlDA_NQkTwj7b';
     const gardenClient = window.supabase.createClient(S_URL, S_KEY);
 
-    // DB 2
     const NEW_DB_URL = 'https://afkfynvyzglxmbcyqgod.supabase.co'; 
     const NEW_DB_KEY = 'sb_publishable_KaakpKOqbhxKXefp8fCTnQ_1OHzhuIu'; 
     const newGardenClient = window.supabase.createClient(NEW_DB_URL, NEW_DB_KEY);
@@ -222,7 +228,6 @@
             console.log("Raw items loaded from original DB:", data1.length);
             console.log("Raw items loaded from new DB:", data2.length);
 
-            // Setup original bricks map structures
             let bricks1 = data1.map(row => {
                 const sec = (row.section || row.Section || "").toLowerCase();
                 let mapped = "";
@@ -238,13 +243,12 @@
                     R: parseInt(row.row || row.Row) || 0,
                     C: parseInt(row.col || row.Col) || 0,
                     RowSpan: 1,
-                    ColSpan: 2, 
+                    ColSpan: 1, 
                     Inscr: textVal,
                     Lines: [textVal]
                 };
             });
 
-            // Setup dynamic structure mappings for v2 entries
             let bricks2 = data2.map(row => {
                 const sec = (row.section || row.Section || "").toLowerCase();
                 let mapped = "";
@@ -400,7 +404,6 @@
         const rowLabel = document.createElement('div');
         rowLabel.className = 'row-number-label';
         rowLabel.innerText = "R" + r;
-        if (hasV2Bricks) rowLabel.style.gridColumn = "1";
         rowDiv.appendChild(rowLabel);
 
         const sortedBricks = rowBricks.sort((a, b) => a.C - b.C);
@@ -413,11 +416,11 @@
             
             if (hasV2Bricks) {
                 brickDiv.classList.add('v2-style');
-                const startCol = b.C + 1; 
-                const endCol = startCol + b.ColSpan;
-                brickDiv.style.gridColumn = `${startCol} / ${endCol}`;
+                if (b.ColSpan > 1) {
+                    brickDiv.classList.add('large-span-col');
+                }
                 if (b.RowSpan > 1) {
-                    brickDiv.style.gridRow = `span ${b.RowSpan}`;
+                    brickDiv.classList.add('large-span-row');
                 }
             }
 
