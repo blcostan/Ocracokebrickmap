@@ -64,7 +64,6 @@
 
         .brick-scroll-viewport { flex: 1; overflow-y: auto; padding: 40px 5px; display: flex; flex-direction: column; align-items: center; }
 
-        /* Explicit CSS Grid: Column 1 is for labels, Columns 2-13 are for the 12 brick units */
         .brick-row {
             display: grid;
             grid-template-columns: 35px repeat(12, 1fr);
@@ -74,7 +73,6 @@
             max-width: 600px;
         }
 
-        /* Row Number Label Column Assignment */
         .row-number-label {
             display: flex;
             align-items: center;
@@ -175,14 +173,19 @@
     async function loadData() {
         const searchInput = document.getElementById('search');
         try {
-            // Fetch from both databases concurrently
             const [res1, res2] = await Promise.all([
                 gardenClient.from('ocracoke_bricks').select('*'),
                 newGardenClient.from('ocracoke_bricks_v2').select('*')
             ]);
 
+            if (res1.error) console.error("DB1 Fetch Error:", res1.error);
+            if (res2.error) console.error("DB2 Fetch Error:", res2.error);
+
             let data1 = res1.data || [];
             let data2 = res2.data || [];
+
+            console.log("Raw items loaded from original DB:", data1.length);
+            console.log("Raw items loaded from new DB:", data2.length);
 
             // Map database 1 format
             let bricks1 = data1.map(row => {
@@ -190,6 +193,8 @@
                 let mapped = "";
                 if (sec.includes("north")) mapped = "Front Fig Garden";
                 else if (sec.includes("south")) mapped = "Back Fig Garden";
+
+                const textVal = row.inscription || row.Inscription || "";
 
                 return {
                     ...row,
@@ -199,14 +204,14 @@
                     C: parseInt(row.col || row.Col) || 0,
                     RowSpan: 1,
                     ColSpan: 2, 
-                    Inscr: row.inscription || row.Inscription || "",
-                    Lines: [row.inscription || row.Inscription || ""]
+                    Inscr: textVal,
+                    Lines: [textVal]
                 };
             });
 
-            // Map database 2 format using the explicit spreadsheet headers
+            // Map database 2 format using the fallback properties
             let bricks2 = data2.map(row => {
-                const sec = (row.section || "").toLowerCase();
+                const sec = (row.section || row.Section || "").toLowerCase();
                 let mapped = "";
                 
                 if (sec.includes("front ne") || sec.includes("ne")) {
@@ -217,11 +222,14 @@
                     mapped = "Back Fig Garden";
                 }
 
-                // Extracted using precise column naming constraints from your spreadsheet
+                // Check standard headers, uppercase headers, or fallback straight inscription column names
                 const clearLines = [
-                    row.inscription_line_1, row.inscription_line_2, 
-                    row.inscription_line_3, row.inscription_line_4,
-                    row.inscription_line_5, row.inscription_line_6
+                    row.inscription_line_1 || row.inscription_1 || row.Inscription_1,
+                    row.inscription_line_2 || row.inscription_2 || row.Inscription_2,
+                    row.inscription_line_3 || row.inscription_3 || row.Inscription_3,
+                    row.inscription_line_4 || row.inscription_4 || row.Inscription_4,
+                    row.inscription_line_5 || row.inscription_5 || row.Inscription_5,
+                    row.inscription_line_6 || row.inscription_6 || row.Inscription_6
                 ].map(l => (l || "").trim()).filter(l => l !== "" && l !== "[BLANK]");
 
                 const searchableText = clearLines.join(" ");
@@ -230,21 +238,23 @@
                     ...row,
                     isV2: true,
                     MappedSec: mapped,
-                    R: parseInt(row.row) || 0,
-                    C: parseInt(row.col) || 0,
-                    RowSpan: parseInt(row.row_span) || 1,
-                    ColSpan: parseInt(row.col_span) || 1,
+                    R: parseInt(row.row || row.Row) || 0,
+                    C: parseInt(row.col || row.Col) || 0,
+                    RowSpan: parseInt(row.row_span || row.Row_span || row.row_span) || 1,
+                    ColSpan: parseInt(row.col_span || row.Col_span || row.col_span) || 1,
                     Inscr: searchableText || "[BLANK]",
                     Lines: clearLines.length > 0 ? clearLines : ["[BLANK]"]
                 };
             });
 
             allBricks = [...bricks1, ...bricks2];
+            console.log("Total master combined brick registry count:", allBricks.length);
+
             searchInput.placeholder = "Enter a name...";
             searchInput.disabled = false;
         } catch (err) {
             searchInput.placeholder = "Error loading data.";
-            console.error("Supabase error:", err);
+            console.error("Critical execution error loading data arrays:", err);
         }
     }
 
@@ -263,8 +273,11 @@
             return; 
         }
 
+        // Global search checks text across combined fields
         currentMatches = allBricks.filter(b => b.Inscr.toLowerCase().includes(t));
         matchIndex = 0;
+
+        console.log(`Searching for "${t}" -> Found matches:`, currentMatches.length);
 
         if (currentMatches.length > 0) { 
             updateUI(); 
@@ -293,7 +306,6 @@
         const dot = document.getElementById('map-dot');
         dot.style.display = "block";
         
-        // Pinpoints map dot coordinates based on matching segment criteria
         if (match.MappedSec === "Front NE Section") {
             dot.style.left = "78%"; 
             dot.style.top = "52%";
@@ -332,7 +344,6 @@
         const rows = {};
         sectionBricks.forEach(b => { if(!rows[b.R]) rows[b.R] = []; rows[b.R].push(b); });
 
-        // Build path view alignment sequences
         if (isFront || isNE) {
             for (let r = maxR; r >= 1; r--) { renderRow(r, rows, container, targetMatch); }
         } else {
@@ -357,11 +368,10 @@
 
         sortedBricks.forEach(b => {
             const brickDiv = document.createElement('div');
-            const isBlank = b.Inscr.includes("[BLANK]");
+            const isInscrBlank = b.Inscr.includes("[BLANK]");
             
-            brickDiv.className = isBlank ? 'brick-unit is-blank' : 'brick-unit';
+            brickDiv.className = isInscrBlank ? 'brick-unit is-blank' : 'brick-unit';
             
-            // Offset positioning by 1 to make space for the Row Label column
             const startCol = b.C + 1; 
             const endCol = startCol + b.ColSpan;
             brickDiv.style.gridColumn = `${startCol} / ${endCol}`;
@@ -370,7 +380,7 @@
                 brickDiv.style.gridRow = `span ${b.RowSpan}`;
             }
 
-            if (!isBlank) {
+            if (!isInscrBlank) {
                 b.Lines.forEach(lineText => {
                     const lineSpan = document.createElement('span');
                     lineSpan.className = 'brick-line';
@@ -378,7 +388,6 @@
                     brickDiv.appendChild(lineSpan);
                 });
 
-                // Unique lookup indexing checks
                 const matchCheck = b.isV2 
                     ? (b.row === targetMatch.row && b.col === targetMatch.col && b.section === targetMatch.section)
                     : (b.id === targetMatch.id || (b.Inscr === targetMatch.Inscr && b.R === targetMatch.R && b.C === targetMatch.C));
