@@ -64,27 +64,41 @@
 
         .brick-scroll-viewport { flex: 1; overflow-y: auto; padding: 40px 5px; display: flex; flex-direction: column; align-items: center; }
 
-        /* Explicit Grid Settings for Staggered Bricks mapping */
+        /* PRESERVED: Your original, perfect center-justified row system */
         .brick-row {
+            display: flex;
+            justify-content: center;
+            gap: 1vw;
+            margin-bottom: 1vw;
+            width: 100%;
+            align-items: stretch;
+        }
+
+        /* NEW: Isolated grid option ONLY applied if a row contains New Multi-Line entries */
+        .brick-row-grid-mode {
             display: grid;
             grid-template-columns: 35px repeat(12, 1fr);
             gap: 4px;
             margin-bottom: 6px;
             width: 96%;
             max-width: 600px;
+            align-items: center;
         }
 
         .row-number-label {
+            width: 30px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 11px;
+            font-size: 10px;
             color: var(--dark-green);
             font-weight: bold;
-            opacity: 0.7;
-            grid-column: 1;
+            opacity: 0.6;
+            margin-right: 5px;
+            flex-shrink: 0;
         }
 
+        /* PRESERVED: Your perfect uniform square dimensions */
         .brick-unit {
             background: var(--brick);
             color: white;
@@ -93,32 +107,55 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 8px;
+            font-size: 7px;
             font-weight: bold;
+            border-radius: 2px;
+            padding: 4px 2px;
+            width: 15vw;
+            max-width: 80px;
+            min-height: 40px;
+            word-break: break-word;
+            line-height: 1.1;
+            box-shadow: inset 0 -1px 0 rgba(0,0,0,0.2);
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+
+        /* Override dynamic formatting settings ONLY when handling v2 entries */
+        .brick-unit.v2-style {
+            width: auto !important;
+            max-width: none !important;
+            min-height: 44px;
+            font-size: 8px;
             border-radius: 3px;
             padding: 4px 2px;
-            min-height: 44px;
-            word-break: break-word;
-            line-height: 1.2;
             box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2);
-            transition: all 0.2s ease;
         }
 
         .brick-line { display: block; width: 100%; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
 
         .brick-unit.current-focus {
-            outline: 3px solid white;
+            outline: 2px solid white;
             background: var(--highlight);
-            transform: scale(1.1);
+            transform: scale(1.4);
             z-index: 99;
-            font-size: 10px; 
-            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+            font-size: 9px; 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
             position: relative;
+        }
+
+        /* Focus scaling fallback adjustments if applied inside a grid container */
+        .brick-row-grid-mode .brick-unit.current-focus {
+            outline: 3px solid white;
+            transform: scale(1.1);
+            font-size: 10px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
         }
 
         .brick-unit.is-blank { background: #dcd7cc; border: 1px dashed #bbb; color: transparent; box-shadow: none; }
 
         .mini-lawn-row { background: var(--fig-green); color: white; padding: 10px; text-align: center; border-radius: 25px; font-weight: bold; font-size: 13px; margin: 20px 0; width: 80%; border: 2px solid var(--dark-green); }
+        .path-title-text { color: var(--dark-green); font-size: 20px; font-weight: bold; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -157,12 +194,12 @@
 </div>
 
 <script>
-    // --- DATABASE 1 (Original Connection) ---
+    // DB 1
     const S_URL = 'https://fcizlimndpfpbkkxardp.supabase.co'; 
     const S_KEY = 'sb_publishable_6VsgUICkD5_DhMkEEdRlDA_NQkTwj7b';
     const gardenClient = window.supabase.createClient(S_URL, S_KEY);
 
-    // --- DATABASE 2 (New Connection) ---
+    // DB 2
     const NEW_DB_URL = 'https://afkfynvyzglxmbcyqgod.supabase.co'; 
     const NEW_DB_KEY = 'sb_publishable_KaakpKOqbhxKXefp8fCTnQ_1OHzhuIu'; 
     const newGardenClient = window.supabase.createClient(NEW_DB_URL, NEW_DB_KEY);
@@ -174,14 +211,10 @@
     async function loadData() {
         const searchInput = document.getElementById('search');
         try {
-            // Target the exact case-sensitive table path string
             const [res1, res2] = await Promise.all([
                 gardenClient.from('ocracoke_bricks').select('*'),
                 newGardenClient.from('Ocracoke_Bricks_New').select('*')
             ]);
-
-            if (res1.error) console.error("DB1 Fetch Error:", res1.error);
-            if (res2.error) console.error("DB2 Fetch Error:", res2.error);
 
             let data1 = res1.data || [];
             let data2 = res2.data || [];
@@ -189,7 +222,7 @@
             console.log("Raw items loaded from original DB:", data1.length);
             console.log("Raw items loaded from new DB:", data2.length);
 
-            // Parse Database 1 items
+            // Setup original bricks map structures
             let bricks1 = data1.map(row => {
                 const sec = (row.section || row.Section || "").toLowerCase();
                 let mapped = "";
@@ -211,7 +244,7 @@
                 };
             });
 
-            // Parse Database 2 items using adaptive structural logic
+            // Setup dynamic structure mappings for v2 entries
             let bricks2 = data2.map(row => {
                 const sec = (row.section || row.Section || "").toLowerCase();
                 let mapped = "";
@@ -249,7 +282,7 @@
             });
 
             allBricks = [...bricks1, ...bricks2];
-            console.log("Total combined catalog item count:", allBricks.length);
+            console.log("Total master database count:", allBricks.length);
 
             searchInput.placeholder = "Enter a name...";
             searchInput.disabled = false;
@@ -276,8 +309,6 @@
 
         currentMatches = allBricks.filter(b => b.Inscr.toLowerCase().includes(t));
         matchIndex = 0;
-
-        console.log(`Query "${t}" yielded matches count:`, currentMatches.length);
 
         if (currentMatches.length > 0) { 
             updateUI(); 
@@ -306,7 +337,6 @@
         const dot = document.getElementById('map-dot');
         dot.style.display = "block";
         
-        // Dynamic map dot assignment mapping
         if (match.MappedSec === "Front NE Section") {
             dot.style.left = "78%"; 
             dot.style.top = "52%";
@@ -357,15 +387,23 @@
     function renderRow(r, rows, container, targetMatch) {
         if (!rows[r]) return;
         
+        const rowBricks = rows[r];
+        const hasV2Bricks = rowBricks.some(b => b.isV2);
+
         const rowDiv = document.createElement('div');
-        rowDiv.className = 'brick-row';
+        if (hasV2Bricks) {
+            rowDiv.className = 'brick-row-grid-mode';
+        } else {
+            rowDiv.className = 'brick-row';
+        }
         
         const rowLabel = document.createElement('div');
         rowLabel.className = 'row-number-label';
         rowLabel.innerText = "R" + r;
+        if (hasV2Bricks) rowLabel.style.gridColumn = "1";
         rowDiv.appendChild(rowLabel);
 
-        const sortedBricks = rows[r].sort((a, b) => a.C - b.C);
+        const sortedBricks = rowBricks.sort((a, b) => a.C - b.C);
 
         sortedBricks.forEach(b => {
             const brickDiv = document.createElement('div');
@@ -373,21 +411,27 @@
             
             brickDiv.className = isInscrBlank ? 'brick-unit is-blank' : 'brick-unit';
             
-            const startCol = b.C + 1; 
-            const endCol = startCol + b.ColSpan;
-            brickDiv.style.gridColumn = `${startCol} / ${endCol}`;
-            
-            if (b.RowSpan > 1) {
-                brickDiv.style.gridRow = `span ${b.RowSpan}`;
+            if (hasV2Bricks) {
+                brickDiv.classList.add('v2-style');
+                const startCol = b.C + 1; 
+                const endCol = startCol + b.ColSpan;
+                brickDiv.style.gridColumn = `${startCol} / ${endCol}`;
+                if (b.RowSpan > 1) {
+                    brickDiv.style.gridRow = `span ${b.RowSpan}`;
+                }
             }
 
             if (!isInscrBlank) {
-                b.Lines.forEach(lineText => {
-                    const lineSpan = document.createElement('span');
-                    lineSpan.className = 'brick-line';
-                    lineSpan.innerText = lineText;
-                    brickDiv.appendChild(lineSpan);
-                });
+                if (b.isV2) {
+                    b.Lines.forEach(lineText => {
+                        const lineSpan = document.createElement('span');
+                        lineSpan.className = 'brick-line';
+                        lineSpan.innerText = lineText;
+                        brickDiv.appendChild(lineSpan);
+                    });
+                } else {
+                    brickDiv.innerText = b.Inscr;
+                }
 
                 const matchCheck = b.isV2 
                     ? (b.row === targetMatch.row && b.col === targetMatch.col && b.section === targetMatch.section)
