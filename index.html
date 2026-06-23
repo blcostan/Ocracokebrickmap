@@ -87,13 +87,13 @@
             padding-bottom: 15px;
             -webkit-overflow-scrolling: touch;
             display: flex;
-            justify-content: center; /* Centers the whole block if it fits the screen width */
+            justify-content: center;
         }
 
         /* TRACK 2: Modern Unified CSS Grid for 13 Bricks + 1 Label column */
         .unified-grid-section {
             display: grid;
-            grid-template-columns: 40px repeat(13, 55px); /* Tightened track layout sizes to reduce horizontal stretch */
+            grid-template-columns: 40px repeat(13, 55px); 
             grid-auto-rows: 42px; 
             gap: 6px;
             width: max-content;
@@ -160,6 +160,14 @@
 
         .brick-line { display: block; width: 100%; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
 
+        .brick-icon {
+            display: inline-block;
+            font-size: 1.2em;
+            vertical-align: middle;
+            line-height: 1;
+            margin: 0 2px;
+        }
+
         .brick-unit.current-focus {
             outline: 2px solid white;
             background: var(--highlight);
@@ -211,7 +219,7 @@
 <div id="brick-overlay">
     <div class="overlay-nav"><button class="back-btn" onclick="closeBricks()">← Back to Map</button></div>
     <div class="brick-scroll-viewport">
-        <div id="top-lawn" class="mini-lawn-row">ISLAND INN (This Way ↑)</div>
+        <div id="top-lawn" class="mini-lawn-row">CENTRAL LAWN (This Way ↑)</div>
         <div id="brick-container"></div>
         <div id="bottom-orientation" class="mini-lawn-row" style="background: #ddd; color: #666; border-color: #bbb;">BACK OF FIG GARDEN (This Way ↓)</div>
     </div>
@@ -229,6 +237,24 @@
     let allBricks = [];
     let currentMatches = [];
     let matchIndex = 0;
+
+    function parseIcons(text) {
+        if (!text) return "";
+        let parsed = text;
+        
+        const iconMap = [
+            { regex: /[\[\(]\s*anchor\s*[\]\)]/gi, replacement: '<span class="brick-icon">⚓</span>' },
+            { regex: /[\[\(]\s*cross\s*[\]\)]/gi, replacement: '<span class="brick-icon">✝</span>' },
+            { regex: /[\[\(]\s*heart\s*[\]\)]/gi, replacement: '<span class="brick-icon">❤️</span>' },
+            { regex: /[\[\(]\s*dog\s+paw\s*[\]\)]/gi, replacement: '<span class="brick-icon">🐾</span>' },
+            { regex: /[\[\(]\s*paw\s*[\]\)]/gi, replacement: '<span class="brick-icon">🐾</span>' }
+        ];
+
+        iconMap.forEach(item => {
+            parsed = parsed.replace(item.regex, item.replacement);
+        });
+        return parsed;
+    }
 
     async function loadData() {
         const searchInput = document.getElementById('search');
@@ -350,7 +376,7 @@
         } else {
             dot.style.left = "54%"; dot.style.top = "41%";
         }
-        document.getElementById('preview-text').innerText = match.Inscr;
+        document.getElementById('preview-text').innerHTML = parseIcons(match.Inscr);
     }
 
     function triggerGridFromPreview() { 
@@ -366,7 +392,7 @@
         
         const bottomLabel = document.getElementById('bottom-orientation');
         if (isNE) {
-            bottomLabel.innerText = "LIGHTHOUSE RD (This Way ↓)";
+            bottomLabel.innerText = "FRONT NE SECTION (This Way ↓)";
         } else {
             bottomLabel.innerText = isFront ? "FRONT OF FIG GARDEN (This Way ↓)" : "BACK OF FIG GARDEN (This Way ↓)";
         }
@@ -411,7 +437,7 @@
                     b.Lines.forEach(lineText => {
                         const lineSpan = document.createElement('span');
                         lineSpan.className = 'brick-line';
-                        lineSpan.innerText = lineText;
+                        lineSpan.innerHTML = parseIcons(lineText);
                         brickDiv.appendChild(lineSpan);
                     });
 
@@ -455,7 +481,7 @@
             brickDiv.className = isBlank ? 'brick-unit is-blank' : 'brick-unit';
             
             if (!isBlank) {
-                brickDiv.innerText = b.Inscr;
+                brickDiv.innerHTML = parseIcons(b.Inscr);
                 if (b.id === targetMatch.id || (b.Inscr === targetMatch.Inscr && b.R === targetMatch.R && b.C === targetMatch.C)) {
                     brickDiv.classList.add('current-focus');
                     setTimeout(() => brickDiv.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
