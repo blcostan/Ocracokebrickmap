@@ -246,8 +246,8 @@
             { regex: /[\[\(]\s*anchor\s*[\]\)]/gi, replacement: '<span class="brick-icon">⚓</span>' },
             { regex: /[\[\(]\s*cross\s*[\]\)]/gi, replacement: '<span class="brick-icon">✝</span>' },
             { regex: /[\[\(]\s*heart\s*[\]\)]/gi, replacement: '<span class="brick-icon">❤️</span>' },
-            { regex: /[\[\(]\s*dog\s+paw\s*[\]\)]/gi, replacement: '<span class="brick-icon">🐾</span>' },
-            { regex: /[\[\(]\s*paw\s*[\]\)]/gi, replacement: '<span class="brick-icon">🐾</span>' }
+            // Consolidated alternative variations into a single regex match rule to safeguard against multiple lookups
+            { regex: /[\[\(]\s*(dog\s+)?paw\s*[\]\)]/gi, replacement: '<span class="brick-icon">🐾</span>' }
         ];
 
         iconMap.forEach(item => {
