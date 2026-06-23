@@ -47,7 +47,6 @@
             text-align: center; margin-bottom: 15px; cursor: pointer;
         }
 
-        /* Forces search preview text card to display in capitals */
         #preview-text {
             text-transform: uppercase;
         }
@@ -88,14 +87,14 @@
             padding-bottom: 15px;
             -webkit-overflow-scrolling: touch;
             display: flex;
-            justify-content: flex-start;
+            justify-content: center; /* Centers the whole block if it fits the screen width */
         }
 
         /* TRACK 2: Modern Unified CSS Grid for 13 Bricks + 1 Label column */
         .unified-grid-section {
             display: grid;
-            grid-template-columns: 40px repeat(13, 70px);
-            grid-auto-rows: 42px; /* Base horizontal rectangle height */
+            grid-template-columns: 40px repeat(13, 55px); /* Tightened track layout sizes to reduce horizontal stretch */
+            grid-auto-rows: 42px; 
             gap: 6px;
             width: max-content;
             margin: 0 auto;
@@ -142,7 +141,7 @@
             box-shadow: inset 0 -1px 0 rgba(0,0,0,0.2);
             flex-shrink: 0;
             transition: all 0.2s ease;
-            text-transform: uppercase; /* Forces Database 1 names to capitals */
+            text-transform: uppercase;
         }
 
         /* TRACK 2 STYLE: V2 Adaptive Bricks */
@@ -156,7 +155,7 @@
             padding: 4px 2px;
             box-sizing: border-box;
             box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2);
-            text-transform: uppercase; /* Forces Database 2 names to capitals */
+            text-transform: uppercase;
         }
 
         .brick-line { display: block; width: 100%; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
@@ -374,12 +373,10 @@
 
         const sectionBricks = allBricks.filter(b => b.MappedSec === targetMatch.MappedSec);
         
-        // Split handling directly by database origin flag
         const isV2Database = targetMatch.isV2;
         let maxR = Math.max(...sectionBricks.map(b => b.R), 0);
 
         if (isV2Database) {
-            // RENDERING PATH 2: Use scrolling layout shell + exactly 13 brick columns 
             const scrollShell = document.createElement('div');
             scrollShell.className = 'grid-scroll-container';
 
@@ -399,11 +396,9 @@
                 const isBlank = b.Inscr.includes("[BLANK]");
                 brickDiv.className = isBlank ? 'brick-unit is-blank v2-style' : 'brick-unit v2-style';
 
-                // Map side position
                 const startCol = b.C + 2;
                 brickDiv.style.gridColumn = `${startCol} / span ${b.ColSpan}`;
 
-                // Calculate exact vertical placement bounds
                 const baseGridRow = (isFront || isNE) ? (maxR - b.R + 1) : b.R;
                 if (b.RowSpan > 1) {
                     const gridStartRow = baseGridRow - (b.RowSpan - 1);
@@ -431,7 +426,6 @@
             container.appendChild(scrollShell);
 
         } else {
-            // RENDERING PATH 1: Use traditional isolated flex rows for Database 1 components
             const rows = {};
             sectionBricks.forEach(b => { if(!rows[b.R]) rows[b.R] = []; rows[b.R].push(b); });
 
