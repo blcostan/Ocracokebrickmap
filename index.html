@@ -211,7 +211,7 @@
 <div id="brick-overlay">
     <div class="overlay-nav"><button class="back-btn" onclick="closeBricks()">← Back to Map</button></div>
     <div class="brick-scroll-viewport">
-        <div id="top-lawn" class="mini-lawn-row">CENTRAL LAWN (This Way ↑)</div>
+        <div id="top-lawn" class="mini-lawn-row">ISLAND INN (This Way ↑)</div>
         <div id="brick-container"></div>
         <div id="bottom-orientation" class="mini-lawn-row" style="background: #ddd; color: #666; border-color: #bbb;">BACK OF FIG GARDEN (This Way ↓)</div>
     </div>
@@ -366,7 +366,7 @@
         
         const bottomLabel = document.getElementById('bottom-orientation');
         if (isNE) {
-            bottomLabel.innerText = "FRONT NE SECTION (This Way ↓)";
+            bottomLabel.innerText = "LIGHTHOUSE RD (This Way ↓)";
         } else {
             bottomLabel.innerText = isFront ? "FRONT OF FIG GARDEN (This Way ↓)" : "BACK OF FIG GARDEN (This Way ↓)";
         }
