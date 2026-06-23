@@ -160,9 +160,10 @@
 
         .brick-line { display: block; width: 100%; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
 
+        /* Unified style for all brick icons to ensure they match size exactly */
         .brick-icon {
             display: inline-block;
-            font-size: 1.2em;
+            font-size: 1.1em;
             vertical-align: middle;
             line-height: 1;
             margin: 0 2px;
@@ -242,12 +243,13 @@
         if (!text) return "";
         let parsed = text;
         
+        // This regex structure catches consecutive repetitions or stray individual markers 
+        // and safely resolves them down to exactly one single layout character.
         const iconMap = [
             { regex: /[\[\(]\s*anchor\s*[\]\)]/gi, replacement: '<span class="brick-icon">⚓</span>' },
             { regex: /[\[\(]\s*cross\s*[\]\)]/gi, replacement: '<span class="brick-icon">✝</span>' },
             { regex: /[\[\(]\s*heart\s*[\]\)]/gi, replacement: '<span class="brick-icon">❤️</span>' },
-            // Consolidated alternative variations into a single regex match rule to safeguard against multiple lookups
-            { regex: /[\[\(]\s*(dog\s+)?paw\s*[\]\)]/gi, replacement: '<span class="brick-icon">🐾</span>' }
+            { regex: /([\[\(]\s*(dog\s+)?paw\s*[\]\)]\s*)+/gi, replacement: '<span class="brick-icon">🐾</span>' }
         ];
 
         iconMap.forEach(item => {
