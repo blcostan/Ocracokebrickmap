@@ -9,7 +9,6 @@
         :root { --fig-green: #9CAF88; --dark-green: #557C4B; --sand: #F2EFEA; --brick: #B14A3B; --highlight: #ff3b3b; }
         body { font-family: 'Georgia', serif; background: var(--sand); margin: 0; display: flex; flex-direction: column; min-height: 100vh; }
         
-        /* The brick unit needs fixed width to NOT stretch */
         .brick-unit { 
             background: var(--brick); color: white; text-align: center; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
@@ -23,7 +22,7 @@
         /* DB1 Layout: Row-based, centered */
         .brick-row { display: flex; justify-content: center; gap: 4px; margin-bottom: 4px; }
         
-        /* DB2 Layout: Grid-based (UNCHANGED) */
+        /* DB2 Layout: Grid-based */
         .grid-container { 
             display: inline-grid; 
             grid-template-columns: repeat(12, 55px); 
@@ -52,7 +51,7 @@
 
 <div id="brick-overlay">
     <div style="padding:10px; background:white; text-align:center;"><button onclick="closeBricks()" style="padding:8px 25px; border-radius:20px; border:none; background:var(--dark-green); color:white; font-weight:bold;">← Back to Map</button></div>
-    <div id="brick-container" style="padding: 20px 0; display: flex; flex-direction: column; align-items: center;"></div>
+    <div id="brick-container" style="display: flex; flex-direction: column; align-items: center; padding: 20px;"></div>
 </div>
 
 <script>
@@ -86,47 +85,58 @@
         dot.style.left = "54%"; dot.style.top = "66%";
         
         let content = `<div style="font-weight:bold; margin-bottom:10px;">${match.Inscription}</div>`;
-        content += `<button onclick="renderBricks(${matchIndex})" style="padding:10px; width:48%; border-radius:20px; border:none; background:var(--dark-green); color:white;">View Map</button>`;
+        content += `<button onclick="renderTarget(${matchIndex})" style="padding:10px; width:48%; border-radius:20px; border:none; background:var(--dark-green); color:white;">View Map</button>`;
         if (currentMatches.length > 1) content += `<button onclick="matchIndex=(matchIndex+1)%currentMatches.length; updateUI();" style="padding:10px; width:48%; margin-left:4%; border-radius:20px; border:none; background:var(--fig-green); color:white;">Next</button>`;
         document.getElementById('preview-text').innerHTML = content;
         document.getElementById('preview-card').style.display = "block";
     }
 
-    function renderBricks(index) {
+    function renderTarget(index) {
         const target = currentMatches[index];
         const container = document.getElementById('brick-container'); container.innerHTML = "";
         
         if (!target.isNew) {
-            // Path 1: DB1 - Correct Row Layout
-            const rows = {}; db1.filter(b => b.Section === target.Section).forEach(b => {
-                if(!rows[b.Row]) rows[b.Row] = []; rows[b.Row].push(b);
-            });
-            Object.keys(rows).sort((a,b) => a-b).forEach(r => {
-                const rowDiv = document.createElement('div'); rowDiv.className = 'brick-row';
-                rows[r].sort((a,b) => a.Col - b.Col).forEach(b => {
-                    const d = document.createElement('div');
-                    d.className = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? 'brick-unit' : 'brick-unit is-blank';
-                    d.innerText = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? b.Inscription : "";
-                    if(b.id == target.id) { d.classList.add('current-focus'); setTimeout(() => d.scrollIntoView({ block: 'center' }), 300); }
-                    rowDiv.appendChild(d);
-                });
-                container.appendChild(rowDiv);
-            });
+            renderOriginalBricks(target);
         } else {
-            // Path 2: DB2 - Correct Grid Layout (UNCHANGED)
-            const grid = document.createElement('div'); grid.className = 'grid-container';
-            db2.filter(b => b.Section === target.Section).forEach(b => {
+            renderNewBricks(target);
+        }
+        document.getElementById('brick-overlay').style.display = 'flex';
+    }
+
+    // PATH 1: Ocracoke_Bricks (Row Layout)
+    function renderOriginalBricks(target) {
+        const container = document.getElementById('brick-container');
+        const rows = {}; 
+        db1.filter(b => b.Section === target.Section).forEach(b => {
+            if(!rows[b.Row]) rows[b.Row] = []; rows[b.Row].push(b);
+        });
+        Object.keys(rows).sort((a,b) => a-b).forEach(r => {
+            const rowDiv = document.createElement('div'); rowDiv.className = 'brick-row';
+            rows[r].sort((a,b) => a.Col - b.Col).forEach(b => {
                 const d = document.createElement('div');
                 d.className = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? 'brick-unit' : 'brick-unit is-blank';
                 d.innerText = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? b.Inscription : "";
-                d.style.gridRow = `${b.Row} / span ${b.RowSpan}`;
-                d.style.gridColumn = `${b.Col} / span ${b.ColSpan}`;
                 if(b.id == target.id) { d.classList.add('current-focus'); setTimeout(() => d.scrollIntoView({ block: 'center' }), 300); }
-                grid.appendChild(d);
+                rowDiv.appendChild(d);
             });
-            container.appendChild(grid);
-        }
-        document.getElementById('brick-overlay').style.display = 'flex';
+            container.appendChild(rowDiv);
+        });
+    }
+
+    // PATH 2: Ocracoke_Bricks_New (Grid Layout)
+    function renderNewBricks(target) {
+        const container = document.getElementById('brick-container');
+        const grid = document.createElement('div'); grid.className = 'grid-container';
+        db2.filter(b => b.Section === target.Section).forEach(b => {
+            const d = document.createElement('div');
+            d.className = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? 'brick-unit' : 'brick-unit is-blank';
+            d.innerText = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? b.Inscription : "";
+            d.style.gridRow = `${b.Row} / span ${b.RowSpan}`;
+            d.style.gridColumn = `${b.Col} / span ${b.ColSpan}`;
+            if(b.id == target.id) { d.classList.add('current-focus'); setTimeout(() => d.scrollIntoView({ block: 'center' }), 300); }
+            grid.appendChild(d);
+        });
+        container.appendChild(grid);
     }
 
     function closeBricks() { document.getElementById('brick-overlay').style.display = 'none'; }
