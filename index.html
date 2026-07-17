@@ -10,18 +10,19 @@
         body { font-family: 'Georgia', serif; background: var(--sand); margin: 0; display: flex; flex-direction: column; min-height: 100vh; }
         
         /* Unified Brick Styling */
-        .brick-unit { background: var(--brick); color: white; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 7px; font-weight: bold; border-radius: 2px; padding: 4px 2px; width: 60px; height: 40px; text-transform: uppercase; }
+        .brick-unit { background: var(--brick); color: white; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 7px; font-weight: bold; border-radius: 2px; padding: 4px 2px; width: 60px; height: 40px; text-transform: uppercase; border: 1px solid rgba(255,255,255,0.3); }
         .brick-unit.current-focus { outline: 3px solid var(--highlight); background: var(--highlight); transform: scale(1.1); z-index: 99; }
         
-        /* Layout 1: Flex rows (Original DB) */
+        /* Layouts */
         .brick-row { display: flex; justify-content: center; gap: 5px; margin-bottom: 5px; }
-        
-        /* Layout 2: CSS Grid (New DB) */
         .grid-container { display: grid; grid-template-columns: repeat(14, 55px); grid-auto-rows: 42px; gap: 6px; width: max-content; margin: 20px auto; padding: 20px; }
         
         /* UI Elements */
         #search { width: 90%; max-width: 400px; padding: 12px; border-radius: 30px; border: 2px solid var(--fig-green); margin: 20px auto; display: block; }
         #preview-card { width: 90%; max-width: 360px; background: white; border-radius: 12px; padding: 15px; border-left: 5px solid var(--fig-green); margin: 0 auto 20px auto; display: none; text-align: center; }
+        .main-map-area { position: relative; width: 100%; max-width: 800px; background: white; padding: 5px; border-radius: 15px; border: 1px solid #ddd; margin: 0 auto 20px auto; }
+        .main-map-area img { width: 100%; display: block; border-radius: 10px; }
+        #map-dot { position: absolute; width: 30px; height: 30px; background: var(--highlight); border: 3px solid white; border-radius: 50%; display: none; transform: translate(-50%, -50%); z-index: 20; }
         #brick-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--sand); z-index: 1000; display: none; flex-direction: column; }
     </style>
 </head>
@@ -29,6 +30,11 @@
 
 <input type="text" id="search" placeholder="Enter a name..." disabled>
 <div id="preview-card"><div id="preview-text"></div></div>
+
+<div class="main-map-area">
+    <div id="map-dot"></div>
+    <img src="rendering%20of%20garden.avif" alt="Map">
+</div>
 
 <div id="brick-overlay">
     <div style="padding:10px; background:white; text-align:center;"><button onclick="closeBricks()" style="padding:8px 25px; border-radius:20px; border:none; background:var(--dark-green); color:white; font-weight:bold;">← Back to Map</button></div>
@@ -49,7 +55,7 @@
 
     document.getElementById('search').oninput = (e) => {
         const t = e.target.value.toLowerCase().trim();
-        if (t.length < 2) { document.getElementById('preview-card').style.display = "none"; return; }
+        if (t.length < 2) { document.getElementById('map-dot').style.display = document.getElementById('preview-card').style.display = "none"; return; }
         currentMatches = [...db1.filter(b => (b.Inscription||"").toLowerCase().includes(t)).map(b=>({...b, isNew:false})),
                           ...db2.filter(b => (b.Inscription||"").toLowerCase().includes(t)).map(b=>({...b, isNew:true}))];
         matchIndex = 0;
@@ -58,6 +64,9 @@
 
     function updateUI() {
         const match = currentMatches[matchIndex];
+        const dot = document.getElementById('map-dot'); dot.style.display = "block";
+        dot.style.left = "54%"; dot.style.top = "66%"; // Adjust as needed
+        
         let content = `<div style="font-weight:bold; margin-bottom:10px;">${match.Inscription}</div>`;
         content += `<button onclick="renderBricks(${matchIndex})" style="padding:10px; width:48%; border-radius:20px; border:none; background:var(--dark-green); color:white;">View Map</button>`;
         if (currentMatches.length > 1) content += `<button onclick="matchIndex=(matchIndex+1)%currentMatches.length; updateUI();" style="padding:10px; width:48%; margin-left:4%; border-radius:20px; border:none; background:var(--fig-green); color:white;">Next</button>`;
@@ -70,7 +79,6 @@
         const container = document.getElementById('brick-container'); container.innerHTML = "";
         
         if (!target.isNew) {
-            // Layout 1: Original Flex Rows
             const rows = {}; db1.filter(b=>b.Section === target.Section).forEach(b=>{if(!rows[b.Row])rows[b.Row]=[]; rows[b.Row].push(b);});
             Object.keys(rows).sort((a,b)=>a-b).forEach(r => {
                 const rowDiv = document.createElement('div'); rowDiv.className = 'brick-row';
@@ -82,7 +90,6 @@
                 container.appendChild(rowDiv);
             });
         } else {
-            // Layout 2: New Grid with Spanning Logic
             const grid = document.createElement('div'); grid.className = 'grid-container';
             db2.filter(b=>b.Section === target.Section).forEach(b => {
                 const d = document.createElement('div'); d.className = 'brick-unit'; d.innerText = b.Inscription;
