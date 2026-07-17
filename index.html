@@ -146,7 +146,7 @@
                 const sec = (row.section||row.Section||"").toLowerCase();
                 let mapped = sec.includes("ne") ? "Front NE Section" : sec.includes("north") ? "Front Fig Garden" : "Back Fig Garden";
                 const lines = [row.inscription_line_1||row.inscription_1||row.Inscription_1, row.inscription_line_2||row.inscription_2||row.Inscription_2, row.inscription_line_3||row.inscription_3||row.Inscription_3, row.inscription_line_4||row.inscription_4||row.Inscription_4, row.inscription_line_5||row.inscription_5||row.Inscription_5, row.inscription_line_6||row.inscription_6||row.Inscription_6].map(l=>(l||"").trim()).filter(l=>l!==""&&l!=="[BLANK]");
-                return { ...row, isV2: true, MappedSec: mapped, R: parseInt(row.row||row.Row)||0, C: parseInt(row.col||row.Col)||0, RowSpan: parseInt(row.row_span||row.Row_span)||1, ColSpan: parseInt(row.col_span||row.Col_span)||1, Inscr: lines.join(" ")||[BLANK], Lines: lines.length>0?lines:["[BLANK]"] };
+                return { ...row, isV2: true, MappedSec: mapped, R: parseInt(row.row||row.Row)||0, C: parseInt(row.col||row.Col)||0, RowSpan: parseInt(row.row_span||row.Row_span)||1, ColSpan: parseInt(row.col_span||row.Col_span)||1, Inscr: lines.join(" ") || "[BLANK]", Lines: lines.length>0?lines:["[BLANK]"] };
             });
             allBricks = [...bricks1, ...bricks2];
             searchInput.placeholder = "Enter a name...";
