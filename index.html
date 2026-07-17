@@ -7,100 +7,92 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --fig-green: #9CAF88; --dark-green: #557C4B; --sand: #F2EFEA; --brick: #B14A3B; --highlight: #ff3b3b; }
-        body { font-family: 'Georgia', serif; background: var(--sand); margin: 0; display: flex; flex-direction: column; min-height: 100vh; color: #333; overflow-x: hidden; }
+        body { font-family: 'Georgia', serif; background: var(--sand); margin: 0; display: flex; flex-direction: column; min-height: 100vh; }
         
-        #app-main-title { text-align: center; color: var(--dark-green); font-size: 22px; margin: 15px 0 5px 0; font-weight: bold; }
-        .hero-interface { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px; }
-        .search-area { width: 100%; max-width: 400px; margin-bottom: 10px; }
-        #search { width: 100%; padding: 12px; border-radius: 30px; border: 2px solid var(--fig-green); font-size: 16px; outline: none; box-sizing: border-box; }
-        #preview-card { width: 90%; max-width: 360px; background: white; border-radius: 12px; padding: 15px; border-left: 5px solid var(--fig-green); box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: none; text-align: center; margin-bottom: 15px; }
+        /* Unified Brick Styling */
+        .brick-unit { background: var(--brick); color: white; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 7px; font-weight: bold; border-radius: 2px; padding: 4px 2px; width: 60px; height: 40px; text-transform: uppercase; }
+        .brick-unit.current-focus { outline: 3px solid var(--highlight); background: var(--highlight); transform: scale(1.1); z-index: 99; }
         
-        .main-map-area { position: relative; width: 100%; max-width: 800px; background: white; padding: 5px; border-radius: 15px; border: 1px solid #ddd; }
-        .main-map-area img { width: 100%; display: block; border-radius: 10px; }
-        #map-dot { position: absolute; width: 30px; height: 30px; background: var(--highlight); border: 3px solid white; border-radius: 50%; display: none; transform: translate(-50%, -50%); z-index: 20; }
+        /* Layout 1: Flex rows (Original DB) */
+        .brick-row { display: flex; justify-content: center; gap: 5px; margin-bottom: 5px; }
         
+        /* Layout 2: CSS Grid (New DB) */
+        .grid-container { display: grid; grid-template-columns: repeat(14, 55px); grid-auto-rows: 42px; gap: 6px; width: max-content; margin: 20px auto; padding: 20px; }
+        
+        /* UI Elements */
+        #search { width: 90%; max-width: 400px; padding: 12px; border-radius: 30px; border: 2px solid var(--fig-green); margin: 20px auto; display: block; }
+        #preview-card { width: 90%; max-width: 360px; background: white; border-radius: 12px; padding: 15px; border-left: 5px solid var(--fig-green); margin: 0 auto 20px auto; display: none; text-align: center; }
         #brick-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--sand); z-index: 1000; display: none; flex-direction: column; }
-        .overlay-nav { width: 100%; background: white; padding: 10px; display: flex; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .back-btn { padding: 8px 25px; border-radius: 20px; border: none; background: var(--dark-green); color: white; font-weight: bold; cursor: pointer; }
-        
-        /* Grid System for Spanning Bricks */
-        .grid-container { 
-            display: grid; 
-            grid-template-columns: repeat(14, 55px); 
-            grid-auto-rows: 42px; 
-            gap: 6px; 
-            width: max-content; 
-            margin: 20px auto; 
-            padding: 20px;
-        }
-        .brick-unit { background: var(--brick); color: white; display: flex; align-items: center; justify-content: center; font-size: 7px; font-weight: bold; border-radius: 2px; padding: 4px; text-transform: uppercase; text-align: center; border: 1px solid rgba(255,255,255,0.3); box-sizing: border-box; }
-        .brick-unit.current-focus { outline: 3px solid var(--highlight); background: var(--highlight); z-index: 99; transform: scale(1.05); }
     </style>
 </head>
 <body>
 
-<h1 id="app-main-title">Ocracoke Commons Brick Finder</h1>
-<div class="hero-interface">
-    <div class="search-area"><input type="text" id="search" placeholder="Enter a name..." disabled></div>
-    <div id="preview-card"><div id="preview-text"></div></div>
-    <div class="main-map-area"><div id="map-dot"></div><img src="rendering%20of%20garden.avif" alt="Map"></div>
-</div>
+<input type="text" id="search" placeholder="Enter a name..." disabled>
+<div id="preview-card"><div id="preview-text"></div></div>
 
 <div id="brick-overlay">
-    <div class="overlay-nav"><button class="back-btn" onclick="closeBricks()">← Back to Map</button></div>
+    <div style="padding:10px; background:white; text-align:center;"><button onclick="closeBricks()" style="padding:8px 25px; border-radius:20px; border:none; background:var(--dark-green); color:white; font-weight:bold;">← Back to Map</button></div>
     <div id="brick-container" style="flex:1; overflow:auto;"></div>
 </div>
 
 <script>
-    const S_URL = 'https://fcizlimndpfpbkkxardp.supabase.co'; 
-    const S_KEY = 'sb_publishable_6VsgUICkD5_DhMkEEdRlDA_NQkTwj7b';
-    const gardenClient = window.supabase.createClient(S_URL, S_KEY);
-    
-    // Assuming Second Database is loaded similarly
-    let allBricks = []; let currentMatches = []; let matchIndex = 0;
+    const gardenClient = window.supabase.createClient('https://fcizlimndpfpbkkxardp.supabase.co', 'sb_publishable_6VsgUICkD5_DhMkEEdRlDA_NQkTwj7b');
+    const newGardenClient = window.supabase.createClient('https://afkfynvyzglxmbcyqgod.supabase.co', 'sb_publishable_KaakpKOqbhxKXefp8fCTnQ_1OHzhuIu');
+
+    let db1 = []; let db2 = []; let currentMatches = []; let matchIndex = 0;
 
     async function loadData() {
-        const { data } = await gardenClient.from('ocracoke_bricks').select('*');
-        allBricks = data || [];
+        const [res1, res2] = await Promise.all([gardenClient.from('ocracoke_bricks').select('*'), newGardenClient.from('Ocracoke_Bricks_New').select('*')]);
+        db1 = res1.data || []; db2 = res2.data || [];
         document.getElementById('search').disabled = false;
     }
 
     document.getElementById('search').oninput = (e) => {
         const t = e.target.value.toLowerCase().trim();
-        if (t.length < 2) { document.getElementById('map-dot').style.display = document.getElementById('preview-card').style.display = "none"; return; }
-        currentMatches = allBricks.filter(b => b.Inscription.toLowerCase().includes(t));
+        if (t.length < 2) { document.getElementById('preview-card').style.display = "none"; return; }
+        currentMatches = [...db1.filter(b => (b.Inscription||"").toLowerCase().includes(t)).map(b=>({...b, isNew:false})),
+                          ...db2.filter(b => (b.Inscription||"").toLowerCase().includes(t)).map(b=>({...b, isNew:true}))];
         matchIndex = 0;
         if (currentMatches.length > 0) updateUI();
     };
 
     function updateUI() {
         const match = currentMatches[matchIndex];
-        let content = `<div style="margin-bottom:10px; font-weight:bold;">${match.Inscription}</div>`;
-        content += `<button onclick="showBrickGrid('${match.Section}', '${match.id}')" style="padding:10px; width:48%; border:none; border-radius:20px; background:var(--dark-green); color:white; font-weight:bold; cursor:pointer;">View Map</button>`;
-        if (currentMatches.length > 1) {
-            content += `<button onclick="event.stopPropagation(); matchIndex=(matchIndex+1)%currentMatches.length; updateUI();" style="padding:10px; width:48%; margin-left:4%; border:none; border-radius:20px; background:var(--fig-green); color:white; font-weight:bold; cursor:pointer;">Next (${matchIndex+1}/${currentMatches.length})</button>`;
-        }
+        let content = `<div style="font-weight:bold; margin-bottom:10px;">${match.Inscription}</div>`;
+        content += `<button onclick="renderBricks(${matchIndex})" style="padding:10px; width:48%; border-radius:20px; border:none; background:var(--dark-green); color:white;">View Map</button>`;
+        if (currentMatches.length > 1) content += `<button onclick="matchIndex=(matchIndex+1)%currentMatches.length; updateUI();" style="padding:10px; width:48%; margin-left:4%; border-radius:20px; border:none; background:var(--fig-green); color:white;">Next</button>`;
         document.getElementById('preview-text').innerHTML = content;
         document.getElementById('preview-card').style.display = "block";
     }
 
-    function showBrickGrid(section, highlightId) {
+    function renderBricks(index) {
+        const target = currentMatches[index];
         const container = document.getElementById('brick-container'); container.innerHTML = "";
-        const grid = document.createElement('div'); grid.className = 'grid-container';
         
-        allBricks.filter(b => b.Section === section).forEach(b => {
-            const d = document.createElement('div');
-            d.className = 'brick-unit';
-            d.innerText = b.Inscription;
-            
-            // Applying spans from database columns H (RowSpan) and I (ColSpan)
-            d.style.gridRow = `${b.Row} / span ${b.RowSpan}`;
-            d.style.gridColumn = `${b.Col} / span ${b.ColSpan}`;
-            
-            if (b.id == highlightId) { d.classList.add('current-focus'); setTimeout(() => d.scrollIntoView({ block: 'center' }), 300); }
-            grid.appendChild(d);
-        });
-        container.appendChild(grid);
+        if (!target.isNew) {
+            // Layout 1: Original Flex Rows
+            const rows = {}; db1.filter(b=>b.Section === target.Section).forEach(b=>{if(!rows[b.Row])rows[b.Row]=[]; rows[b.Row].push(b);});
+            Object.keys(rows).sort((a,b)=>a-b).forEach(r => {
+                const rowDiv = document.createElement('div'); rowDiv.className = 'brick-row';
+                rows[r].forEach(b => {
+                    const d = document.createElement('div'); d.className = 'brick-unit'; d.innerText = b.Inscription;
+                    if(b.id == target.id) d.classList.add('current-focus');
+                    rowDiv.appendChild(d);
+                });
+                container.appendChild(rowDiv);
+            });
+        } else {
+            // Layout 2: New Grid with Spanning Logic
+            const grid = document.createElement('div'); grid.className = 'grid-container';
+            db2.filter(b=>b.Section === target.Section).forEach(b => {
+                const d = document.createElement('div'); d.className = 'brick-unit'; d.innerText = b.Inscription;
+                d.style.gridRow = `${b.Row} / span ${b.RowSpan || 1}`;
+                d.style.gridColumn = `${b.Col} / span ${b.ColSpan || 1}`;
+                if(b.id == target.id) d.classList.add('current-focus');
+                grid.appendChild(d);
+            });
+            container.appendChild(grid);
+        }
         document.getElementById('brick-overlay').style.display = 'flex';
     }
 
