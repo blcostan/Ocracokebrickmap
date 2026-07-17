@@ -9,11 +9,27 @@
         :root { --fig-green: #9CAF88; --dark-green: #557C4B; --sand: #F2EFEA; --brick: #B14A3B; --highlight: #ff3b3b; }
         body { font-family: 'Georgia', serif; background: var(--sand); margin: 0; display: flex; flex-direction: column; min-height: 100vh; }
         
-        .brick-unit { background: var(--brick); color: white; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 7px; font-weight: bold; border-radius: 2px; padding: 4px; width: 100%; height: 100%; text-transform: uppercase; box-sizing: border-box; border: 1px solid rgba(255,255,255,0.3); }
-        .brick-unit.current-focus { outline: 4px solid var(--highlight); background: var(--highlight); transform: scale(1.05); z-index: 99; }
+        .brick-unit { 
+            background: var(--brick); color: white; text-align: center; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            font-size: 7px; font-weight: bold; border-radius: 2px; padding: 4px; 
+            width: 100%; height: 100%; text-transform: uppercase; 
+            box-sizing: border-box;
+        }
+        .brick-unit.current-focus { outline: 3px solid var(--highlight); background: var(--highlight); transform: scale(1.02); z-index: 99; }
         
         .brick-row { display: flex; justify-content: center; gap: 5px; margin-bottom: 5px; }
-        .grid-container { display: inline-grid; grid-template-columns: repeat(12, 55px); grid-auto-rows: 42px; gap: 4px; padding: 4px; background: white; border: 4px solid white; }
+        
+        /* Centering Fix: Use 'inline-grid' so the container only takes up the width of the bricks, then center that block */
+        .grid-container { 
+            display: inline-grid; 
+            grid-template-columns: repeat(12, 55px); /* Adjusted to match common brick width usage */
+            grid-auto-rows: 42px; 
+            gap: 4px; 
+            padding: 4px; 
+            background: white; 
+            border: 4px solid white;
+        }
         
         #search { width: 90%; max-width: 400px; padding: 12px; border-radius: 30px; border: 2px solid var(--fig-green); margin: 10px auto; display: block; }
         #preview-card { width: 90%; max-width: 360px; background: white; border-radius: 12px; padding: 15px; border-left: 5px solid var(--fig-green); margin: 0 auto 20px auto; display: none; text-align: center; }
@@ -36,10 +52,8 @@
 </div>
 
 <div id="brick-overlay">
-    <div style="padding:10px; background:white; text-align:center; position:sticky; top:0; z-index:100;">
-        <button onclick="closeBricks()" style="padding:8px 25px; border-radius:20px; border:none; background:var(--dark-green); color:white; font-weight:bold;">← Back to Map</button>
-        <div id="section-nav" style="margin-top:10px;"></div>
-    </div>
+    <div style="padding:10px; background:white; text-align:center;"><button onclick="closeBricks()" style="padding:8px 25px; border-radius:20px; border:none; background:var(--dark-green); color:white; font-weight:bold;">← Back to Map</button></div>
+    <!-- Centering wrapper -->
     <div id="brick-container" style="display: flex; justify-content: center; align-items: flex-start; flex: 1; padding: 20px;"></div>
 </div>
 
@@ -47,56 +61,89 @@
     const gardenClient = window.supabase.createClient('https://fcizlimndpfpbkkxardp.supabase.co', 'sb_publishable_6VsgUICkD5_DhMkEEdRlDA_NQkTwj7b');
     const newGardenClient = window.supabase.createClient('https://afkfynvyzglxmbcyqgod.supabase.co', 'sb_publishable_KaakpKOqbhxKXefp8fCTnQ_1OHzhuIu');
 
-    let db1 = [], db2 = [], currentMatches = [], activeSection = "";
+    let db1 = []; let db2 = []; let currentMatches = []; let matchIndex = 0;
 
     async function loadData() {
         const [res1, res2] = await Promise.all([gardenClient.from('ocracoke_bricks').select('*'), newGardenClient.from('Ocracoke_Bricks_New').select('*')]);
         db1 = res1.data || [];
-        db2 = (res2.data || []).map(b => ({ ...b, Inscription: [b.inscription_line_1, b.inscription_line_2, b.inscription_line_3, b.inscription_line_4].filter(l => l && typeof l === 'string' && l.toUpperCase().replace(/\[BLANK\]/gi, "").trim() !== "").map(l => l.toUpperCase().replace(/\[BLANK\]/gi, "").trim()).join(" "), Section: b.section, Row: b.row, Col: b.col, RowSpan: b.row_span, ColSpan: b.col_span, id: b.ID }));
+        db2 = (res2.data || []).map(b => {
+            const lines = [b.inscription_line_1, b.inscription_line_2, b.inscription_line_3, b.inscription_line_4]
+                .filter(l => l && typeof l === 'string' && l.toUpperCase().replace(/\[BLANK\]/gi, "").trim() !== "")
+                .map(l => l.toUpperCase().replace(/\[BLANK\]/gi, "").trim());
+            return { 
+                ...b, 
+                Inscription: lines.join(" "), 
+                Section: b.section, Row: b.row, Col: b.col, RowSpan: b.row_span, ColSpan: b.col_span, id: b.ID 
+            };
+        });
         document.getElementById('search').disabled = false;
     }
 
     document.getElementById('search').oninput = (e) => {
         const t = e.target.value.toLowerCase().trim();
-        if (t.length < 2) { document.getElementById('preview-card').style.display = "none"; return; }
-        currentMatches = [...db1.filter(b => (b.Inscription||"").toLowerCase().includes(t)).map(b=>({...b, isNew:false})), ...db2.filter(b => (b.Inscription||"").toLowerCase().includes(t)).map(b=>({...b, isNew:true}))];
-        if (currentMatches.length > 0) {
-            document.getElementById('preview-text').innerHTML = `<div>Found ${currentMatches.length} bricks.</div><button onclick="viewAll()" style="margin-top:10px; padding:10px; border-radius:20px; border:none; background:var(--dark-green); color:white;">View All Matches</button>`;
-            document.getElementById('preview-card').style.display = "block";
-        }
+        if (t.length < 2) { document.getElementById('map-dot').style.display = document.getElementById('preview-card').style.display = "none"; return; }
+        currentMatches = [...db1.filter(b => (b.Inscription||"").toLowerCase().includes(t)).map(b=>({...b, isNew:false})),
+                          ...db2.filter(b => (b.Inscription||"").toLowerCase().includes(t)).map(b=>({...b, isNew:true}))];
+        matchIndex = 0;
+        if (currentMatches.length > 0) updateUI();
     };
 
-    function viewAll() {
-        const sections = [...new Set(currentMatches.map(m => m.Section))];
-        activeSection = sections[0];
-        renderNav(sections);
-        renderBricks(activeSection);
+    function updateUI() {
+        const match = currentMatches[matchIndex];
+        const dot = document.getElementById('map-dot'); dot.style.display = "block";
+        dot.style.left = "54%"; dot.style.top = "66%";
+        
+        let content = `<div style="font-weight:bold; margin-bottom:10px;">${match.Inscription}</div>`;
+        content += `<div style="font-size:12px; color:#666; margin-bottom:10px;">${matchIndex + 1}/${currentMatches.length}</div>`;
+        content += `<button onclick="renderBricks(${matchIndex})" style="padding:10px; width:30%; border-radius:20px; border:none; background:var(--dark-green); color:white;">VIEW MAP</button>`;
+        if (currentMatches.length > 1) content += `<button onclick="matchIndex=(matchIndex+1)%currentMatches.length; updateUI();" style="padding:10px; width:30%; margin-left:4%; border-radius:20px; border:none; background:var(--fig-green); color:white;">NEXT</button>`;
+        content += `<button onclick="renderAllMatches()" style="padding:10px; width:30%; margin-left:4%; border-radius:20px; border:none; background:var(--brick); color:white;">VIEW ALL</button>`;
+        document.getElementById('preview-text').innerHTML = content;
+        document.getElementById('preview-card').style.display = "block";
     }
 
-    function renderNav(sections) {
-        const nav = document.getElementById('section-nav'); nav.innerHTML = "";
-        sections.forEach(s => {
-            const btn = document.createElement('button'); btn.innerText = s;
-            btn.style.margin = "0 5px"; btn.style.padding = "5px 15px"; btn.style.borderRadius = "15px"; btn.style.border = "none";
-            btn.onclick = () => { activeSection = s; renderBricks(s); };
-            nav.appendChild(btn);
-        });
-    }
-
-    function renderBricks(section) {
+    function renderAllMatches() {
         const container = document.getElementById('brick-container'); container.innerHTML = "";
         const allBricks = [...db1, ...db2];
         const grid = document.createElement('div'); grid.className = 'grid-container';
         
-        allBricks.filter(b => b.Section === section).forEach(b => {
-            const d = document.createElement('div'); d.className = 'brick-unit';
-            d.innerText = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? b.Inscription : "";
+        allBricks.filter(b => currentMatches.some(m => m.id == (b.id||b.ID) && m.isNew == !!b.isNew)).forEach(b => {
+            const d = document.createElement('div'); d.className = 'brick-unit current-focus'; 
+            d.innerText = b.Inscription;
             if (b.isNew) { d.style.gridRow = `${b.Row} / span ${b.RowSpan}`; d.style.gridColumn = `${b.Col} / span ${b.ColSpan}`; }
-            // Highlight if it's in our matches list
-            if (currentMatches.find(m => m.id == b.id && m.isNew == !!b.isNew)) d.classList.add('current-focus');
             grid.appendChild(d);
         });
         container.appendChild(grid);
+        document.getElementById('brick-overlay').style.display = 'flex';
+    }
+
+    function renderBricks(index) {
+        const target = currentMatches[index];
+        const container = document.getElementById('brick-container'); container.innerHTML = "";
+        
+        if (!target.isNew) {
+            const rows = {}; db1.filter(b=>b.Section === target.Section).forEach(b=>{if(!rows[b.Row])rows[b.Row]=[]; rows[b.Row].push(b);});
+            Object.keys(rows).sort((a,b)=>a-b).forEach(r => {
+                const rowDiv = document.createElement('div'); rowDiv.className = 'brick-row';
+                rows[r].forEach(b => {
+                    const d = document.createElement('div'); d.className = 'brick-unit'; d.innerText = b.Inscription;
+                    if(b.id == target.id) { d.classList.add('current-focus'); setTimeout(() => d.scrollIntoView({ block: 'center' }), 300); }
+                    rowDiv.appendChild(d);
+                });
+                container.appendChild(rowDiv);
+            });
+        } else {
+            const grid = document.createElement('div'); grid.className = 'grid-container';
+            db2.filter(b=>b.Section === target.Section).forEach(b => {
+                const d = document.createElement('div'); d.className = 'brick-unit'; 
+                d.innerText = b.Inscription;
+                d.style.gridRow = `${b.Row} / span ${b.RowSpan}`;
+                d.style.gridColumn = `${b.Col} / span ${b.ColSpan}`;
+                if(b.id == target.id) { d.classList.add('current-focus'); setTimeout(() => d.scrollIntoView({ block: 'center' }), 300); }
+                grid.appendChild(d);
+            });
+            container.appendChild(grid);
+        }
         document.getElementById('brick-overlay').style.display = 'flex';
     }
 
