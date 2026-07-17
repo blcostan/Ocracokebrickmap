@@ -9,9 +9,15 @@
         :root { --fig-green: #9CAF88; --dark-green: #557C4B; --sand: #F2EFEA; --brick: #B14A3B; --highlight: #ff3b3b; }
         body { font-family: 'Georgia', serif; background: var(--sand); margin: 0; display: flex; flex-direction: column; min-height: 100vh; }
         
-        /* Unified Brick Styling */
-        .brick-unit { background: var(--brick); color: white; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 7px; font-weight: bold; border-radius: 2px; padding: 4px 2px; width: 60px; height: 40px; text-transform: uppercase; border: 1px solid rgba(255,255,255,0.3); }
-        .brick-unit.current-focus { outline: 3px solid var(--highlight); background: var(--highlight); transform: scale(1.1); z-index: 99; }
+        /* UPDATED: Removed fixed width/height so CSS Grid controls size */
+        .brick-unit { 
+            background: var(--brick); color: white; text-align: center; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            font-size: 7px; font-weight: bold; border-radius: 2px; padding: 4px; 
+            width: 100%; height: 100%; text-transform: uppercase; 
+            border: 1px solid rgba(255,255,255,0.3); box-sizing: border-box;
+        }
+        .brick-unit.current-focus { outline: 3px solid var(--highlight); background: var(--highlight); transform: scale(1.02); z-index: 99; }
         
         /* Layouts */
         .brick-row { display: flex; justify-content: center; gap: 5px; margin-bottom: 5px; }
@@ -52,7 +58,6 @@
     async function loadData() {
         const [res1, res2] = await Promise.all([gardenClient.from('ocracoke_bricks').select('*'), newGardenClient.from('Ocracoke_Bricks_New').select('*')]);
         db1 = res1.data || [];
-        // Map new database column names to common format
         db2 = (res2.data || []).map(b => {
             const lines = [b.inscription_line_1, b.inscription_line_2, b.inscription_line_3, b.inscription_line_4].filter(l => l && l.trim() !== "");
             return { 
