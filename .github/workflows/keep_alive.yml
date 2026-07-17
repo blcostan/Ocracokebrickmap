@@ -1,0 +1,45 @@
+name: Keep Supabase Alive
+on:
+  schedule:
+    # Runs at 00:00 UTC every Sunday
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Supabase client
+        run: npm install @supabase/supabase-js
+
+      - name: Ping Databases
+        env:
+          DB1_URL: ${{ secrets.DB1_URL }}
+          DB1_KEY: ${{ secrets.DB1_KEY }}
+          DB2_URL: ${{ secrets.DB2_URL }}
+          DB2_KEY: ${{ secrets.DB2_KEY }}
+        run: |
+          node -e "
+          const { createClient } = require('@supabase/supabase-js');
+          
+          async function ping(url, key, name) {
+            const supabase = createClient(url, key);
+            // Pinging auth.users to keep the project active
+            const { error } = await supabase.from('auth.users').select('id').limit(1);
+            if (error) {
+              console.error(name + ' ping failed:', error.message);
+            } else {
+              console.log(name + ' ping successful!');
+            }
+          }
+
+          (async () => {
+            await ping(process.env.DB1_URL, process.env.DB1_KEY, 'Database 1');
+            await ping(process.env.DB2_URL, process.env.DB2_KEY, 'Database 2');
+          })();
+          "
