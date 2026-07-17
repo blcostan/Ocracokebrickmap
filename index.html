@@ -17,13 +17,13 @@
         }
         .brick-unit.current-focus { outline: 3px solid white; background: var(--highlight); transform: scale(1.05); z-index: 99; }
         
-        /* Centered grid container */
+        /* Updated Centering CSS */
         .brick-grid { 
-            display: inline-grid; 
+            display: grid; 
             gap: 4px; 
             padding: 20px; 
-            justify-content: center; 
-            align-content: center;
+            justify-content: center;   /* Centers the grid itself */
+            justify-items: center;     /* Centers items within grid cells */
             width: 100%;
         }
         
@@ -49,7 +49,6 @@
 
 <div id="brick-overlay">
     <div style="padding:10px; background:white; text-align:center;"><button onclick="closeBricks()" style="padding:8px 25px; border-radius:20px; border:none; background:var(--dark-green); color:white; font-weight:bold;">← Back to Map</button></div>
-    <!-- Brick Container -->
     <div id="brick-container" style="display: flex; justify-content: center; width: 100%;"></div>
 </div>
 
@@ -85,9 +84,18 @@
         dot.style.left = "54%";
         dot.style.top = match.Section.toLowerCase().includes("north") ? "66%" : "41%";
         
-        let content = `<div style="font-weight:bold; margin-bottom:10px;">${match.Inscription}</div><div style="font-size:12px; color:#666; margin-bottom:10px;">${matchIndex + 1}/${currentMatches.length}</div><button onclick="renderBricks(${matchIndex})" style="padding:10px; width:45%; border-radius:20px; border:none; background:var(--dark-green); color:white;">VIEW MAP</button><button onclick="renderAllMatches()" style="padding:10px; width:45%; margin-left:5%; border-radius:20px; border:none; background:var(--brick); color:white;">VIEW ALL</button>`;
+        let content = `<div style="font-weight:bold; margin-bottom:10px;">${match.Inscription}</div><div style="font-size:12px; color:#666; margin-bottom:10px;">${matchIndex + 1}/${currentMatches.length}</div>`;
+        content += `<button onclick="renderBricks(${matchIndex})" style="padding:10px; width:30%; border-radius:20px; border:none; background:var(--dark-green); color:white;">VIEW MAP</button>`;
+        if (currentMatches.length > 1) content += `<button onclick="nextMatch()" style="padding:10px; width:30%; margin-left:2%; border-radius:20px; border:none; background:var(--fig-green); color:white;">NEXT</button>`;
+        content += `<button onclick="renderAllMatches()" style="padding:10px; width:30%; margin-left:2%; border-radius:20px; border:none; background:var(--brick); color:white;">VIEW ALL</button>`;
+        
         document.getElementById('preview-text').innerHTML = content;
         document.getElementById('preview-card').style.display = "block";
+    }
+
+    function nextMatch() {
+        matchIndex = (matchIndex + 1) % currentMatches.length;
+        updateUI();
     }
 
     function renderBricks(index) {
