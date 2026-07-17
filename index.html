@@ -17,7 +17,6 @@
         }
         .brick-unit.current-focus { outline: 3px solid white; background: var(--highlight); transform: scale(1.05); z-index: 99; }
         
-        /* Grid container for brick map */
         .brick-grid { display: inline-grid; gap: 4px; padding: 20px; justify-content: center; }
         
         #search { width: 90%; max-width: 400px; padding: 12px; border-radius: 30px; border: 2px solid var(--fig-green); margin: 10px auto; display: block; }
@@ -72,7 +71,12 @@
 
     function updateUI() {
         const match = currentMatches[matchIndex];
-        document.getElementById('map-dot').style.display = "block";
+        const dot = document.getElementById('map-dot');
+        dot.style.display = "block";
+        // Restoring original coordinate logic: 54% 66% for Front, 54% 41% for Back
+        dot.style.left = "54%";
+        dot.style.top = match.Section.toLowerCase().includes("north") ? "66%" : "41%";
+        
         let content = `<div style="font-weight:bold; margin-bottom:10px;">${match.Inscription}</div><div style="font-size:12px; color:#666; margin-bottom:10px;">${matchIndex + 1}/${currentMatches.length}</div><button onclick="renderBricks(${matchIndex})" style="padding:10px; width:45%; border-radius:20px; border:none; background:var(--dark-green); color:white;">VIEW MAP</button><button onclick="renderAllMatches()" style="padding:10px; width:45%; margin-left:5%; border-radius:20px; border:none; background:var(--brick); color:white;">VIEW ALL</button>`;
         document.getElementById('preview-text').innerHTML = content;
         document.getElementById('preview-card').style.display = "block";
@@ -82,10 +86,9 @@
         const target = currentMatches[index];
         const container = document.getElementById('brick-container'); container.innerHTML = "";
         const grid = document.createElement('div'); grid.className = 'brick-grid';
-        grid.style.gridTemplateColumns = "repeat(6, 50px)"; // Standard for now
+        grid.style.gridTemplateColumns = "repeat(6, 50px)";
         
-        const sectionBricks = [...db1, ...db2].filter(b => b.Section === target.Section);
-        sectionBricks.forEach(b => {
+        [...db1, ...db2].filter(b => b.Section === target.Section).forEach(b => {
             const d = document.createElement('div'); d.className = 'brick-unit'; d.innerText = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? b.Inscription : "";
             d.style.gridRow = `${b.Row} / span ${b.RowSpan}`; d.style.gridColumn = `${b.Col} / span ${b.ColSpan}`;
             if(b.id == target.id) d.classList.add('current-focus');
