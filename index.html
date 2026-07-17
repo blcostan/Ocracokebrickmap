@@ -90,10 +90,22 @@
         if (currentMatches.length > 0) updateUI();
     };
 
-    function updateUI() {
+function updateUI() {
         const match = currentMatches[matchIndex];
-        const dot = document.getElementById('map-dot'); dot.style.display = "block";
-        dot.style.left = "54%"; dot.style.top = "66%";
+        const dot = document.getElementById('map-dot'); 
+        dot.style.display = "block";
+        
+        // This checks which database the match belongs to
+        if (match.isNew) {
+            // DATABASE 2 (Ocracoke_Bricks_New)
+            dot.style.left = "75%"; 
+            dot.style.top = "50%";
+        } else {
+            // DATABASE 1 (Ocracoke_Bricks)
+            dot.style.left = "54%";
+            dot.style.top = match.Section.toLowerCase().includes("north") ? "66%" : "41%";
+        }
+        
         let content = `<div style="font-weight:bold; margin-bottom:10px;">${match.Inscription}</div>`;
         content += `<button onclick="renderTarget(${matchIndex})" style="padding:10px; width:45%; border-radius:20px; border:none; background:var(--dark-green); color:white;">View Map</button>`;
         if (currentMatches.length > 1) content += `<button onclick="matchIndex=(matchIndex+1)%currentMatches.length; updateUI();" style="padding:10px; width:45%; margin-left:5%; border-radius:20px; border:none; background:var(--fig-green); color:white;">Next</button>`;
