@@ -21,7 +21,6 @@
         
         /* Layouts */
         .brick-row { display: flex; justify-content: center; gap: 5px; margin-bottom: 5px; }
-        /* UPDATED: Added background white to grid-container for white spaces */
         .grid-container { 
             display: grid; grid-template-columns: repeat(14, 55px); grid-auto-rows: 42px; 
             gap: 6px; width: max-content; margin: 20px auto; padding: 6px; 
@@ -63,7 +62,6 @@
     async function loadData() {
         const [res1, res2] = await Promise.all([gardenClient.from('ocracoke_bricks').select('*'), newGardenClient.from('Ocracoke_Bricks_New').select('*')]);
         db1 = res1.data || [];
-        // Map new database column names to common format
         db2 = (res2.data || []).map(b => {
             const lines = [b.inscription_line_1, b.inscription_line_2, b.inscription_line_3, b.inscription_line_4].filter(l => l && l.trim() !== "");
             return { 
@@ -116,7 +114,9 @@
             const grid = document.createElement('div'); grid.className = 'grid-container';
             db2.filter(b=>b.Section === target.Section).forEach(b => {
                 const d = document.createElement('div'); d.className = 'brick-unit'; 
-                d.innerText = b.Inscription === "[BLANK]" ? "" : b.Inscription;
+                // Updated: Hide [BLANK] text
+                d.innerText = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? b.Inscription : "";
+                
                 d.style.gridRow = `${b.Row} / span ${b.RowSpan}`;
                 d.style.gridColumn = `${b.Col} / span ${b.ColSpan}`;
                 if(b.id == target.id) { d.classList.add('current-focus'); setTimeout(() => d.scrollIntoView({ block: 'center' }), 300); }
