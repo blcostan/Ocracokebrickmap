@@ -9,23 +9,27 @@
         :root { --fig-green: #9CAF88; --dark-green: #557C4B; --sand: #F2EFEA; --brick: #B14A3B; --highlight: #ff3b3b; }
         body { font-family: 'Georgia', serif; background: var(--sand); margin: 0; display: flex; flex-direction: column; min-height: 100vh; }
         
+        /* Standard Brick Unit */
         .brick-unit { 
             background: var(--brick); color: white; text-align: center; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             font-size: 7px; font-weight: bold; border-radius: 2px; padding: 4px; 
-            width: 50px; height: 40px; box-sizing: border-box; text-transform: uppercase;
-            overflow: hidden; word-break: break-word; flex-shrink: 0;
+            width: 100%; height: 100%; box-sizing: border-box; text-transform: uppercase;
+            overflow: hidden; word-break: break-word; line-height: 1; flex-shrink: 0;
         }
-        .brick-unit.current-focus { outline: 3px solid white; background: var(--highlight); transform: scale(1.05); z-index: 99; }
+        .brick-unit.current-focus { outline: 3px solid white; background: var(--highlight); transform: scale(1.02); z-index: 99; }
         .brick-unit.is-blank { background: #dcd7cc; border: 1px dashed #bbb; color: transparent; }
 
-        /* DB1 Row Layout: Centered */
+        /* DB1: Centered Row Layout */
         .brick-row { display: flex; justify-content: center; gap: 4px; margin-bottom: 4px; }
         
-        /* DB2 Grid Layout: Unchanged */
+        /* DB2: Grid Layout with Spanning Support */
         .grid-container { 
-            display: inline-grid; grid-template-columns: repeat(12, 55px); 
-            grid-auto-rows: 42px; gap: 4px; padding: 4px; background: white; border: 4px solid white;
+            display: grid; 
+            grid-template-columns: repeat(10, 50px); /* Adjust column width as needed */
+            grid-auto-rows: 40px; 
+            gap: 4px; 
+            justify-content: center;
         }
         
         #search { width: 90%; max-width: 400px; padding: 12px; border-radius: 30px; border: 2px solid var(--fig-green); margin: 10px auto; display: block; }
@@ -49,7 +53,7 @@
 
 <div id="brick-overlay">
     <div style="padding:10px; background:white; text-align:center;"><button onclick="closeBricks()" style="padding:8px 25px; border-radius:20px; border:none; background:var(--dark-green); color:white; font-weight:bold;">← Back to Map</button></div>
-    <div id="brick-container" style="display: flex; flex-direction: column; align-items: center; padding: 20px;"></div>
+    <div id="brick-container" style="padding: 20px 0;"></div>
 </div>
 
 <script>
@@ -69,6 +73,7 @@
         document.getElementById('search').disabled = false;
     }
 
+    // Search and UI logic (Keep as is)
     document.getElementById('search').oninput = (e) => {
         const t = e.target.value.toLowerCase().trim();
         if (t.length < 2) { document.getElementById('map-dot').style.display = document.getElementById('preview-card').style.display = "none"; return; }
@@ -81,10 +86,9 @@
         const match = currentMatches[matchIndex];
         const dot = document.getElementById('map-dot'); dot.style.display = "block";
         dot.style.left = "54%"; dot.style.top = "66%";
-        
         let content = `<div style="font-weight:bold; margin-bottom:10px;">${match.Inscription}</div>`;
-        content += `<button onclick="renderBricks(${matchIndex})" style="padding:10px; width:48%; border-radius:20px; border:none; background:var(--dark-green); color:white;">View Map</button>`;
-        if (currentMatches.length > 1) content += `<button onclick="matchIndex=(matchIndex+1)%currentMatches.length; updateUI();" style="padding:10px; width:48%; margin-left:4%; border-radius:20px; border:none; background:var(--fig-green); color:white;">Next</button>`;
+        content += `<button onclick="renderBricks(${matchIndex})" style="padding:10px; width:45%; border-radius:20px; border:none; background:var(--dark-green); color:white;">View Map</button>`;
+        if (currentMatches.length > 1) content += `<button onclick="matchIndex=(matchIndex+1)%currentMatches.length; updateUI();" style="padding:10px; width:45%; margin-left:5%; border-radius:20px; border:none; background:var(--fig-green); color:white;">Next</button>`;
         document.getElementById('preview-text').innerHTML = content;
         document.getElementById('preview-card').style.display = "block";
     }
@@ -94,7 +98,7 @@
         const container = document.getElementById('brick-container'); container.innerHTML = "";
         
         if (!target.isNew) {
-            // DB1: Row-by-Row Centered Layout
+            // DB1: Row-by-Row Centered Layout (UNCHANGED)
             const rows = {}; db1.filter(b => b.Section === target.Section).forEach(b => {
                 if(!rows[b.Row]) rows[b.Row] = []; rows[b.Row].push(b);
             });
@@ -110,12 +114,13 @@
                 container.appendChild(rowDiv);
             });
         } else {
-            // DB2: Grid Layout (UNCHANGED)
+            // DB2: Grid Layout with Spanning (NEW LAYOUT)
             const grid = document.createElement('div'); grid.className = 'grid-container';
             db2.filter(b => b.Section === target.Section).forEach(b => {
                 const d = document.createElement('div');
                 d.className = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? 'brick-unit' : 'brick-unit is-blank';
                 d.innerText = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? b.Inscription : "";
+                // Use spanning
                 d.style.gridRow = `${b.Row} / span ${b.RowSpan}`;
                 d.style.gridColumn = `${b.Col} / span ${b.ColSpan}`;
                 if(b.id == target.id) { d.classList.add('current-focus'); setTimeout(() => d.scrollIntoView({ block: 'center' }), 300); }
