@@ -9,7 +9,6 @@
         :root { --fig-green: #9CAF88; --dark-green: #557C4B; --sand: #F2EFEA; --brick: #B14A3B; --highlight: #ff3b3b; }
         body { font-family: 'Georgia', serif; background: var(--sand); margin: 0; display: flex; flex-direction: column; min-height: 100vh; }
         
-        /* Unified Brick Styling */
         .brick-unit { 
             background: var(--brick); color: white; text-align: center; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
@@ -19,15 +18,15 @@
         }
         .brick-unit.current-focus { outline: 3px solid var(--highlight); background: var(--highlight); transform: scale(1.02); z-index: 99; }
         
-        /* Layouts */
         .brick-row { display: flex; justify-content: center; gap: 5px; margin-bottom: 5px; }
+        
+        /* White Mortar Effect: Gap is the mortar, background color is the mortar color */
         .grid-container { 
             display: grid; grid-template-columns: repeat(14, 55px); grid-auto-rows: 42px; 
-            gap: 6px; width: max-content; margin: 20px auto; padding: 6px; 
-            background: white; border: 6px solid white; 
+            gap: 4px; width: max-content; margin: 20px auto; padding: 4px; 
+            background: white; 
         }
         
-        /* UI Elements */
         #search { width: 90%; max-width: 400px; padding: 12px; border-radius: 30px; border: 2px solid var(--fig-green); margin: 10px auto; display: block; }
         #preview-card { width: 90%; max-width: 360px; background: white; border-radius: 12px; padding: 15px; border-left: 5px solid var(--fig-green); margin: 0 auto 20px auto; display: none; text-align: center; }
         .main-map-area { position: relative; width: 100%; max-width: 800px; background: white; padding: 5px; border-radius: 15px; border: 1px solid #ddd; margin: 0 auto 20px auto; }
@@ -62,8 +61,13 @@
     async function loadData() {
         const [res1, res2] = await Promise.all([gardenClient.from('ocracoke_bricks').select('*'), newGardenClient.from('Ocracoke_Bricks_New').select('*')]);
         db1 = res1.data || [];
+        // Map new database column names to common format
         db2 = (res2.data || []).map(b => {
-            const lines = [b.inscription_line_1, b.inscription_line_2, b.inscription_line_3, b.inscription_line_4].filter(l => l && l.trim() !== "");
+            // Updated mapping to aggressively remove [BLANK]
+            const lines = [b.inscription_line_1, b.inscription_line_2, b.inscription_line_3, b.inscription_line_4]
+                .map(l => (l || "").replace(/\[BLANK\]/gi, "").trim())
+                .filter(l => l !== "");
+            
             return { 
                 ...b, 
                 Inscription: lines.join(" "), 
@@ -91,6 +95,7 @@
         content += `<div style="font-size:12px; color:#666; margin-bottom:10px;">${matchIndex + 1}/${currentMatches.length}</div>`;
         content += `<button onclick="renderBricks(${matchIndex})" style="padding:10px; width:48%; border-radius:20px; border:none; background:var(--dark-green); color:white;">View Map</button>`;
         if (currentMatches.length > 1) content += `<button onclick="matchIndex=(matchIndex+1)%currentMatches.length; updateUI();" style="padding:10px; width:48%; margin-left:4%; border-radius:20px; border:none; background:var(--fig-green); color:white;">Next</button>`;
+        content = content.replace("[BLANK]", ""); // Final cleanup
         document.getElementById('preview-text').innerHTML = content;
         document.getElementById('preview-card').style.display = "block";
     }
@@ -114,9 +119,7 @@
             const grid = document.createElement('div'); grid.className = 'grid-container';
             db2.filter(b=>b.Section === target.Section).forEach(b => {
                 const d = document.createElement('div'); d.className = 'brick-unit'; 
-                // Updated: Hide [BLANK] text
-                d.innerText = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? b.Inscription : "";
-                
+                d.innerText = b.Inscription;
                 d.style.gridRow = `${b.Row} / span ${b.RowSpan}`;
                 d.style.gridColumn = `${b.Col} / span ${b.ColSpan}`;
                 if(b.id == target.id) { d.classList.add('current-focus'); setTimeout(() => d.scrollIntoView({ block: 'center' }), 300); }
