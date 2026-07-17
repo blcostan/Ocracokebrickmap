@@ -50,8 +50,28 @@
     let db1 = []; let db2 = []; let currentMatches = []; let matchIndex = 0;
 
     async function loadData() {
-        const [res1, res2] = await Promise.all([gardenClient.from('ocracoke_bricks').select('*'), newGardenClient.from('Ocracoke_Bricks_New').select('*')]);
-        db1 = res1.data || []; db2 = res2.data || [];
+        const [res1, res2] = await Promise.all([
+            gardenClient.from('ocracoke_bricks').select('*'), 
+            newGardenClient.from('Ocracoke_Bricks_New').select('*')
+        ]);
+        
+        db1 = res1.data || [];
+        
+        // Normalize the second database so text lines map directly to an Inscription field for the search engine
+        db2 = (res2.data || []).map(b => {
+            const lines = [
+                b.inscription_line_1 || b.inscription_1 || b.Inscription_1,
+                b.inscription_line_2 || b.inscription_2 || b.Inscription_2,
+                b.inscription_line_3 || b.inscription_3 || b.Inscription_3,
+                b.inscription_line_4 || b.inscription_4 || b.Inscription_4
+            ].map(l => (l || "").trim()).filter(l => l !== "");
+            
+            return {
+                ...b,
+                Inscription: lines.join(" ") || b.inscription || b.Inscription || ""
+            };
+        });
+        
         document.getElementById('search').disabled = false;
     }
 
