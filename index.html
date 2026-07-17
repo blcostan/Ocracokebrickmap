@@ -2,55 +2,37 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ocracoke Commons Brick Finder</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --fig-green: #9CAF88; --dark-green: #557C4B; --sand: #F2EFEA; --brick: #B14A3B; --highlight: #ff3b3b; }
-        body { font-family: 'Georgia', serif; background: var(--sand); margin: 0; }
+        body { font-family: 'Georgia', serif; background: var(--sand); margin: 0; display: flex; flex-direction: column; align-items: center; }
         
-        /* UNIFIED STYLING: Every brick, square or wide, uses this */
+        /* Unified Brick Styling */
         .brick-unit { 
-            background: var(--brick); 
-            color: white; 
-            text-align: center; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 7px; 
-            font-weight: bold; 
-            border-radius: 3px; 
-            padding: 4px; 
-            width: 55px; 
-            height: 42px; 
-            text-transform: uppercase; 
-            box-sizing: border-box; 
-            border: 1px solid rgba(255,255,255,0.5); /* Unified white border */
+            background: var(--brick); color: white; text-align: center; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; font-size: 7px; font-weight: bold; 
+            border-radius: 3px; padding: 4px; width: 55px; height: 42px; text-transform: uppercase; 
+            box-sizing: border-box; border: 1px solid rgba(255,255,255,0.5); 
         }
-        
-        /* Rectangular bricks (span 2 columns) */
-        .brick-unit.wide { width: 116px; grid-column: span 2; } 
-        
+        .brick-unit.wide { width: 116px; grid-column: span 2; }
         .brick-unit.current-focus { outline: 4px solid var(--highlight) !important; background: var(--highlight) !important; transform: scale(1.05); z-index: 100; box-shadow: 0 0 15px var(--highlight); }
         .brick-unit.is-blank { background: #dcd7cc; border: 1px dashed #bbb; color: transparent; }
 
-        .unified-grid { 
-            display: grid; 
-            grid-template-columns: repeat(14, 55px); 
-            grid-auto-rows: 42px; 
-            gap: 6px; 
-            width: max-content; 
-            margin: 0 auto; 
-            padding: 20px;
-        }
+        .unified-grid { display: grid; grid-template-columns: repeat(14, 55px); grid-auto-rows: 42px; gap: 6px; width: max-content; margin: 0 auto; padding: 20px; }
+        #search { width: 80%; max-width: 400px; padding: 12px; margin: 20px; border-radius: 30px; border: 2px solid var(--fig-green); }
+        #preview-card { background: white; padding: 15px; border-radius: 12px; display: none; margin-bottom: 20px; }
+        #brick-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--sand); z-index:1000; overflow-y:auto; }
     </style>
 </head>
 <body>
 
-<div id="brick-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:var(--sand); z-index:1000; overflow-y:auto;">
-    <div style="padding:10px; background:white; text-align:center;"><button onclick="closeBricks()" style="padding:8px 25px; border-radius:20px; border:none; background:var(--dark-green); color:white; font-weight:bold;">← Back to Map</button></div>
-    <div id="tab-container" style="padding:10px; text-align:center;"></div>
+<input type="text" id="search" placeholder="Enter a name...">
+<div id="preview-card"><div id="preview-text"></div></div>
+
+<div id="brick-overlay">
+    <div style="padding:10px; background:white; text-align:center;"><button onclick="closeBricks()" style="padding:8px 25px; border-radius:20px; border:none; background:var(--dark-green); color:white; font-weight:bold;">← Back to Search</button></div>
     <div id="brick-container"></div>
 </div>
 
@@ -62,7 +44,7 @@
     const NEW_DB_KEY = 'sb_publishable_KaakpKOqbhxKXefp8fCTnQ_1OHzhuIu'; 
     const newGardenClient = window.supabase.createClient(NEW_DB_URL, NEW_DB_KEY);
 
-    let allBricks = []; 
+    let allBricks = []; let currentMatches = [];
 
     async function loadData() {
         const [r1, r2] = await Promise.all([gardenClient.from('ocracoke_bricks').select('*'), newGardenClient.from('Ocracoke_Bricks_New').select('*')]);
@@ -70,22 +52,26 @@
                      ...(r2.data||[]).map(b=>{ const s=(b.section||b.Section||"").toLowerCase(); const lines=[b.inscription_line_1||b.inscription_1,b.inscription_line_2||b.inscription_2].map(l=>(l||"").trim()).filter(l=>l!==""); return {...b, MappedSec:s.includes("ne")?"Front NE Section":s.includes("north")?"Front Fig Garden":"Back Fig Garden", R:parseInt(b.row||b.Row)||0, C:parseInt(b.col||b.Col)||0, Inscr:lines.join(" "), Lines:lines, ColSpan:parseInt(b.col_span)||1};})];
     }
 
+    document.getElementById('search').oninput = (e) => {
+        const t = e.target.value.toLowerCase().trim();
+        if (t.length < 2) { document.getElementById('preview-card').style.display = "none"; return; }
+        currentMatches = allBricks.filter(b => b.Inscr.toLowerCase().includes(t));
+        if (currentMatches.length > 0) {
+            document.getElementById('preview-text').innerHTML = `${currentMatches[0].Inscr}<br><button onclick="showBrickGrid({MappedSec:'${currentMatches[0].MappedSec}'}, ['${currentMatches[0].id}'])">View Map</button>`;
+            document.getElementById('preview-card').style.display = "block";
+        }
+    };
+
     function showBrickGrid(target, highlights = []) {
         const container = document.getElementById('brick-container'); container.innerHTML = "";
         const bricks = allBricks.filter(b => b.MappedSec === target.MappedSec);
-        
         const grid = document.createElement('div'); grid.className = 'unified-grid';
         
         bricks.forEach(b => {
             const div = document.createElement('div');
-            // Check ColSpan for shape
             const isWide = (b.ColSpan > 1);
             div.className = `brick-unit ${isWide ? 'wide' : ''} ${b.Inscr.trim() === "" ? 'is-blank' : ''}`;
-            
-            if (highlights.includes(String(b.id))) { 
-                div.classList.add('current-focus'); 
-                setTimeout(() => div.scrollIntoView({ behavior: 'smooth', block: 'center' }), 500); 
-            }
+            if (highlights.includes(String(b.id))) { div.classList.add('current-focus'); setTimeout(() => div.scrollIntoView({behavior:'smooth', block:'center'}), 500); }
             div.innerHTML = (b.Lines ? b.Lines.map(l => `<span>${l}</span>`).join("") : `<span>${b.Inscr}</span>`);
             grid.appendChild(div);
         });
