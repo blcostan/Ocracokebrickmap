@@ -104,16 +104,31 @@
 
     function renderAllMatches() {
         const container = document.getElementById('brick-container'); container.innerHTML = "";
-        const allBricks = [...db1, ...db2];
-        const grid = document.createElement('div'); grid.className = 'grid-container';
+        const target = currentMatches[0]; // Use the first match to determine which section to show
         
-        allBricks.filter(b => currentMatches.some(m => m.id == (b.id||b.ID) && m.isNew == !!b.isNew)).forEach(b => {
-            const d = document.createElement('div'); d.className = 'brick-unit current-focus'; 
-            d.innerText = b.Inscription;
-            if (b.isNew) { d.style.gridRow = `${b.Row} / span ${b.RowSpan}`; d.style.gridColumn = `${b.Col} / span ${b.ColSpan}`; }
-            grid.appendChild(d);
-        });
-        container.appendChild(grid);
+        if (!target.isNew) {
+            const rows = {}; db1.filter(b=>b.Section === target.Section).forEach(b=>{if(!rows[b.Row])rows[b.Row]=[]; rows[b.Row].push(b);});
+            Object.keys(rows).sort((a,b)=>a-b).forEach(r => {
+                const rowDiv = document.createElement('div'); rowDiv.className = 'brick-row';
+                rows[r].forEach(b => {
+                    const d = document.createElement('div'); d.className = 'brick-unit'; d.innerText = b.Inscription;
+                    if(currentMatches.some(m => m.id == b.id)) d.classList.add('current-focus');
+                    rowDiv.appendChild(d);
+                });
+                container.appendChild(rowDiv);
+            });
+        } else {
+            const grid = document.createElement('div'); grid.className = 'grid-container';
+            db2.filter(b=>b.Section === target.Section).forEach(b => {
+                const d = document.createElement('div'); d.className = 'brick-unit'; 
+                d.innerText = b.Inscription;
+                d.style.gridRow = `${b.Row} / span ${b.RowSpan}`;
+                d.style.gridColumn = `${b.Col} / span ${b.ColSpan}`;
+                if(currentMatches.some(m => m.id == b.id)) d.classList.add('current-focus');
+                grid.appendChild(d);
+            });
+            container.appendChild(grid);
+        }
         document.getElementById('brick-overlay').style.display = 'flex';
     }
 
