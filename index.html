@@ -13,23 +13,13 @@
             background: var(--brick); color: white; text-align: center; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             font-size: 7px; font-weight: bold; border-radius: 2px; padding: 4px; 
-            width: 100%; height: 100%; text-transform: uppercase; 
-            box-sizing: border-box;
+            width: 50px; height: 40px; box-sizing: border-box; text-transform: uppercase;
         }
-        .brick-unit.current-focus { outline: 3px solid var(--highlight); background: var(--highlight); transform: scale(1.02); z-index: 99; }
+        .brick-unit.current-focus { outline: 3px solid white; background: var(--highlight); transform: scale(1.05); z-index: 99; }
         
+        /* Layouts */
         .brick-row { display: flex; justify-content: center; gap: 5px; margin-bottom: 5px; }
-        
-        /* The grid container for the second database (Ocracoke_Bricks_New) */
-        .grid-container { 
-            display: inline-grid; 
-            grid-template-columns: repeat(12, 55px); 
-            grid-auto-rows: 42px; 
-            gap: 4px; 
-            padding: 4px; 
-            background: white; 
-            border: 4px solid white;
-        }
+        .grid-container { display: inline-grid; grid-template-columns: repeat(12, 55px); grid-auto-rows: 42px; gap: 4px; padding: 4px; background: white; border: 4px solid white; }
         
         #search { width: 90%; max-width: 400px; padding: 12px; border-radius: 30px; border: 2px solid var(--fig-green); margin: 10px auto; display: block; }
         #preview-card { width: 90%; max-width: 360px; background: white; border-radius: 12px; padding: 15px; border-left: 5px solid var(--fig-green); margin: 0 auto 20px auto; display: none; text-align: center; }
@@ -60,29 +50,23 @@
     const gardenClient = window.supabase.createClient('https://fcizlimndpfpbkkxardp.supabase.co', 'sb_publishable_6VsgUICkD5_DhMkEEdRlDA_NQkTwj7b');
     const newGardenClient = window.supabase.createClient('https://afkfynvyzglxmbcyqgod.supabase.co', 'sb_publishable_KaakpKOqbhxKXefp8fCTnQ_1OHzhuIu');
 
-    let db1 = []; let db2 = []; let currentMatches = []; let matchIndex = 0;
+    let db1 = [], db2 = [], currentMatches = [], matchIndex = 0;
 
     async function loadData() {
         const [res1, res2] = await Promise.all([gardenClient.from('ocracoke_bricks').select('*'), newGardenClient.from('Ocracoke_Bricks_New').select('*')]);
-        db1 = res1.data || [];
-        db2 = (res2.data || []).map(b => {
-            const lines = [b.inscription_line_1, b.inscription_line_2, b.inscription_line_3, b.inscription_line_4]
-                .filter(l => l && typeof l === 'string' && l.toUpperCase().replace(/\[BLANK\]/gi, "").trim() !== "")
-                .map(l => l.toUpperCase().replace(/\[BLANK\]/gi, "").trim());
-            return { 
-                ...b, 
-                Inscription: lines.join(" "), 
-                Section: b.section, Row: b.row, Col: b.col, RowSpan: b.row_span, ColSpan: b.col_span, id: b.ID 
-            };
-        });
+        db1 = (res1.data || []).map(b => ({ ...b, isNew: false, Inscription: b.Inscription || "", Section: b.Section, Row: b.Row, Col: b.Col, id: b.id }));
+        db2 = (res2.data || []).map(b => ({ 
+            ...b, isNew: true,
+            Inscription: [b.inscription_line_1, b.inscription_line_2, b.inscription_line_3, b.inscription_line_4].filter(l => l && typeof l === 'string' && l.toUpperCase() !== "[BLANK]").join(" "), 
+            Section: b.section, Row: b.row, Col: b.col, RowSpan: b.row_span, ColSpan: b.col_span, id: b.ID 
+        }));
         document.getElementById('search').disabled = false;
     }
 
     document.getElementById('search').oninput = (e) => {
         const t = e.target.value.toLowerCase().trim();
         if (t.length < 2) { document.getElementById('map-dot').style.display = document.getElementById('preview-card').style.display = "none"; return; }
-        currentMatches = [...db1.filter(b => (b.Inscription||"").toLowerCase().includes(t)).map(b=>({...b, isNew:false})),
-                          ...db2.filter(b => (b.Inscription||"").toLowerCase().includes(t)).map(b=>({...b, isNew:true}))];
+        currentMatches = [...db1.filter(b => (b.Inscription||"").toLowerCase().includes(t)), ...db2.filter(b => (b.Inscription||"").toLowerCase().includes(t))];
         matchIndex = 0;
         if (currentMatches.length > 0) updateUI();
     };
@@ -105,9 +89,11 @@
         const container = document.getElementById('brick-container'); container.innerHTML = "";
         
         if (!target.isNew) {
-            // First database: Row-based rendering
-            const rows = {}; db1.filter(b=>b.Section === target.Section).forEach(b=>{if(!rows[b.Row])rows[b.Row]=[]; rows[b.Row].push(b);});
-            Object.keys(rows).sort((a,b)=>a-b).forEach(r => {
+            // Path 1: Row-based layout (Old DB)
+            const rows = {}; db1.filter(b => b.Section === target.Section).forEach(b => {
+                if(!rows[b.Row]) rows[b.Row] = []; rows[b.Row].push(b);
+            });
+            Object.keys(rows).sort((a,b) => a-b).forEach(r => {
                 const rowDiv = document.createElement('div'); rowDiv.className = 'brick-row';
                 rows[r].forEach(b => {
                     const d = document.createElement('div'); d.className = 'brick-unit'; d.innerText = b.Inscription;
@@ -117,11 +103,10 @@
                 container.appendChild(rowDiv);
             });
         } else {
-            // Second database: Grid-based rendering (NEW DB)
+            // Path 2: Grid-based layout (New DB)
             const grid = document.createElement('div'); grid.className = 'grid-container';
-            db2.filter(b=>b.Section === target.Section).forEach(b => {
-                const d = document.createElement('div'); d.className = 'brick-unit'; 
-                d.innerText = b.Inscription;
+            db2.filter(b => b.Section === target.Section).forEach(b => {
+                const d = document.createElement('div'); d.className = 'brick-unit'; d.innerText = b.Inscription;
                 d.style.gridRow = `${b.Row} / span ${b.RowSpan}`;
                 d.style.gridColumn = `${b.Col} / span ${b.ColSpan}`;
                 if(b.id == target.id) { d.classList.add('current-focus'); setTimeout(() => d.scrollIntoView({ block: 'center' }), 300); }
