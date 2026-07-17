@@ -14,18 +14,13 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             font-size: 7px; font-weight: bold; border-radius: 2px; padding: 4px; 
             width: 50px; height: 40px; box-sizing: border-box; text-transform: uppercase;
+            overflow: hidden; word-break: break-word; line-height: 1;
         }
         .brick-unit.current-focus { outline: 3px solid white; background: var(--highlight); transform: scale(1.05); z-index: 99; }
         
-        /* Updated Centering CSS */
-        .brick-grid { 
-            display: grid; 
-            gap: 4px; 
-            padding: 20px; 
-            justify-content: center;   /* Centers the grid itself */
-            justify-items: center;     /* Centers items within grid cells */
-            width: 100%;
-        }
+        /* Flexbox parent for perfect centering */
+        .grid-wrapper { display: flex; justify-content: center; padding: 20px; width: 100%; }
+        .brick-grid { display: grid; gap: 4px; }
         
         #search { width: 90%; max-width: 400px; padding: 12px; border-radius: 30px; border: 2px solid var(--fig-green); margin: 10px auto; display: block; }
         #preview-card { width: 90%; max-width: 360px; background: white; border-radius: 12px; padding: 15px; border-left: 5px solid var(--fig-green); margin: 0 auto 20px auto; display: none; text-align: center; }
@@ -49,7 +44,7 @@
 
 <div id="brick-overlay">
     <div style="padding:10px; background:white; text-align:center;"><button onclick="closeBricks()" style="padding:8px 25px; border-radius:20px; border:none; background:var(--dark-green); color:white; font-weight:bold;">← Back to Map</button></div>
-    <div id="brick-container" style="display: flex; justify-content: center; width: 100%;"></div>
+    <div id="brick-container" class="grid-wrapper"></div>
 </div>
 
 <script>
@@ -88,15 +83,11 @@
         content += `<button onclick="renderBricks(${matchIndex})" style="padding:10px; width:30%; border-radius:20px; border:none; background:var(--dark-green); color:white;">VIEW MAP</button>`;
         if (currentMatches.length > 1) content += `<button onclick="nextMatch()" style="padding:10px; width:30%; margin-left:2%; border-radius:20px; border:none; background:var(--fig-green); color:white;">NEXT</button>`;
         content += `<button onclick="renderAllMatches()" style="padding:10px; width:30%; margin-left:2%; border-radius:20px; border:none; background:var(--brick); color:white;">VIEW ALL</button>`;
-        
         document.getElementById('preview-text').innerHTML = content;
         document.getElementById('preview-card').style.display = "block";
     }
 
-    function nextMatch() {
-        matchIndex = (matchIndex + 1) % currentMatches.length;
-        updateUI();
-    }
+    function nextMatch() { matchIndex = (matchIndex + 1) % currentMatches.length; updateUI(); }
 
     function renderBricks(index) {
         const target = currentMatches[index];
