@@ -104,10 +104,12 @@
 
     function renderAllMatches() {
         const container = document.getElementById('brick-container'); container.innerHTML = "";
-        const target = currentMatches[0]; // Use the first match to determine which section to show
+        // Use the first match to determine which section to draw
+        const sectionToShow = currentMatches[0].Section;
         
-        if (!target.isNew) {
-            const rows = {}; db1.filter(b=>b.Section === target.Section).forEach(b=>{if(!rows[b.Row])rows[b.Row]=[]; rows[b.Row].push(b);});
+        // --- DRAWING OLD SECTION ---
+        if (!currentMatches[0].isNew) {
+            const rows = {}; db1.filter(b=>b.Section === sectionToShow).forEach(b=>{if(!rows[b.Row])rows[b.Row]=[]; rows[b.Row].push(b);});
             Object.keys(rows).sort((a,b)=>a-b).forEach(r => {
                 const rowDiv = document.createElement('div'); rowDiv.className = 'brick-row';
                 rows[r].forEach(b => {
@@ -117,9 +119,11 @@
                 });
                 container.appendChild(rowDiv);
             });
-        } else {
+        } 
+        // --- DRAWING NEW SECTION ---
+        else {
             const grid = document.createElement('div'); grid.className = 'grid-container';
-            db2.filter(b=>b.Section === target.Section).forEach(b => {
+            db2.filter(b=>b.Section === sectionToShow).forEach(b => {
                 const d = document.createElement('div'); d.className = 'brick-unit'; 
                 d.innerText = b.Inscription;
                 d.style.gridRow = `${b.Row} / span ${b.RowSpan}`;
