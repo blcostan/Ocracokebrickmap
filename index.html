@@ -13,21 +13,22 @@
             background: var(--brick); color: white; text-align: center; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             font-size: 7px; font-weight: bold; border-radius: 2px; padding: 4px; 
-            width: 50px; height: 40px; box-sizing: border-box; text-transform: uppercase;
+            width: 100%; height: 100%; box-sizing: border-box; text-transform: uppercase;
             overflow: hidden; word-break: break-word; line-height: 1; flex-shrink: 0;
         }
-        .brick-unit.current-focus { outline: 3px solid white; background: var(--highlight); transform: scale(1.05); z-index: 99; }
+        .brick-unit.current-focus { outline: 3px solid white; background: var(--highlight); transform: scale(1.02); z-index: 99; }
         .brick-unit.is-blank { background: #dcd7cc; border: 1px dashed #bbb; color: transparent; }
 
         /* DB1 Layout: Row-based, centered */
         .brick-row { display: flex; justify-content: center; gap: 4px; margin-bottom: 4px; }
         
-        /* DB2 Layout: Grid-based */
+        /* DB2 Layout: Grid-based with Spanning */
         .grid-container { 
-            display: inline-grid; 
-            grid-template-columns: repeat(12, 55px); 
-            grid-auto-rows: 42px; 
-            gap: 4px; padding: 4px; background: white; border: 4px solid white;
+            display: grid; 
+            grid-template-columns: repeat(10, 50px); 
+            grid-auto-rows: 40px; 
+            gap: 4px; 
+            justify-content: center;
         }
         
         #search { width: 90%; max-width: 400px; padding: 12px; border-radius: 30px; border: 2px solid var(--fig-green); margin: 10px auto; display: block; }
@@ -51,7 +52,7 @@
 
 <div id="brick-overlay">
     <div style="padding:10px; background:white; text-align:center;"><button onclick="closeBricks()" style="padding:8px 25px; border-radius:20px; border:none; background:var(--dark-green); color:white; font-weight:bold;">← Back to Map</button></div>
-    <div id="brick-container" style="display: flex; flex-direction: column; align-items: center; padding: 20px;"></div>
+    <div id="brick-container" style="padding: 20px 0;"></div>
 </div>
 
 <script>
@@ -83,60 +84,49 @@
         const match = currentMatches[matchIndex];
         const dot = document.getElementById('map-dot'); dot.style.display = "block";
         dot.style.left = "54%"; dot.style.top = "66%";
-        
         let content = `<div style="font-weight:bold; margin-bottom:10px;">${match.Inscription}</div>`;
-        content += `<button onclick="renderTarget(${matchIndex})" style="padding:10px; width:48%; border-radius:20px; border:none; background:var(--dark-green); color:white;">View Map</button>`;
-        if (currentMatches.length > 1) content += `<button onclick="matchIndex=(matchIndex+1)%currentMatches.length; updateUI();" style="padding:10px; width:48%; margin-left:4%; border-radius:20px; border:none; background:var(--fig-green); color:white;">Next</button>`;
+        content += `<button onclick="renderBricks(${matchIndex})" style="padding:10px; width:45%; border-radius:20px; border:none; background:var(--dark-green); color:white;">View Map</button>`;
+        if (currentMatches.length > 1) content += `<button onclick="matchIndex=(matchIndex+1)%currentMatches.length; updateUI();" style="padding:10px; width:45%; margin-left:5%; border-radius:20px; border:none; background:var(--fig-green); color:white;">Next</button>`;
         document.getElementById('preview-text').innerHTML = content;
         document.getElementById('preview-card').style.display = "block";
     }
 
-    function renderTarget(index) {
+    function renderBricks(index) {
         const target = currentMatches[index];
         const container = document.getElementById('brick-container'); container.innerHTML = "";
         
         if (!target.isNew) {
-            renderOriginalBricks(target);
+            // DB1: Row-by-Row Centered Layout (STRICTLY UNCHANGED)
+            const rows = {}; db1.filter(b => b.Section === target.Section).forEach(b => {
+                if(!rows[b.Row]) rows[b.Row] = []; rows[b.Row].push(b);
+            });
+            Object.keys(rows).sort((a,b) => a-b).forEach(r => {
+                const rowDiv = document.createElement('div'); rowDiv.className = 'brick-row';
+                rows[r].sort((a,b) => a.Col - b.Col).forEach(b => {
+                    const d = document.createElement('div');
+                    d.className = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? 'brick-unit' : 'brick-unit is-blank';
+                    d.innerText = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? b.Inscription : "";
+                    if(b.id == target.id) { d.classList.add('current-focus'); setTimeout(() => d.scrollIntoView({ block: 'center' }), 300); }
+                    rowDiv.appendChild(d);
+                });
+                container.appendChild(rowDiv);
+            });
         } else {
-            renderNewBricks(target);
-        }
-        document.getElementById('brick-overlay').style.display = 'flex';
-    }
-
-    // PATH 1: Ocracoke_Bricks (Row Layout)
-    function renderOriginalBricks(target) {
-        const container = document.getElementById('brick-container');
-        const rows = {}; 
-        db1.filter(b => b.Section === target.Section).forEach(b => {
-            if(!rows[b.Row]) rows[b.Row] = []; rows[b.Row].push(b);
-        });
-        Object.keys(rows).sort((a,b) => a-b).forEach(r => {
-            const rowDiv = document.createElement('div'); rowDiv.className = 'brick-row';
-            rows[r].sort((a,b) => a.Col - b.Col).forEach(b => {
+            // DB2: Grid Layout with Spanning (UPDATED)
+            const grid = document.createElement('div'); grid.className = 'grid-container';
+            db2.filter(b => b.Section === target.Section).forEach(b => {
                 const d = document.createElement('div');
                 d.className = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? 'brick-unit' : 'brick-unit is-blank';
                 d.innerText = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? b.Inscription : "";
+                // Applying the Spanning Logic
+                d.style.gridRow = `${b.Row} / span ${b.RowSpan}`;
+                d.style.gridColumn = `${b.Col} / span ${b.ColSpan}`;
                 if(b.id == target.id) { d.classList.add('current-focus'); setTimeout(() => d.scrollIntoView({ block: 'center' }), 300); }
-                rowDiv.appendChild(d);
+                grid.appendChild(d);
             });
-            container.appendChild(rowDiv);
-        });
-    }
-
-    // PATH 2: Ocracoke_Bricks_New (Grid Layout)
-    function renderNewBricks(target) {
-        const container = document.getElementById('brick-container');
-        const grid = document.createElement('div'); grid.className = 'grid-container';
-        db2.filter(b => b.Section === target.Section).forEach(b => {
-            const d = document.createElement('div');
-            d.className = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? 'brick-unit' : 'brick-unit is-blank';
-            d.innerText = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? b.Inscription : "";
-            d.style.gridRow = `${b.Row} / span ${b.RowSpan}`;
-            d.style.gridColumn = `${b.Col} / span ${b.ColSpan}`;
-            if(b.id == target.id) { d.classList.add('current-focus'); setTimeout(() => d.scrollIntoView({ block: 'center' }), 300); }
-            grid.appendChild(d);
-        });
-        container.appendChild(grid);
+            container.appendChild(grid);
+        }
+        document.getElementById('brick-overlay').style.display = 'flex';
     }
 
     function closeBricks() { document.getElementById('brick-overlay').style.display = 'none'; }
