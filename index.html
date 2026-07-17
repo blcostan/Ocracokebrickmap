@@ -18,15 +18,8 @@
         }
         .brick-unit.current-focus { outline: 3px solid var(--highlight); background: var(--highlight); transform: scale(1.02); z-index: 99; }
         
-        /* New Staggered Layout for db1 */
-        .staggered-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 70px);
-            gap: 4px;
-            justify-content: center;
-        }
-        .staggered-grid > div:nth-child(even) { margin-left: 35px; } /* Creates the running bond effect */
-
+        .brick-row { display: flex; justify-content: center; gap: 5px; margin-bottom: 5px; }
+        
         .grid-container { 
             display: inline-grid; 
             grid-template-columns: repeat(12, 55px); 
@@ -103,22 +96,22 @@
     function renderAllMatches() {
         const container = document.getElementById('brick-container'); container.innerHTML = "";
         const target = currentMatches[0];
-        
         if (!target.isNew) {
-            const grid = document.createElement('div'); grid.className = 'staggered-grid';
-            db1.filter(b => b.Section === target.Section).forEach(b => {
-                const d = document.createElement('div'); d.className = 'brick-unit'; d.innerText = b.Inscription;
-                if(currentMatches.some(m => m.id == b.id)) d.classList.add('current-focus');
-                grid.appendChild(d);
+            const rows = {}; db1.filter(b=>b.Section === target.Section).forEach(b=>{if(!rows[b.Row])rows[b.Row]=[]; rows[b.Row].push(b);});
+            Object.keys(rows).sort((a,b)=>a-b).forEach(r => {
+                const rowDiv = document.createElement('div'); rowDiv.className = 'brick-row';
+                rows[r].forEach(b => {
+                    const d = document.createElement('div'); d.className = 'brick-unit'; d.innerText = b.Inscription;
+                    if(currentMatches.some(m => m.id == b.id)) d.classList.add('current-focus');
+                    rowDiv.appendChild(d);
+                });
+                container.appendChild(rowDiv);
             });
-            container.appendChild(grid);
         } else {
             const grid = document.createElement('div'); grid.className = 'grid-container';
-            db2.filter(b => b.Section === target.Section).forEach(b => {
-                const d = document.createElement('div'); d.className = 'brick-unit'; 
-                d.innerText = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? b.Inscription : "";
-                d.style.gridRow = `${b.Row} / span ${b.RowSpan}`;
-                d.style.gridColumn = `${b.Col} / span ${b.ColSpan}`;
+            db2.filter(b=>b.Section === target.Section).forEach(b => {
+                const d = document.createElement('div'); d.className = 'brick-unit'; d.innerText = b.Inscription;
+                d.style.gridRow = `${b.Row} / span ${b.RowSpan}`; d.style.gridColumn = `${b.Col} / span ${b.ColSpan}`;
                 if(currentMatches.some(m => m.id == b.id)) d.classList.add('current-focus');
                 grid.appendChild(d);
             });
@@ -131,13 +124,12 @@
         const target = currentMatches[index];
         const container = document.getElementById('brick-container'); container.innerHTML = "";
         if (!target.isNew) {
-            const grid = document.createElement('div'); grid.className = 'staggered-grid';
-            db1.filter(b => b.Section === target.Section).forEach(b => {
-                const d = document.createElement('div'); d.className = 'brick-unit'; d.innerText = b.Inscription;
-                if(b.id == target.id) { d.classList.add('current-focus'); setTimeout(() => d.scrollIntoView({ block: 'center' }), 300); }
-                grid.appendChild(d);
+            const rows = {}; db1.filter(b=>b.Section === target.Section).forEach(b=>{if(!rows[b.Row])rows[b.Row]=[]; rows[b.Row].push(b);});
+            Object.keys(rows).sort((a,b)=>a-b).forEach(r => {
+                const rowDiv = document.createElement('div'); rowDiv.className = 'brick-row';
+                rows[r].forEach(b => { const d = document.createElement('div'); d.className = 'brick-unit'; d.innerText = b.Inscription; if(b.id == target.id) { d.classList.add('current-focus'); setTimeout(() => d.scrollIntoView({ block: 'center' }), 300); } rowDiv.appendChild(d); });
+                container.appendChild(rowDiv);
             });
-            container.appendChild(grid);
         } else {
             const grid = document.createElement('div'); grid.className = 'grid-container';
             db2.filter(b=>b.Section === target.Section).forEach(b => { const d = document.createElement('div'); d.className = 'brick-unit'; d.innerText = b.Inscription; d.style.gridRow = `${b.Row} / span ${b.RowSpan}`; d.style.gridColumn = `${b.Col} / span ${b.ColSpan}`; if(b.id == target.id) { d.classList.add('current-focus'); setTimeout(() => d.scrollIntoView({ block: 'center' }), 300); } grid.appendChild(d); });
