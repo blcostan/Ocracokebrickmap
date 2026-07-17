@@ -42,12 +42,10 @@
 </div>
 
 <script>
-    // Supabase config...
-    const S_URL = 'YOUR_SUPABASE_URL'; 
-    const S_KEY = 'YOUR_SUPABASE_KEY';
+    const S_URL = 'https://fcizlimndpfpbkkxardp.supabase.co'; 
+    const S_KEY = 'sb_publishable_6VsgUICkD5_DhMkEEdRlDA_NQkTwj7b';
     const gardenClient = window.supabase.createClient(S_URL, S_KEY);
-
-    let allBricks = []; 
+    let allBricks = []; let currentMatches = []; let matchIndex = 0;
 
     async function loadData() {
         const { data } = await gardenClient.from('ocracoke_bricks').select('*');
@@ -55,8 +53,46 @@
         document.getElementById('search').disabled = false;
     }
 
-    // Add your search, updateUI, and showBrickGrid row-based logic here
-    
+    document.getElementById('search').oninput = (e) => {
+        const t = e.target.value.toLowerCase().trim();
+        if (t.length < 2) { document.getElementById('map-dot').style.display = document.getElementById('preview-card').style.display = "none"; return; }
+        currentMatches = allBricks.filter(b => b.Inscription.toLowerCase().includes(t));
+        matchIndex = 0;
+        if (currentMatches.length > 0) updateUI();
+    };
+
+    function updateUI() {
+        const match = currentMatches[matchIndex];
+        const dot = document.getElementById('map-dot'); dot.style.display = "block";
+        dot.style.left = match.Section.includes("North") ? "54%" : "54%";
+        dot.style.top = match.Section.includes("North") ? "66%" : "41%";
+        
+        let content = `<div style="margin-bottom:10px; font-weight:bold;">${match.Inscription}</div>`;
+        content += `<button onclick="showBrickGrid({Section:'${match.Section}'}, ['${match.id}'])" style="padding:10px; width:48%; border:none; border-radius:20px; background:var(--dark-green); color:white; font-weight:bold; cursor:pointer;">View Map</button>`;
+        if (currentMatches.length > 1) {
+            content += `<button onclick="event.stopPropagation(); matchIndex=(matchIndex+1)%currentMatches.length; updateUI();" style="padding:10px; width:48%; margin-left:4%; border:none; border-radius:20px; background:var(--fig-green); color:white; font-weight:bold; cursor:pointer;">Next (${matchIndex+1}/${currentMatches.length})</button>`;
+        }
+        document.getElementById('preview-text').innerHTML = content;
+        document.getElementById('preview-card').style.display = "block";
+    }
+
+    function showBrickGrid(target, highlights = []) {
+        const container = document.getElementById('brick-container'); container.innerHTML = "";
+        const bricks = allBricks.filter(b => b.Section === target.Section);
+        const rows = {}; bricks.forEach(b => { if(!rows[b.Row]) rows[b.Row] = []; rows[b.Row].push(b); });
+        Object.keys(rows).sort((a,b)=>a-b).forEach(r => {
+            const rowDiv = document.createElement('div'); rowDiv.className = 'brick-row';
+            rows[r].sort((a,b)=>a.Col-b.Col).forEach(b => {
+                const d = document.createElement('div'); d.className = 'brick-unit'; d.innerText = b.Inscription;
+                if (highlights.includes(String(b.id))) { d.classList.add('current-focus'); setTimeout(() => d.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300); }
+                rowDiv.appendChild(d);
+            });
+            container.appendChild(rowDiv);
+        });
+        document.getElementById('brick-overlay').style.display = 'flex';
+    }
+
+    function closeBricks() { document.getElementById('brick-overlay').style.display = 'none'; }
     loadData();
 </script>
 </body>
