@@ -83,7 +83,7 @@
 <div class="hero-interface">
     <div class="search-area">
         <div class="input-row">
-            <input type="text" id="search" placeholder="Loading bricks..." disabled>
+            <input type="text" id="search" placeholder="Enter a name..." disabled>
         </div>
     </div>
 
@@ -171,9 +171,15 @@
         dot.style.top = match.MappedSec === "Front NE Section" ? "81%" : match.MappedSec === "Front Fig Garden" ? "66%" : "41%";
         
         let content = `<div style="margin-bottom: 10px;">${parseIcons(match.Inscr)}</div>`;
-        content += `<button onclick="showBrickGrid(currentMatches[matchIndex])" style="padding: 8px 20px; border-radius: 20px; border: none; background: var(--dark-green); color: white; font-weight: bold; cursor: pointer; width: 100%;">View Map</button>`;
+        content += `<button onclick="showBrickGrid(currentMatches[matchIndex])" style="padding: 12px 20px; border-radius: 20px; border: none; background: var(--dark-green); color: white; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%;">View Map</button>`;
+        
         if (currentMatches.length > 1) {
-            content += `<div style="margin-top: 8px;"><button onclick="event.stopPropagation(); matchIndex = (matchIndex + 1) % currentMatches.length; updateUI();" style="padding: 4px 15px; border-radius: 15px; border: 1px solid var(--fig-green); background: white; color: var(--dark-green); font-size: 12px; cursor: pointer;">Next Match (${matchIndex + 1}/${currentMatches.length}) →</button></div>`;
+            content += `<div style="margin-top: 12px;">
+                <button onclick="event.stopPropagation(); matchIndex = (matchIndex + 1) % currentMatches.length; updateUI();" 
+                        style="padding: 10px 20px; border-radius: 20px; border: 2px solid var(--fig-green); background: white; color: var(--dark-green); font-size: 14px; font-weight: bold; cursor: pointer; width: 100%;">
+                    Next Match (${matchIndex + 1}/${currentMatches.length}) →
+                </button>
+            </div>`;
         }
         document.getElementById('preview-text').innerHTML = content;
     }
