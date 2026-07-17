@@ -8,33 +8,22 @@
     <style>
         :root { --fig-green: #9CAF88; --dark-green: #557C4B; --sand: #F2EFEA; --brick: #B14A3B; --highlight: #ff3b3b; }
         body { font-family: 'Georgia', serif; background: var(--sand); margin: 0; display: flex; flex-direction: column; min-height: 100vh; color: #333; overflow-x: hidden; }
-        
         #app-main-title { text-align: center; color: var(--dark-green); font-size: 22px; margin: 15px 0 5px 0; font-weight: bold; }
         .hero-interface { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px; }
         .search-area { width: 100%; max-width: 400px; margin-bottom: 10px; z-index: 100; }
-        #search { width: 100%; padding: 12px; border-radius: 30px; border: 2px solid var(--fig-green); font-size: 16px; outline: none; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        
-        #preview-card { width: 90%; max-width: 360px; background: white; border-radius: 12px; padding: 12px; border-left: 5px solid var(--fig-green); box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: none; text-align: center; margin-bottom: 15px; }
-        #preview-text { text-transform: uppercase; }
-
+        #search { width: 100%; padding: 12px; border-radius: 30px; border: 2px solid var(--fig-green); font-size: 16px; outline: none; box-shadow: 0 4px 15px rgba(0,0,0,0.1); box-sizing: border-box; }
+        #preview-card { width: 90%; max-width: 360px; background: white; border-radius: 12px; padding: 15px; border-left: 5px solid var(--fig-green); box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: none; text-align: center; margin-bottom: 15px; }
         .main-map-area { position: relative; width: 100%; max-width: 800px; background: white; padding: 5px; border-radius: 15px; border: 1px solid #ddd; }
         .main-map-area img { width: 100%; display: block; border-radius: 10px; }
-        #map-dot { position: absolute; width: 30px; height: 30px; background: var(--highlight); border: 3px solid white; border-radius: 50%; display: none; transform: translate(-50%, -50%); animation: pulse 1.5s infinite; z-index: 20; }
-        @keyframes pulse { 0% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.1); } 100% { transform: translate(-50%, -50%) scale(1); } }
-
+        #map-dot { position: absolute; width: 30px; height: 30px; background: var(--highlight); border: 3px solid white; border-radius: 50%; display: none; transform: translate(-50%, -50%); z-index: 20; }
         #brick-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--sand); z-index: 1000; display: none; flex-direction: column; }
-        .overlay-nav { width: 100%; background: white; padding: 10px; display: flex; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); flex-shrink: 0; }
+        .overlay-nav { width: 100%; background: white; padding: 10px; display: flex; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .back-btn { padding: 8px 25px; border-radius: 20px; border: none; background: var(--dark-green); color: white; font-weight: bold; cursor: pointer; }
-        .brick-scroll-viewport { flex: 1; overflow-y: auto; padding: 40px 5px; display: flex; flex-direction: column; align-items: center; width: 100%; box-sizing: border-box; }
-        
-        /* Brick Row & Styling */
-        .brick-row { display: flex; justify-content: center; gap: 1vw; margin-bottom: 1vw; width: 100%; align-items: stretch; }
-        .brick-unit { background: var(--brick); color: white; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 7px; font-weight: bold; border-radius: 2px; padding: 4px 2px; width: 15vw; max-width: 80px; min-height: 40px; word-break: break-word; flex-shrink: 0; text-transform: uppercase; }
-        .brick-unit.current-focus { outline: 2px solid white; background: var(--highlight); transform: scale(1.4); z-index: 99; box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
-        .brick-unit.is-blank { background: #dcd7cc; border: 1px dashed #bbb; color: transparent; }
-        
-        .row-number-label { width: 30px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--dark-green); font-weight: bold; opacity: 0.6; margin-right: 5px; }
-        .mini-lawn-row { background: var(--fig-green); color: white; padding: 10px; text-align: center; border-radius: 25px; font-weight: bold; font-size: 13px; margin: 20px 0; width: 80%; border: 2px solid var(--dark-green); }
+        .brick-scroll-viewport { flex: 1; overflow-y: auto; padding: 20px 5px; display: flex; flex-direction: column; align-items: center; width: 100%; }
+        #brick-container { width: 100%; display: flex; flex-direction: column; align-items: center; }
+        .brick-row { display: flex; justify-content: center; gap: 5px; margin-bottom: 5px; }
+        .brick-unit { background: var(--brick); color: white; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 7px; font-weight: bold; border-radius: 2px; padding: 4px 2px; width: 60px; height: 40px; text-transform: uppercase; }
+        .brick-unit.current-focus { outline: 3px solid var(--highlight); background: var(--highlight); transform: scale(1.1); z-index: 99; box-shadow: 0 0 10px var(--highlight); }
     </style>
 </head>
 <body>
@@ -42,97 +31,32 @@
 <h1 id="app-main-title">Ocracoke Commons Brick Finder</h1>
 
 <div class="hero-interface">
-    <div class="search-area">
-        <input type="text" id="search" placeholder="Loading bricks..." disabled>
-    </div>
-    <div id="preview-card" onclick="triggerGridFromPreview()">
-        <div id="preview-text"></div>
-    </div>
-    <div class="main-map-area">
-        <div id="map-dot"></div>
-        <img src="rendering%20of%20garden.avif" alt="Garden Map">
-    </div>
+    <div class="search-area"><input type="text" id="search" placeholder="Enter a name..." disabled></div>
+    <div id="preview-card"><div id="preview-text"></div></div>
+    <div class="main-map-area"><div id="map-dot"></div><img src="rendering%20of%20garden.avif" alt="Map"></div>
 </div>
 
 <div id="brick-overlay">
     <div class="overlay-nav"><button class="back-btn" onclick="closeBricks()">← Back to Map</button></div>
-    <div class="brick-scroll-viewport">
-        <div id="top-lawn" class="mini-lawn-row">CENTRAL LAWN (This Way ↑)</div>
-        <div id="brick-container"></div>
-        <div id="bottom-orientation" class="mini-lawn-row" style="background: #ddd; color: #666; border-color: #bbb;">BACK OF FIG GARDEN (This Way ↓)</div>
-    </div>
+    <div class="brick-scroll-viewport"><div id="brick-container"></div></div>
 </div>
 
 <script>
-    const S_URL = 'https://fcizlimndpfpbkkxardp.supabase.co'; 
-    const S_KEY = 'sb_publishable_6VsgUICkD5_DhMkEEdRlDA_NQkTwj7b';
+    // Supabase config...
+    const S_URL = 'YOUR_SUPABASE_URL'; 
+    const S_KEY = 'YOUR_SUPABASE_KEY';
     const gardenClient = window.supabase.createClient(S_URL, S_KEY);
-    const NEW_DB_URL = 'https://afkfynvyzglxmbcyqgod.supabase.co'; 
-    const NEW_DB_KEY = 'sb_publishable_KaakpKOqbhxKXefp8fCTnQ_1OHzhuIu'; 
-    const newGardenClient = window.supabase.createClient(NEW_DB_URL, NEW_DB_KEY);
 
-    let allBricks = []; let currentMatches = []; let matchIndex = 0;
+    let allBricks = []; 
 
     async function loadData() {
-        const searchInput = document.getElementById('search');
-        try {
-            const [res1, res2] = await Promise.all([gardenClient.from('ocracoke_bricks').select('*'), newGardenClient.from('Ocracoke_Bricks_New').select('*')]);
-            allBricks = [...(res1.data||[]).map(r=>({MappedSec:((r.section||r.Section||"").toLowerCase().includes("north")?"Front Fig Garden":"Back Fig Garden"), R:parseInt(r.row||r.Row)||0, C:parseInt(r.col||r.Col)||0, Inscr:r.inscription||r.Inscription||"", ...r})), 
-                         ...(res2.data||[]).map(r=>({MappedSec:((r.section||r.Section||"").toLowerCase().includes("ne")?"Front NE Section":((r.section||r.Section||"").toLowerCase().includes("north")?"Front Fig Garden":"Back Fig Garden")), R:parseInt(r.row||r.Row)||0, C:parseInt(r.col||r.Col)||0, Inscr:(r.inscription_line_1||"")+" "+(r.inscription_line_2||""), ...r}))];
-            searchInput.placeholder = "Enter a name..."; searchInput.disabled = false;
-        } catch(e) { searchInput.placeholder = "Error loading data."; }
+        const { data } = await gardenClient.from('ocracoke_bricks').select('*');
+        allBricks = data || [];
+        document.getElementById('search').disabled = false;
     }
 
-    document.getElementById('search').oninput = (e) => {
-        const t = e.target.value.toLowerCase().trim();
-        if (t.length < 2) { document.getElementById('map-dot').style.display = document.getElementById('preview-card').style.display = "none"; return; }
-        currentMatches = allBricks.filter(b => b.Inscr.toLowerCase().includes(t)); matchIndex = 0;
-        if (currentMatches.length > 0) updateUI();
-    };
-
-    function updateUI() {
-        if (!currentMatches[matchIndex]) return;
-        const match = currentMatches[matchIndex];
-        const dot = document.getElementById('map-dot');
-        dot.style.display = "block";
-        dot.style.left = match.MappedSec === "Front NE Section" ? "68%" : "54%";
-        dot.style.top = match.MappedSec === "Front NE Section" ? "81%" : (match.MappedSec === "Front Fig Garden" ? "66%" : "41%");
-        
-        const hasMultiple = currentMatches.length > 1;
-        document.getElementById('preview-text').innerHTML = `
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-                ${hasMultiple ? `<button onclick="cycleMatch(-1, event)" style="border:none; background:none; font-size:20px; cursor:pointer;">←</button>` : '<span></span>'}
-                <div style="flex:1; font-weight:bold; color:var(--brick); font-size:16px;">${match.Inscr}</div>
-                ${hasMultiple ? `<button onclick="cycleMatch(1, event)" style="border:none; background:none; font-size:20px; cursor:pointer;">→</button>` : '<span></span>'}
-            </div>
-            ${hasMultiple ? `<div style="font-size:11px; color:#888; margin-top:5px;">${matchIndex + 1} of ${currentMatches.length}</div>` : ''}
-        `;
-        document.getElementById('preview-card').style.display = "block";
-    }
-
-    function cycleMatch(dir, e) { e.stopPropagation(); matchIndex = (matchIndex + dir + currentMatches.length) % currentMatches.length; updateUI(); }
-    function triggerGridFromPreview() { showBrickGrid(currentMatches[matchIndex]); }
-
-    function showBrickGrid(target) {
-        const container = document.getElementById('brick-container'); container.innerHTML = "";
-        const bricks = allBricks.filter(b => b.MappedSec === target.MappedSec);
-        const rows = {}; bricks.forEach(b => { if(!rows[b.R]) rows[b.R] = []; rows[b.R].push(b); });
-        
-        Object.keys(rows).sort((a,b)=>a-b).forEach(r => {
-            const rowDiv = document.createElement('div'); rowDiv.className = 'brick-row';
-            const label = document.createElement('div'); label.className = 'row-number-label'; label.innerText = "R" + r; rowDiv.appendChild(label);
-            rows[r].sort((a,b)=>a.C-b.C).forEach(b => {
-                const d = document.createElement('div'); d.className = 'brick-unit';
-                d.innerText = b.Inscr;
-                if (b.id === target.id) { d.classList.add('current-focus'); setTimeout(() => d.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300); }
-                rowDiv.appendChild(d);
-            });
-            container.appendChild(rowDiv);
-        });
-        document.getElementById('brick-overlay').style.display = 'flex';
-    }
-
-    function closeBricks() { document.getElementById('brick-overlay').style.display = 'none'; }
+    // Add your search, updateUI, and showBrickGrid row-based logic here
+    
     loadData();
 </script>
 </body>
