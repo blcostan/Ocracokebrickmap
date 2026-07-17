@@ -28,6 +28,8 @@
 </head>
 <body>
 
+<h1 style="text-align: center; color: var(--dark-green); font-size: 22px; margin: 15px 0 5px 0; font-weight: bold;">Ocracoke Brick Finder</h1>
+
 <input type="text" id="search" placeholder="Enter a name..." disabled>
 <div id="preview-card"><div id="preview-text"></div></div>
 
@@ -65,9 +67,10 @@
     function updateUI() {
         const match = currentMatches[matchIndex];
         const dot = document.getElementById('map-dot'); dot.style.display = "block";
-        dot.style.left = "54%"; dot.style.top = "66%"; // Adjust as needed
+        dot.style.left = "54%"; dot.style.top = "66%";
         
         let content = `<div style="font-weight:bold; margin-bottom:10px;">${match.Inscription}</div>`;
+        content += `<div style="font-size:12px; color:#666; margin-bottom:10px;">${matchIndex + 1}/${currentMatches.length}</div>`;
         content += `<button onclick="renderBricks(${matchIndex})" style="padding:10px; width:48%; border-radius:20px; border:none; background:var(--dark-green); color:white;">View Map</button>`;
         if (currentMatches.length > 1) content += `<button onclick="matchIndex=(matchIndex+1)%currentMatches.length; updateUI();" style="padding:10px; width:48%; margin-left:4%; border-radius:20px; border:none; background:var(--fig-green); color:white;">Next</button>`;
         document.getElementById('preview-text').innerHTML = content;
