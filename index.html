@@ -104,28 +104,28 @@
 
     function renderAllMatches() {
         const container = document.getElementById('brick-container'); container.innerHTML = "";
-        // Use the first match to determine which section to draw
-        const sectionToShow = currentMatches[0].Section;
+        const target = currentMatches[0];
         
-        // --- DRAWING OLD SECTION ---
-        if (!currentMatches[0].isNew) {
-            const rows = {}; db1.filter(b=>b.Section === sectionToShow).forEach(b=>{if(!rows[b.Row])rows[b.Row]=[]; rows[b.Row].push(b);});
-            Object.keys(rows).sort((a,b)=>a-b).forEach(r => {
+        if (!target.isNew) {
+            const rows = {}; 
+            db1.filter(b => b.Section === target.Section).forEach(b => {
+                if(!rows[b.Row]) rows[b.Row] = []; 
+                rows[b.Row].push(b);
+            });
+            Object.keys(rows).sort((a,b) => a-b).forEach(r => {
                 const rowDiv = document.createElement('div'); rowDiv.className = 'brick-row';
                 rows[r].forEach(b => {
-                    const d = document.createElement('div'); d.className = 'brick-unit'; d.innerText = b.Inscription;
+                    const d = document.createElement('div'); d.className = 'brick-unit'; d.innerText = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? b.Inscription : "";
                     if(currentMatches.some(m => m.id == b.id)) d.classList.add('current-focus');
                     rowDiv.appendChild(d);
                 });
                 container.appendChild(rowDiv);
             });
-        } 
-        // --- DRAWING NEW SECTION ---
-        else {
+        } else {
             const grid = document.createElement('div'); grid.className = 'grid-container';
-            db2.filter(b=>b.Section === sectionToShow).forEach(b => {
+            db2.filter(b => b.Section === target.Section).forEach(b => {
                 const d = document.createElement('div'); d.className = 'brick-unit'; 
-                d.innerText = b.Inscription;
+                d.innerText = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? b.Inscription : "";
                 d.style.gridRow = `${b.Row} / span ${b.RowSpan}`;
                 d.style.gridColumn = `${b.Col} / span ${b.ColSpan}`;
                 if(currentMatches.some(m => m.id == b.id)) d.classList.add('current-focus');
