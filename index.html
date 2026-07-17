@@ -14,14 +14,13 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             font-size: 7px; font-weight: bold; border-radius: 2px; padding: 4px; 
             width: 50px; height: 40px; box-sizing: border-box; text-transform: uppercase;
-            overflow: hidden; word-break: break-word; line-height: 1;
+            overflow: hidden; word-break: break-word; line-height: 1; flex-shrink: 0;
         }
         .brick-unit.current-focus { outline: 3px solid white; background: var(--highlight); transform: scale(1.05); z-index: 99; }
         .brick-unit.is-blank { background: #dcd7cc; border: 1px dashed #bbb; color: transparent; }
 
-        /* Centering Logic */
-        .grid-wrapper { display: flex; justify-content: center; padding: 20px; width: 100%; }
-        .brick-grid { display: inline-grid; gap: 4px; }
+        /* Row-based Flex layout to ensure centering */
+        .brick-row { display: flex; justify-content: center; gap: 4px; margin-bottom: 4px; }
         
         #search { width: 90%; max-width: 400px; padding: 12px; border-radius: 30px; border: 2px solid var(--fig-green); margin: 10px auto; display: block; }
         #preview-card { width: 90%; max-width: 360px; background: white; border-radius: 12px; padding: 15px; border-left: 5px solid var(--fig-green); margin: 0 auto 20px auto; display: none; text-align: center; }
@@ -45,7 +44,7 @@
 
 <div id="brick-overlay">
     <div style="padding:10px; background:white; text-align:center;"><button onclick="closeBricks()" style="padding:8px 25px; border-radius:20px; border:none; background:var(--dark-green); color:white; font-weight:bold;">← Back to Map</button></div>
-    <div id="brick-container"></div>
+    <div id="brick-container" style="padding: 20px 0;"></div>
 </div>
 
 <script>
@@ -96,24 +95,34 @@
 
     function renderTarget(target, highlightAll) {
         const container = document.getElementById('brick-container'); container.innerHTML = "";
-        const wrapper = document.createElement('div'); wrapper.className = 'grid-wrapper';
-        const grid = document.createElement('div'); grid.className = 'brick-grid';
-        grid.style.gridTemplateColumns = "repeat(6, 50px)";
+        const sectionBricks = [...db1, ...db2].filter(b => b.Section === target.Section);
         
-        [...db1, ...db2].filter(b => b.Section === target.Section).forEach(b => {
-            const d = document.createElement('div'); 
-            d.className = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? 'brick-unit' : 'brick-unit is-blank';
-            d.innerText = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? b.Inscription : "";
-            d.style.gridRow = `${b.Row} / span ${b.RowSpan}`; 
-            d.style.gridColumn = `${b.Col} / span ${b.ColSpan}`;
-            
-            const isMatch = highlightAll ? currentMatches.some(m => m.id == b.id) : (b.id == target.id);
-            if(isMatch) d.classList.add('current-focus');
-            
-            grid.appendChild(d);
+        // Group by Row
+        const rows = {};
+        sectionBricks.forEach(b => {
+            if(!rows[b.Row]) rows[b.Row] = [];
+            rows[b.Row].push(b);
         });
-        wrapper.appendChild(grid);
-        container.appendChild(wrapper);
+
+        Object.keys(rows).sort((a,b) => a-b).forEach(r => {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'brick-row';
+            
+            // Sort by Col to maintain order
+            rows[r].sort((a,b) => a.Col - b.Col).forEach(b => {
+                const d = document.createElement('div');
+                d.className = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? 'brick-unit' : 'brick-unit is-blank';
+                d.innerText = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? b.Inscription : "";
+                
+                const isMatch = highlightAll ? currentMatches.some(m => m.id == b.id) : (b.id == target.id);
+                if(isMatch) {
+                    d.classList.add('current-focus');
+                    setTimeout(() => d.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+                }
+                rowDiv.appendChild(d);
+            });
+            container.appendChild(rowDiv);
+        });
         document.getElementById('brick-overlay').style.display = 'flex';
     }
 
