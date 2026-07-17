@@ -17,7 +17,15 @@
         }
         .brick-unit.current-focus { outline: 3px solid white; background: var(--highlight); transform: scale(1.05); z-index: 99; }
         
-        .brick-grid { display: inline-grid; gap: 4px; padding: 20px; justify-content: center; }
+        /* Centered grid container */
+        .brick-grid { 
+            display: inline-grid; 
+            gap: 4px; 
+            padding: 20px; 
+            justify-content: center; 
+            align-content: center;
+            width: 100%;
+        }
         
         #search { width: 90%; max-width: 400px; padding: 12px; border-radius: 30px; border: 2px solid var(--fig-green); margin: 10px auto; display: block; }
         #preview-card { width: 90%; max-width: 360px; background: white; border-radius: 12px; padding: 15px; border-left: 5px solid var(--fig-green); margin: 0 auto 20px auto; display: none; text-align: center; }
@@ -41,7 +49,8 @@
 
 <div id="brick-overlay">
     <div style="padding:10px; background:white; text-align:center;"><button onclick="closeBricks()" style="padding:8px 25px; border-radius:20px; border:none; background:var(--dark-green); color:white; font-weight:bold;">← Back to Map</button></div>
-    <div id="brick-container" style="display: flex; justify-content: center; align-items: flex-start; flex: 1; padding: 20px;"></div>
+    <!-- Brick Container -->
+    <div id="brick-container" style="display: flex; justify-content: center; width: 100%;"></div>
 </div>
 
 <script>
@@ -73,7 +82,6 @@
         const match = currentMatches[matchIndex];
         const dot = document.getElementById('map-dot');
         dot.style.display = "block";
-        // Restoring original coordinate logic: 54% 66% for Front, 54% 41% for Back
         dot.style.left = "54%";
         dot.style.top = match.Section.toLowerCase().includes("north") ? "66%" : "41%";
         
