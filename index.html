@@ -5,49 +5,169 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ocracoke Commons Brick Finder</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        :root { --fig-green: #9CAF88; --dark-green: #557C4B; --sand: #F2EFEA; --brick: #B14A3B; --highlight: #ff3b3b; }
-        body { font-family: 'Georgia', serif; background: var(--sand); margin: 0; display: flex; flex-direction: column; min-height: 100vh; }
+<style>
+        :root { 
+            --fig-green: #9CAF88; 
+            --dark-green: #557C4B; 
+            --sand: #F2EFEA; 
+            --brick: #B14A3B; 
+            --highlight: #ff3b3b; 
+        }
         
-        /* DATABASE 1: Fixed dimensions to ensure bricks look like bricks */
+        body { 
+            font-family: 'Georgia', serif; 
+            background: var(--sand); 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            min-height: 100vh; 
+        }
+        
+        /* DATABASE 1: Fixed dimensions with tight text scaling */
         .brick-unit-db1 { 
-            background: var(--brick); color: white; text-align: center; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            font-size: 7px; font-weight: bold; border-radius: 2px; padding: 4px; 
-            width: 50px; height: 40px; box-sizing: border-box; text-transform: uppercase;
-            overflow: hidden; word-break: break-word; flex-shrink: 0;
+            background: var(--brick); 
+            color: white; 
+            text-align: center; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 6px; 
+            line-height: 1.1;
+            font-weight: bold; 
+            border-radius: 2px; 
+            padding: 2px; 
+            width: 50px; 
+            height: 40px; 
+            box-sizing: border-box; 
+            text-transform: uppercase;
+            overflow: hidden; 
+            word-break: break-word;
+            hyphens: auto;
+            flex-shrink: 0;
         }
         
         /* DATABASE 2: Fluid dimensions for grid spanning */
         .brick-unit-db2 { 
-            background: var(--brick); color: white; text-align: center; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            font-size: 7px; font-weight: bold; border-radius: 2px; padding: 4px; 
-            width: 100%; height: 100%; box-sizing: border-box; text-transform: uppercase;
-            overflow: hidden; word-break: break-word;
+            background: var(--brick); 
+            color: white; 
+            text-align: center; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 6px; 
+            line-height: 1.1;
+            font-weight: bold; 
+            border-radius: 2px; 
+            padding: 2px; 
+            width: 100%; 
+            height: 100%; 
+            box-sizing: border-box; 
+            text-transform: uppercase;
+            overflow: hidden; 
+            word-break: break-word;
+            hyphens: auto;
         }
 
-        .current-focus { outline: 3px solid white; background: var(--highlight) !important; transform: scale(1.05); z-index: 99; }
-        .is-blank { background: #dcd7cc !important; border: 1px dashed #bbb; color: transparent; }
+        .current-focus { 
+            outline: 3px solid white; 
+            background: var(--highlight) !important; 
+            transform: scale(1.05); 
+            z-index: 99; 
+        }
+        
+        .is-blank { 
+            background: #dcd7cc !important; 
+            border: 1px dashed #bbb; 
+            color: transparent; 
+        }
 
         /* DB1 Layout: Row-based, centered */
-        .brick-row { display: flex; justify-content: center; gap: 4px; margin-bottom: 4px; }
+        .brick-row { 
+            display: flex; 
+            justify-content: center; 
+            gap: 4px; 
+            margin-bottom: 4px; 
+        }
         
         /* DB2 Layout: Grid-based spanning */
         .grid-container { 
             display: grid; 
             grid-template-columns: repeat(12, 50px); 
             grid-auto-rows: 40px; 
-            gap: 4px; padding: 4px; background: white; border: 4px solid white;
+            gap: 4px; 
+            padding: 4px; 
+            background: white; 
+            border: 4px solid white;
+            margin: 0 auto;
         }
         
-        #search { width: 90%; max-width: 400px; padding: 12px; border-radius: 30px; border: 2px solid var(--fig-green); margin: 10px auto; display: block; }
-        #preview-card { width: 90%; max-width: 360px; background: white; border-radius: 12px; padding: 15px; border-left: 5px solid var(--fig-green); margin: 0 auto 20px auto; display: none; text-align: center; }
-        .main-map-area { position: relative; width: 100%; max-width: 800px; background: white; padding: 5px; border-radius: 15px; border: 1px solid #ddd; margin: 0 auto 20px auto; }
-        .main-map-area img { width: 100%; display: block; border-radius: 10px; }
-        #map-dot { position: absolute; width: 30px; height: 30px; background: var(--highlight); border: 3px solid white; border-radius: 50%; display: none; transform: translate(-50%, -50%); z-index: 20; }
-        #brick-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--sand); z-index: 1000; display: none; flex-direction: column; overflow: auto; }
+        #search { 
+            width: 90%; 
+            max-width: 400px; 
+            padding: 12px; 
+            border-radius: 30px; 
+            border: 2px solid var(--fig-green); 
+            margin: 10px auto; 
+            display: block; 
+        }
+        
+        #preview-card { 
+            width: 90%; 
+            max-width: 360px; 
+            background: white; 
+            border-radius: 12px; 
+            padding: 15px; 
+            border-left: 5px solid var(--fig-green); 
+            margin: 0 auto 20px auto; 
+            display: none; 
+            text-align: center; 
+        }
+        
+        .main-map-area { 
+            position: relative; 
+            width: 100%; 
+            max-width: 800px; 
+            background: white; 
+            padding: 5px; 
+            border-radius: 15px; 
+            border: 1px solid #ddd; 
+            margin: 0 auto 20px auto; 
+        }
+        
+        .main-map-area img { 
+            width: 100%; 
+            display: block; 
+            border-radius: 10px; 
+        }
+        
+        #map-dot { 
+            position: absolute; 
+            width: 30px; 
+            height: 30px; 
+            background: var(--highlight); 
+            border: 3px solid white; 
+            border-radius: 50%; 
+            display: none; 
+            transform: translate(-50%, -50%); 
+            z-index: 20; 
+        }
+        
+        #brick-overlay { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: var(--sand); 
+            z-index: 1000; 
+            display: none; 
+            flex-direction: column; 
+            overflow: auto; 
+        }
     </style>
+
 </head>
 <body>
 
@@ -76,19 +196,22 @@
         db1 = (res1.data || []).map(b => ({ ...b, isNew: false, Inscription: b.Inscription || "", Section: b.Section, Row: b.Row, Col: b.Col, id: b.id }));
         db2 = (res2.data || []).map(b => ({ 
             ...b, isNew: true,
-            Inscription: [b.inscription_line_1, b.inscription_line_2, b.inscription_line_3, b.inscription_line_4].filter(l => l && typeof l === 'string' && l.toUpperCase() !== "[BLANK]").join(" "), 
+            Inscription: [b.inscription_line_1, b.inscription_line_2, b.inscription_line_3, b.inscription_line_4].filter(l => l && typeof l === 'string' && l.toUpperCase() !== "[BLANK]").join("<br>"),
             Section: b.section, Row: b.row, Col: b.col, RowSpan: b.row_span, ColSpan: b.col_span, id: b.ID 
         }));
         document.getElementById('search').disabled = false;
     }
 
-    document.getElementById('search').oninput = (e) => {
-        const t = e.target.value.toLowerCase().trim();
-        if (t.length < 2) { document.getElementById('map-dot').style.display = document.getElementById('preview-card').style.display = "none"; return; }
-        currentMatches = [...db1.filter(b => (b.Inscription||"").toLowerCase().includes(t)), ...db2.filter(b => (b.Inscription||"").toLowerCase().includes(t))];
-        matchIndex = 0;
-        if (currentMatches.length > 0) updateUI();
-    };
+ document.getElementById('search').oninput = (e) => {
+    const t = e.target.value.toLowerCase().trim();
+    if (t.length < 2) { document.getElementById('map-dot').style.display = document.getElementById('preview-card').style.display = "none"; return; }
+    currentMatches = [
+        ...db1.filter(b => (b.Inscription||"").toLowerCase().includes(t)), 
+        ...db2.filter(b => (b.Inscription||"").replace(/<br>/g, " ").toLowerCase().includes(t))
+    ];
+    matchIndex = 0;
+    if (currentMatches.length > 0) updateUI();
+};
 
 function updateUI() {
         const match = currentMatches[matchIndex];
@@ -138,7 +261,7 @@ function updateUI() {
             rows[r].sort((a,b) => a.Col - b.Col).forEach(b => {
                 const d = document.createElement('div');
                 d.className = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? 'brick-unit-db1' : 'brick-unit-db1 is-blank';
-                d.innerText = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? b.Inscription : "";
+                d.innerHTML = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? b.Inscription : "";
                 if(b.id == target.id) { d.classList.add('current-focus'); setTimeout(() => d.scrollIntoView({ block: 'center' }), 300); }
                 rowDiv.appendChild(d);
             });
@@ -154,7 +277,7 @@ function updateUI() {
         db2.filter(b => b.Section === target.Section).forEach(b => {
             const d = document.createElement('div');
             d.className = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? 'brick-unit-db2' : 'brick-unit-db2 is-blank';
-            d.innerText = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? b.Inscription : "";
+            d.innerHTML = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? b.Inscription : "";
             d.style.gridRow = `${b.Row} / span ${b.RowSpan}`;
             d.style.gridColumn = `${b.Col} / span ${b.ColSpan}`;
             if(b.id == target.id) { d.classList.add('current-focus'); setTimeout(() => d.scrollIntoView({ block: 'center' }), 300); }
