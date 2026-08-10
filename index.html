@@ -94,15 +94,15 @@
    /* PASTE THIS UPDATED BLOCK */
 .grid-container { 
     display: grid; 
-    grid-template-columns: repeat(12, 1fr); 
-    grid-auto-rows: 40px; 
+    grid-template-columns: repeat(12, minmax(0, 1fr)); 
+    grid-auto-rows: minmax(40px, auto); 
     gap: 4px; 
-    padding: 4px; 
+    padding: 6px; 
     background: white; 
     border: 4px solid white;
     margin: 0 auto;
     width: 100%;
-    max-width: 652px; 
+    max-width: 650px; 
     box-sizing: border-box;
 }
         
@@ -198,16 +198,6 @@
         const [res1, res2] = await Promise.all([gardenClient.from('ocracoke_bricks').select('*'), newGardenClient.from('ocracoke_bricks_new').select('*')]);
         db1 = (res1.data || []).map(b => ({ ...b, isNew: false, Inscription: b.Inscription || "", Section: b.Section, Row: b.Row, Col: b.Col, id: b.id }));
 db2 = (res2.data || []).map(b => {
-    const rawCol = parseInt(b.col) || 1;
-    const rSpan = parseInt(b.row_span) || 1;
-    const cSpanRaw = parseInt(b.col_span) || 1;
-    
-    // Map brick columns (1-6) to 12-track CSS grid columns (1, 3, 5, 7, 9, 11)
-    const gridCol = ((rawCol - 1) * 2) + 1;
-    
-    // Standard brick = span 2 tracks; Large 2x2 = span 4 tracks
-    const gridColSpan = (cSpanRaw >= 2 || rSpan >= 2) ? 4 : 2;
-
     return { 
         ...b, 
         isNew: true,
@@ -216,9 +206,9 @@ db2 = (res2.data || []).map(b => {
             .join("<br>"),
         Section: b.section, 
         Row: parseInt(b.row), 
-        Col: gridCol, 
-        RowSpan: rSpan, 
-        ColSpan: gridColSpan, 
+        Col: parseInt(b.col), 
+        RowSpan: parseInt(b.row_span) || 1, 
+        ColSpan: parseInt(b.col_span) || 1, 
         id: b.id || b.ID 
     };
 });
@@ -292,6 +282,7 @@ function updateUI() {
             container.appendChild(rowDiv);
         });
     }
+
 function renderNewBricks(target) {
     const container = document.getElementById('brick-container');
     container.style.flexDirection = "row";
@@ -300,14 +291,14 @@ function renderNewBricks(target) {
     
     db2.filter(b => b.Section === target.Section).forEach(b => {
         const d = document.createElement('div');
-        d.className = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? 'brick-unit-db2' : 'brick-unit-db2 is-blank';
-        d.innerHTML = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? b.Inscription : "";
+        const hasText = b.Inscription && b.Inscription.trim().length > 0;
         
-        // Explicitly set explicit track start and span properties
-        d.style.gridRowStart = b.Row;
-        d.style.gridRowEnd = `span ${b.RowSpan}`;
-        d.style.gridColumnStart = b.Col;
-        d.style.gridColumnEnd = `span ${b.ColSpan}`;
+        d.className = hasText ? 'brick-unit-db2' : 'brick-unit-db2 is-blank';
+        d.innerHTML = hasText ? b.Inscription : "";
+        
+        // Map exact column and row spans directly from database
+        d.style.gridColumn = `${b.Col} / span ${b.ColSpan}`;
+        d.style.gridRow = `${b.Row} / span ${b.RowSpan}`;
 
         if(b.id == target.id) { 
             d.classList.add('current-focus'); 
@@ -317,7 +308,6 @@ function renderNewBricks(target) {
     });
     container.appendChild(grid);
 }
-
 
     function closeBricks() { document.getElementById('brick-overlay').style.display = 'none'; }
     loadData();
