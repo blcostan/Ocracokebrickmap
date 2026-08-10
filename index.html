@@ -197,14 +197,16 @@
     async function loadData() {
         const [res1, res2] = await Promise.all([gardenClient.from('ocracoke_bricks').select('*'), newGardenClient.from('ocracoke_bricks_new').select('*')]);
         db1 = (res1.data || []).map(b => ({ ...b, isNew: false, Inscription: b.Inscription || "", Section: b.Section, Row: b.Row, Col: b.Col, id: b.id }));
-        db2 = (res2.data || []).map(b => {
-    // If database row_span is 2, it's a 2x2 brick requiring 4 columns horizontal span
-    const rSpan = parseInt(b.row_span) || 1;
-    let cSpan = parseInt(b.col_span) || 2; 
+  db2 = (res2.data || []).map(b => {
+    const rawCol = parseInt(b.col) || 1;
+    const rSpan = parseInt(b.row_span) || 1; // 1 or 2 rows tall
+    const cSpanRaw = parseInt(b.col_span) || 1; // 1 or 2 brick columns wide
     
-    if (rSpan === 2 && cSpan === 2) {
-        cSpan = 4; // Force 2x2 square bricks to span 4 grid track columns
-    }
+    // Map brick column positions (1-6) to 12-track CSS grid columns (1, 3, 5, 7, 9, 11)
+    const gridCol = ((rawCol - 1) * 2) + 1;
+    
+    // 1 brick wide = 2 CSS grid tracks; 2 bricks wide = 4 CSS grid tracks
+    const gridColSpan = cSpanRaw * 2;
 
     return { 
         ...b, 
@@ -213,10 +215,10 @@
             .filter(l => l && typeof l === 'string' && l.toUpperCase() !== "[BLANK]")
             .join("<br>"),
         Section: b.section, 
-        Row: b.row, 
-        Col: b.col, 
+        Row: parseInt(b.row), 
+        Col: gridCol, 
         RowSpan: rSpan, 
-        ColSpan: cSpan, 
+        ColSpan: gridColSpan, 
         id: b.id || b.ID 
     };
 });
