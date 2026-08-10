@@ -285,10 +285,19 @@ function updateUI() {
 
 function renderNewBricks(target) {
     const container = document.getElementById('brick-container');
-    container.style.flexDirection = "row";
+    container.style.flexDirection = "column"; // Stack header on top of the grid
+
+    // 1. HEADER (Sits directly above Row 1)
+    const header = document.createElement('div');
+    header.className = 'grid-orientation-header';
+    header.innerHTML = '↑ ↑ ↑ TOWARD LIGHTHOUSE ROAD ↑ ↑ ↑';
+    container.appendChild(header);
+
+    // 2. GRID CONTAINER
     const grid = document.createElement('div'); 
     grid.className = 'grid-container';
     
+    // 3. RENDER BRICKS AS USUAL
     db2.filter(b => b.Section === target.Section).forEach(b => {
         const d = document.createElement('div');
         const hasText = b.Inscription && b.Inscription.trim().length > 0;
@@ -296,7 +305,6 @@ function renderNewBricks(target) {
         d.className = hasText ? 'brick-unit-db2' : 'brick-unit-db2 is-blank';
         d.innerHTML = hasText ? b.Inscription : "";
         
-        // Map exact column and row spans directly from database
         d.style.gridColumn = `${b.Col} / span ${b.ColSpan}`;
         d.style.gridRow = `${b.Row} / span ${b.RowSpan}`;
 
