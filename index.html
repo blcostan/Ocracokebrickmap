@@ -192,12 +192,12 @@
     let db1 = [], db2 = [], currentMatches = [], matchIndex = 0;
 
     async function loadData() {
-        const [res1, res2] = await Promise.all([gardenClient.from('ocracoke_bricks').select('*'), newGardenClient.from('Ocracoke_Bricks_New').select('*')]);
+        const [res1, res2] = await Promise.all([gardenClient.from('ocracoke_bricks').select('*'), newGardenClient.from('ocracoke_bricks_new').select('*')]);
         db1 = (res1.data || []).map(b => ({ ...b, isNew: false, Inscription: b.Inscription || "", Section: b.Section, Row: b.Row, Col: b.Col, id: b.id }));
         db2 = (res2.data || []).map(b => ({ 
             ...b, isNew: true,
             Inscription: [b.inscription_line_1, b.inscription_line_2, b.inscription_line_3, b.inscription_line_4].filter(l => l && typeof l === 'string' && l.toUpperCase() !== "[BLANK]").join("<br>"),
-            Section: b.section, Row: b.row, Col: b.col, RowSpan: b.row_span, ColSpan: b.col_span, id: b.ID 
+            Section: b.section, Row: b.row, Col: b.col, RowSpan: b.row_span, ColSpan: b.col_span, id: b.id 
         }));
         document.getElementById('search').disabled = false;
     }
@@ -220,7 +220,7 @@ function updateUI() {
         
         // This checks which database the match belongs to
         if (match.isNew) {
-            // DATABASE 2 (Ocracoke_Bricks_New)
+            // DATABASE 2 (ocracoke_bricks_new)
             dot.style.left = "75%"; 
             dot.style.top = "50%";
         } else {
