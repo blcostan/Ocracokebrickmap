@@ -101,7 +101,8 @@
     background: white; 
     border: 4px solid white;
     margin: 0 auto;
-    width: 652px; 
+    width: 100%;
+    max-width: 652px; 
     box-sizing: border-box;
 }
         
@@ -196,11 +197,30 @@
     async function loadData() {
         const [res1, res2] = await Promise.all([gardenClient.from('ocracoke_bricks').select('*'), newGardenClient.from('ocracoke_bricks_new').select('*')]);
         db1 = (res1.data || []).map(b => ({ ...b, isNew: false, Inscription: b.Inscription || "", Section: b.Section, Row: b.Row, Col: b.Col, id: b.id }));
-        db2 = (res2.data || []).map(b => ({ 
-            ...b, isNew: true,
-            Inscription: [b.inscription_line_1, b.inscription_line_2, b.inscription_line_3, b.inscription_line_4].filter(l => l && typeof l === 'string' && l.toUpperCase() !== "[BLANK]").join("<br>"),
-            Section: b.section, Row: b.row, Col: b.col, RowSpan: b.row_span, ColSpan: b.col_span, id: b.id 
-        }));
+        db2 = (res2.data || []).map(b => {
+    // If database row_span is 2, it's a 2x2 brick requiring 4 columns horizontal span
+    const rSpan = parseInt(b.row_span) || 1;
+    let cSpan = parseInt(b.col_span) || 2; 
+    
+    if (rSpan === 2 && cSpan === 2) {
+        cSpan = 4; // Force 2x2 square bricks to span 4 grid track columns
+    }
+
+    return { 
+        ...b, 
+        isNew: true,
+        Inscription: [b.inscription_line_1, b.inscription_line_2, b.inscription_line_3, b.inscription_line_4]
+            .filter(l => l && typeof l === 'string' && l.toUpperCase() !== "[BLANK]")
+            .join("<br>"),
+        Section: b.section, 
+        Row: b.row, 
+        Col: b.col, 
+        RowSpan: rSpan, 
+        ColSpan: cSpan, 
+        id: b.id || b.ID 
+    };
+});
+        
         document.getElementById('search').disabled = false;
     }
 
