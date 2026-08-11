@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ocracoke Commons Brick Finder</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
+    <style>
         :root { 
             --fig-green: #9CAF88; 
             --dark-green: #557C4B; 
@@ -90,32 +90,31 @@
             gap: 4px; 
             margin-bottom: 4px; 
         }
-    /* ADD THIS BLOCK RIGHT ABOVE .grid-container IN YOUR <style> TAG */
-.grid-orientation-header {
-    text-align: center;
-    font-weight: bold;
-    font-size: 13px;
-    color: var(--dark-green);
-    letter-spacing: 1.5px;
-    padding: 12px 0 8px 0;
-    text-transform: uppercase;
-    width: 100%;
-}
+
+        .grid-orientation-header {
+            text-align: center;
+            font-weight: bold;
+            font-size: 13px;
+            color: var(--dark-green);
+            letter-spacing: 1.5px;
+            padding: 12px 0 8px 0;
+            text-transform: uppercase;
+            width: 100%;
+        }
         
-   /* PASTE THIS UPDATED BLOCK */
-.grid-container { 
-    display: grid; 
-    grid-template-columns: repeat(12, minmax(0, 1fr)); 
-    grid-auto-rows: minmax(40px, auto); 
-    gap: 4px; 
-    padding: 6px; 
-    background: white; 
-    border: 4px solid white;
-    margin: 0 auto;
-    width: 100%;
-    max-width: 650px; 
-    box-sizing: border-box;
-}
+        .grid-container { 
+            display: grid; 
+            grid-template-columns: repeat(12, minmax(0, 1fr)); 
+            grid-auto-rows: minmax(40px, auto); 
+            gap: 4px; 
+            padding: 6px; 
+            background: white; 
+            border: 4px solid white;
+            margin: 0 auto;
+            width: 100%;
+            max-width: 650px; 
+            box-sizing: border-box;
+        }
         
         #search { 
             width: 90%; 
@@ -181,7 +180,6 @@
             overflow: auto; 
         }
     </style>
-
 </head>
 <body>
 
@@ -208,50 +206,57 @@
     async function loadData() {
         const [res1, res2] = await Promise.all([gardenClient.from('ocracoke_bricks').select('*'), newGardenClient.from('ocracoke_bricks_new').select('*')]);
         db1 = (res1.data || []).map(b => ({ ...b, isNew: false, Inscription: b.Inscription || "", Section: b.Section, Row: b.Row, Col: b.Col, id: b.id }));
-db2 = (res2.data || []).map(b => {
-    return { 
-        ...b, 
-        isNew: true,
-        Inscription: [b.inscription_line_1, b.inscription_line_2, b.inscription_line_3, b.inscription_line_4]
-            .filter(l => l && typeof l === 'string' && l.toUpperCase() !== "[BLANK]")
-            .join("<br>"),
-        Section: b.section, 
-        Row: parseInt(b.row), 
-        Col: parseInt(b.col), 
-        RowSpan: parseInt(b.row_span) || 1, 
-        ColSpan: parseInt(b.col_span) || 1, 
-        id: b.id || b.ID 
-    };
-});
+        db2 = (res2.data || []).map(b => {
+            return { 
+                ...b, 
+                isNew: true,
+                Inscription: [b.inscription_line_1, b.inscription_line_2, b.inscription_line_3, b.inscription_line_4]
+                    .filter(l => l && typeof l === 'string' && l.toUpperCase() !== "[BLANK]")
+                    .join("<br>"),
+                Section: b.section, 
+                Row: parseInt(b.row), 
+                Col: parseInt(b.col), 
+                RowSpan: parseInt(b.row_span) || 1, 
+                ColSpan: parseInt(b.col_span) || 1, 
+                id: b.id || b.ID 
+            };
+        });
         
         document.getElementById('search').disabled = false;
     }
 
- document.getElementById('search').oninput = (e) => {
-    const t = e.target.value.toLowerCase().trim();
-    if (t.length < 2) { document.getElementById('map-dot').style.display = document.getElementById('preview-card').style.display = "none"; return; }
-    currentMatches = [
-        ...db1.filter(b => (b.Inscription||"").toLowerCase().includes(t)), 
-        ...db2.filter(b => (b.Inscription||"").replace(/<br>/g, " ").toLowerCase().includes(t))
-    ];
-    matchIndex = 0;
-    if (currentMatches.length > 0) updateUI();
-};
+    document.getElementById('search').oninput = (e) => {
+        const t = e.target.value.toLowerCase().trim();
+        if (t.length < 2) { document.getElementById('map-dot').style.display = document.getElementById('preview-card').style.display = "none"; return; }
+        currentMatches = [
+            ...db1.filter(b => (b.Inscription||"").toLowerCase().includes(t)), 
+            ...db2.filter(b => (b.Inscription||"").replace(/<br>/g, " ").toLowerCase().includes(t))
+        ];
+        matchIndex = 0;
+        if (currentMatches.length > 0) updateUI();
+    };
 
 function updateUI() {
         const match = currentMatches[matchIndex];
         const dot = document.getElementById('map-dot'); 
         dot.style.display = "block";
         
-        // This checks which database the match belongs to
+        // Clean up the section string to avoid casing/whitespace bugs
+        const sectionName = (match.Section || "").toUpperCase().trim();
+
         if (match.isNew) {
-            // DATABASE 2 (ocracoke_bricks_new)
-            dot.style.left = "68%"; 
-            dot.style.top = "86%";
+            // DATABASE 2
+            if (sectionName.includes("BACK")) {
+                dot.style.left = "72%"; 
+                dot.style.top = "70%"; // <-- Adjust this value to move Back NE up or down
+            } else {
+                dot.style.left = "68%"; 
+                dot.style.top = "86%"; // Front NE position
+            }
         } else {
             // DATABASE 1 (Ocracoke_Bricks)
             dot.style.left = "54%";
-            dot.style.top = match.Section.toLowerCase().includes("north") ? "66%" : "41%";
+            dot.style.top = sectionName.includes("NORTH") ? "66%" : "41%";
         }
         
         let content = `<div style="font-weight:bold; margin-bottom:10px;">${match.Inscription}</div>`;
@@ -293,60 +298,61 @@ function updateUI() {
             container.appendChild(rowDiv);
         });
     }
-function renderNewBricks(target) {
-    const container = document.getElementById('brick-container');
-    container.style.flexDirection = "column"; 
 
-    // Filter section bricks and find the maximum row index
-    const sectionBricks = db2.filter(b => b.Section === target.Section);
-    const maxRow = Math.max(...sectionBricks.map(b => b.Row + b.RowSpan - 1));
+    function renderNewBricks(target) {
+        const container = document.getElementById('brick-container');
+        container.style.flexDirection = "column"; 
 
-    const wrapper = document.createElement('div');
-    wrapper.style.width = "100%";
-    wrapper.style.maxWidth = "650px";
-    wrapper.style.margin = "0 auto";
-    wrapper.style.boxSizing = "border-box";
+        // Filter section bricks and find the maximum row index dynamically for whichever section is selected
+        const sectionBricks = db2.filter(b => b.Section === target.Section);
+        const maxRow = Math.max(...sectionBricks.map(b => b.Row + b.RowSpan - 1));
 
-    // 1. TOP HEADER (TOWARD THE ISLAND INN)
-    const topHeader = document.createElement('div');
-    topHeader.className = 'grid-orientation-header';
-    topHeader.innerHTML = '↑ ↑ ↑ TOWARD THE ISLAND INN ↑ ↑ ↑';
-    wrapper.appendChild(topHeader);
+        const wrapper = document.createElement('div');
+        wrapper.style.width = "100%";
+        wrapper.style.maxWidth = "650px";
+        wrapper.style.margin = "0 auto";
+        wrapper.style.boxSizing = "border-box";
 
-    // 2. GRID CONTAINER
-    const grid = document.createElement('div'); 
-    grid.className = 'grid-container';
-    
-    // 3. RENDER BRICKS INVERTED
-    sectionBricks.forEach(b => {
-        const d = document.createElement('div');
-        const hasText = b.Inscription && b.Inscription.trim().length > 0;
+        // 1. TOP HEADER (TOWARD THE ISLAND INN)
+        const topHeader = document.createElement('div');
+        topHeader.className = 'grid-orientation-header';
+        topHeader.innerHTML = '↑ ↑ ↑ TOWARD THE ISLAND INN ↑ ↑ ↑';
+        wrapper.appendChild(topHeader);
+
+        // 2. GRID CONTAINER
+        const grid = document.createElement('div'); 
+        grid.className = 'grid-container';
         
-        d.className = hasText ? 'brick-unit-db2' : 'brick-unit-db2 is-blank';
-        d.innerHTML = hasText ? b.Inscription : "";
-        
-        d.style.gridColumn = `${b.Col} / span ${b.ColSpan}`;
-        
-        // Invert rows so Row 1 renders at the bottom
-        const invertedRow = maxRow - b.Row - b.RowSpan + 2;
-        d.style.gridRow = `${invertedRow} / span ${b.RowSpan}`;
+        // 3. RENDER BRICKS INVERTED
+        sectionBricks.forEach(b => {
+            const d = document.createElement('div');
+            const hasText = b.Inscription && b.Inscription.trim().length > 0;
+            
+            d.className = hasText ? 'brick-unit-db2' : 'brick-unit-db2 is-blank';
+            d.innerHTML = hasText ? b.Inscription : "";
+            
+            d.style.gridColumn = `${b.Col} / span ${b.ColSpan}`;
+            
+            // Invert rows so Row 1 renders at the bottom
+            const invertedRow = maxRow - b.Row - b.RowSpan + 2;
+            d.style.gridRow = `${invertedRow} / span ${b.RowSpan}`;
 
-        if(b.id == target.id) { 
-            d.classList.add('current-focus'); 
-            setTimeout(() => d.scrollIntoView({ block: 'center' }), 300); 
-        }
-        grid.appendChild(d);
-    });
-    wrapper.appendChild(grid);
+            if(b.id == target.id) { 
+                d.classList.add('current-focus'); 
+                setTimeout(() => d.scrollIntoView({ block: 'center' }), 300); 
+            }
+            grid.appendChild(d);
+        });
+        wrapper.appendChild(grid);
 
-    // 4. BOTTOM HEADER (TOWARD LIGHTHOUSE ROAD)
-    const bottomHeader = document.createElement('div');
-    bottomHeader.className = 'grid-orientation-header';
-    bottomHeader.innerHTML = '↓ ↓ ↓ TOWARD LIGHTHOUSE ROAD ↓ ↓ ↓';
-    wrapper.appendChild(bottomHeader);
+        // 4. BOTTOM HEADER (TOWARD LIGHTHOUSE ROAD)
+        const bottomHeader = document.createElement('div');
+        bottomHeader.className = 'grid-orientation-header';
+        bottomHeader.innerHTML = '↓ ↓ ↓ TOWARD LIGHTHOUSE ROAD ↓ ↓ ↓';
+        wrapper.appendChild(bottomHeader);
 
-    container.appendChild(wrapper);
-}
+        container.appendChild(wrapper);
+    }
 
     function closeBricks() { document.getElementById('brick-overlay').style.display = 'none'; }
     loadData();
