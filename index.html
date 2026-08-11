@@ -97,7 +97,7 @@
     font-size: 13px;
     color: var(--dark-green);
     letter-spacing: 1.5px;
-    padding: 8px 0 12px 0;
+    padding: 12px 0 8px 0;
     text-transform: uppercase;
     width: 100%;
 }
@@ -293,30 +293,26 @@ function updateUI() {
             container.appendChild(rowDiv);
         });
     }
-
 function renderNewBricks(target) {
     const container = document.getElementById('brick-container');
     container.style.flexDirection = "column"; 
 
-    // Create a wrapper to constrain width & center header with grid
+    // Filter section bricks and find the maximum row index
+    const sectionBricks = db2.filter(b => b.Section === target.Section);
+    const maxRow = Math.max(...sectionBricks.map(b => b.Row + b.RowSpan - 1));
+
     const wrapper = document.createElement('div');
     wrapper.style.width = "100%";
     wrapper.style.maxWidth = "650px";
     wrapper.style.margin = "0 auto";
     wrapper.style.boxSizing = "border-box";
 
-    // 1. HEADER (Centered inside wrapper)
-    const header = document.createElement('div');
-    header.className = 'grid-orientation-header';
-    header.innerHTML = '↑ ↑ ↑ TOWARD LIGHTHOUSE ROAD ↑ ↑ ↑';
-    wrapper.appendChild(header);
-
-    // 2. GRID CONTAINER
+    // 1. GRID CONTAINER FIRST
     const grid = document.createElement('div'); 
     grid.className = 'grid-container';
     
-    // 3. RENDER BRICKS AS USUAL
-    db2.filter(b => b.Section === target.Section).forEach(b => {
+    // 2. RENDER BRICKS INVERTED
+    sectionBricks.forEach(b => {
         const d = document.createElement('div');
         const hasText = b.Inscription && b.Inscription.trim().length > 0;
         
@@ -324,7 +320,10 @@ function renderNewBricks(target) {
         d.innerHTML = hasText ? b.Inscription : "";
         
         d.style.gridColumn = `${b.Col} / span ${b.ColSpan}`;
-        d.style.gridRow = `${b.Row} / span ${b.RowSpan}`;
+        
+        // Invert rows so Row 1 renders at the bottom
+        const invertedRow = maxRow - b.Row - b.RowSpan + 2;
+        d.style.gridRow = `${invertedRow} / span ${b.RowSpan}`;
 
         if(b.id == target.id) { 
             d.classList.add('current-focus'); 
@@ -333,9 +332,17 @@ function renderNewBricks(target) {
         grid.appendChild(d);
     });
 
+    // 3. HEADER AT THE BOTTOM POINTING DOWN
+    const header = document.createElement('div');
+    header.className = 'grid-orientation-header';
+    header.innerHTML = '↓ ↓ ↓ TOWARD LIGHTHOUSE ROAD ↓ ↓ ↓';
+
+    // Append grid first, then header below it
     wrapper.appendChild(grid);
+    wrapper.appendChild(header);
     container.appendChild(wrapper);
 }
+
 
     function closeBricks() { document.getElementById('brick-overlay').style.display = 'none'; }
     loadData();
