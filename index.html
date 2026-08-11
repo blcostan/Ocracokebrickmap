@@ -90,6 +90,17 @@
             gap: 4px; 
             margin-bottom: 4px; 
         }
+    /* ADD THIS BLOCK RIGHT ABOVE .grid-container IN YOUR <style> TAG */
+.grid-orientation-header {
+    text-align: center;
+    font-weight: bold;
+    font-size: 13px;
+    color: var(--dark-green);
+    letter-spacing: 1.5px;
+    padding: 8px 0 12px 0;
+    text-transform: uppercase;
+    width: 100%;
+}
         
    /* PASTE THIS UPDATED BLOCK */
 .grid-container { 
@@ -285,13 +296,20 @@ function updateUI() {
 
 function renderNewBricks(target) {
     const container = document.getElementById('brick-container');
-    container.style.flexDirection = "column"; // Stack header on top of the grid
+    container.style.flexDirection = "column"; 
 
-    // 1. HEADER (Sits directly above Row 1)
+    // Create a wrapper to constrain width & center header with grid
+    const wrapper = document.createElement('div');
+    wrapper.style.width = "100%";
+    wrapper.style.maxWidth = "650px";
+    wrapper.style.margin = "0 auto";
+    wrapper.style.boxSizing = "border-box";
+
+    // 1. HEADER (Centered inside wrapper)
     const header = document.createElement('div');
     header.className = 'grid-orientation-header';
     header.innerHTML = '↑ ↑ ↑ TOWARD LIGHTHOUSE ROAD ↑ ↑ ↑';
-    container.appendChild(header);
+    wrapper.appendChild(header);
 
     // 2. GRID CONTAINER
     const grid = document.createElement('div'); 
@@ -314,7 +332,9 @@ function renderNewBricks(target) {
         }
         grid.appendChild(d);
     });
-    container.appendChild(grid);
+
+    wrapper.appendChild(grid);
+    container.appendChild(wrapper);
 }
 
     function closeBricks() { document.getElementById('brick-overlay').style.display = 'none'; }
