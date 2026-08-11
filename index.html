@@ -236,24 +236,27 @@
         if (currentMatches.length > 0) updateUI();
     };
 
-    function updateUI() {
+function updateUI() {
         const match = currentMatches[matchIndex];
         const dot = document.getElementById('map-dot'); 
         dot.style.display = "block";
         
-        // Dynamic map dot placement depending on the section
+        // Clean up the section string to avoid casing/whitespace bugs
+        const sectionName = (match.Section || "").toUpperCase().trim();
+
         if (match.isNew) {
-            if (match.Section === "Back NE") {
+            // DATABASE 2
+            if (sectionName.includes("BACK")) {
                 dot.style.left = "72%"; 
-                dot.style.top = "30%";
+                dot.style.top = "70%"; // <-- Adjust this value to move Back NE up or down
             } else {
                 dot.style.left = "68%"; 
-                dot.style.top = "86%";
+                dot.style.top = "86%"; // Front NE position
             }
         } else {
             // DATABASE 1 (Ocracoke_Bricks)
             dot.style.left = "54%";
-            dot.style.top = match.Section.toLowerCase().includes("north") ? "66%" : "41%";
+            dot.style.top = sectionName.includes("NORTH") ? "66%" : "41%";
         }
         
         let content = `<div style="font-weight:bold; margin-bottom:10px;">${match.Inscription}</div>`;
