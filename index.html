@@ -307,11 +307,17 @@ function renderNewBricks(target) {
     wrapper.style.margin = "0 auto";
     wrapper.style.boxSizing = "border-box";
 
-    // 1. GRID CONTAINER FIRST
+    // 1. TOP HEADER (TOWARD THE ISLAND INN)
+    const topHeader = document.createElement('div');
+    topHeader.className = 'grid-orientation-header';
+    topHeader.innerHTML = '↑ ↑ ↑ TOWARD THE ISLAND INN ↑ ↑ ↑';
+    wrapper.appendChild(topHeader);
+
+    // 2. GRID CONTAINER
     const grid = document.createElement('div'); 
     grid.className = 'grid-container';
     
-    // 2. RENDER BRICKS INVERTED
+    // 3. RENDER BRICKS INVERTED
     sectionBricks.forEach(b => {
         const d = document.createElement('div');
         const hasText = b.Inscription && b.Inscription.trim().length > 0;
@@ -331,18 +337,16 @@ function renderNewBricks(target) {
         }
         grid.appendChild(d);
     });
-
-    // 3. HEADER AT THE BOTTOM POINTING DOWN
-    const header = document.createElement('div');
-    header.className = 'grid-orientation-header';
-    header.innerHTML = '↓ ↓ ↓ TOWARD LIGHTHOUSE ROAD ↓ ↓ ↓';
-
-    // Append grid first, then header below it
     wrapper.appendChild(grid);
-    wrapper.appendChild(header);
+
+    // 4. BOTTOM HEADER (TOWARD LIGHTHOUSE ROAD)
+    const bottomHeader = document.createElement('div');
+    bottomHeader.className = 'grid-orientation-header';
+    bottomHeader.innerHTML = '↓ ↓ ↓ TOWARD LIGHTHOUSE ROAD ↓ ↓ ↓';
+    wrapper.appendChild(bottomHeader);
+
     container.appendChild(wrapper);
 }
-
 
     function closeBricks() { document.getElementById('brick-overlay').style.display = 'none'; }
     loadData();
