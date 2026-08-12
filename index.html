@@ -78,15 +78,21 @@
 
         /* Clear, legible text formatted specifically for Entrance Left bricks */
         .grid-container.entrance-left .brick-unit-db2 {
-            font-size: clamp(6px, 0.75vw, 8px) !important;
-            line-height: 1.15 !important;
-            padding: 3px 2px !important;
+            font-size: clamp(4px, 0.45vw, 6px) !important;
+            line-height: 1.0 !important;
+            padding: 1px !important;
         }
 
         /* Scaled font for 2x2 square bricks in Entrance Left */
         .grid-container.entrance-left .brick-unit-db2[style*="span 2"] {
-            font-size: clamp(9px, 1.1vw, 12px) !important;
+            font-size: clamp(7px, 0.8vw, 9px) !important;
+            line-height: 1.1 !important;
         }
+        .grid-container.entrance-left .brick-unit-db2 {
+    justify-content: center !important;
+    align-content: center !important;
+    max-height: 100% !important;
+}
         .current-focus { 
             outline: 3px solid white; 
             background: var(--highlight) !important; 
