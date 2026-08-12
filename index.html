@@ -21,31 +21,31 @@
             display: flex; 
             flex-direction: column; 
             min-height: 100vh; 
-        }
+        } 
         
-/* DATABASE 1: Larger 1:2 aspect ratio bricks to accommodate multi-line text */
-.brick-unit-db1 { 
-    background: var(--brick); 
-    color: white; 
-    text-align: center; 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-    justify-content: center; 
-    font-size: 8px; /* Slightly larger, legible text */
-    line-height: 1.15;
-    font-weight: normal; 
-    border-radius: 3px; 
-    padding: 4px 6px; /* Generous internal padding */
-    width: 100px; /* Scaled up maintaining 1:2 ratio */
-    height: 50px; 
-    box-sizing: border-box; 
-    text-transform: uppercase;
-    overflow: hidden; 
-    word-break: break-word;
-    hyphens: auto;
-    flex-shrink: 0;
-}
+        /* DATABASE 1: Larger 1:2 aspect ratio bricks to accommodate multi-line text */
+        .brick-unit-db1 { 
+            background: var(--brick); 
+            color: white; 
+            text-align: center; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 8px; /* Slightly larger, legible text */
+            line-height: 1.15;
+            font-weight: normal; 
+            border-radius: 3px; 
+            padding: 4px 6px; /* Generous internal padding */
+            width: 100px; /* Scaled up maintaining 1:2 ratio */
+            height: 50px; 
+            box-sizing: border-box; 
+            text-transform: uppercase;
+            overflow: hidden; 
+            word-break: break-word;
+            hyphens: auto;
+            flex-shrink: 0;
+        }
         
         /* DATABASE 2: Fluid dimensions for grid spanning */
         .brick-unit-db2 { 
@@ -69,18 +69,22 @@
             word-break: break-word;
             hyphens: auto;
         }
-/* Entrance Left Grid: Fluid row sizing with ratio preservation */
-.grid-container.entrance-left {
-    grid-template-columns: repeat(20, minmax(0, 1fr)) !important;
-    grid-auto-rows: 1fr !important;
-    max-width: 1100px !important;
-}
+
+        /* Entrance Left Grid: Fluid row sizing with ratio preservation */
+        .grid-container.entrance-left {
+            grid-template-columns: repeat(20, minmax(0, 1fr)) !important;
+            grid-auto-rows: 1fr !important;
+            max-width: 1100px !important;
+        }
 
         /* Clear, legible text formatted specifically for Entrance Left bricks */
         .grid-container.entrance-left .brick-unit-db2 {
             font-size: clamp(4px, 0.45vw, 6px) !important;
             line-height: 1.0 !important;
             padding: 1px !important;
+            justify-content: center !important;
+            align-content: center !important;
+            max-height: 100% !important;
         }
 
         /* Scaled font for 2x2 square bricks in Entrance Left */
@@ -88,11 +92,7 @@
             font-size: clamp(7px, 0.8vw, 9px) !important;
             line-height: 1.1 !important;
         }
-        .grid-container.entrance-left .brick-unit-db2 {
-    justify-content: center !important;
-    align-content: center !important;
-    max-height: 100% !important;
-}
+
         .current-focus { 
             outline: 3px solid white; 
             background: var(--highlight) !important; 
@@ -190,17 +190,54 @@
             z-index: 20; 
         }
         
+        /* Modal Lightbox & Zoom Overlay */
         #brick-overlay { 
             position: fixed; 
             top: 0; 
             left: 0; 
-            width: 100%; 
-            height: 100%; 
-            background: var(--sand); 
+            width: 100vw; 
+            height: 100vh; 
+            background: rgba(0, 0, 0, 0.75); 
+            backdrop-filter: blur(4px); 
             z-index: 1000; 
             display: none; 
-            flex-direction: column; 
-            overflow: auto; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 15px; 
+            box-sizing: border-box; 
+        }
+
+        .modal-content {
+            background: var(--sand);
+            width: 100%;
+            max-width: 1200px;
+            max-height: 90vh;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            animation: popIn 0.25s ease-out forwards;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.85); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-header {
+            background: white;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+        }
+
+        #brick-container {
+            padding: 20px;
+            overflow: auto;
+            flex: 1;
         }
     </style>
 </head>
@@ -215,9 +252,14 @@
     <img src="rendering%20of%20garden.avif" alt="Map">
 </div>
 
-<div id="brick-overlay">
-    <div style="padding:10px; background:white; text-align:center;"><button onclick="closeBricks()" style="padding:8px 25px; border-radius:20px; border:none; background:var(--dark-green); color:white; font-weight:bold;">← Back to Map</button></div>
-    <div id="brick-container" style="padding: 20px 0;"></div>
+<div id="brick-overlay" onclick="if(event.target === this) closeBricks()">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span style="font-weight: bold; color: var(--dark-green);">Brick Location Map</span>
+            <button onclick="closeBricks()" style="padding: 6px 16px; border-radius: 20px; border: none; background: var(--dark-green); color: white; font-weight: bold; cursor: pointer;">✕ Close</button>
+        </div>
+        <div id="brick-container"></div>
+    </div>
 </div>
 
 <script>
@@ -280,8 +322,8 @@
         }
         
         let content = `<div style="font-weight:bold; margin-bottom:10px;">${match.Inscription}</div>`;
-        content += `<button onclick="renderTarget(${matchIndex})" style="padding:10px; width:45%; border-radius:20px; border:none; background:var(--dark-green); color:white;">View Map</button>`;
-        if (currentMatches.length > 1) content += `<button onclick="matchIndex=(matchIndex+1)%currentMatches.length; updateUI();" style="padding:10px; width:45%; margin-left:5%; border-radius:20px; border:none; background:var(--fig-green); color:white;">Next</button>`;
+        content += `<button onclick="renderTarget(${matchIndex})" style="padding:10px; width:45%; border-radius:20px; border:none; background:var(--dark-green); color:white; cursor:pointer;">View Map</button>`;
+        if (currentMatches.length > 1) content += `<button onclick="matchIndex=(matchIndex+1)%currentMatches.length; updateUI();" style="padding:10px; width:45%; margin-left:5%; border-radius:20px; border:none; background:var(--fig-green); color:white; cursor:pointer;">Next</button>`;
         document.getElementById('preview-text').innerHTML = content;
         document.getElementById('preview-card').style.display = "block";
     }
@@ -398,7 +440,6 @@ function renderNewBricks(target) {
     const grid = document.createElement('div'); 
     grid.className = 'grid-container';
     
-    // --- REPLACE YOUR GRID CONTAINER IF/ELSE WITH THIS ---
     if ((target.Section || "").toUpperCase() === "ENTRANCE LEFT") {
         grid.classList.add('entrance-left');
         grid.style.gridTemplateColumns = `repeat(${totalCols}, minmax(0, 1fr))`;
@@ -407,7 +448,6 @@ function renderNewBricks(target) {
     } else {
         grid.style.gridTemplateColumns = `repeat(${maxCol}, minmax(0, 1fr))`;
     }
-    // ----------------------------------------------------
     
     // 3. RENDER BRICKS INVERTED
     sectionBricks.forEach(b => {
