@@ -25,6 +25,7 @@
         
         /* DATABASE 1: Larger 1:2 aspect ratio bricks to accommodate multi-line text */
         .brick-unit-db1 { 
+            position: relative;
             background: var(--brick); 
             color: white; 
             text-align: center; 
@@ -50,6 +51,7 @@
         
         /* DATABASE 2: Fluid dimensions for grid spanning */
         .brick-unit-db2 { 
+            position: relative;
             background: var(--brick); 
             color: white; 
             text-align: center; 
@@ -95,14 +97,28 @@
             line-height: 1.1 !important;
         }
 
-        /* POP-OUT TARGET BRICK STYLING */
-        .current-focus { 
+        /* POP-OUT TARGET BRICK STYLING FOR DB1 */
+        .brick-unit-db1.current-focus {
             outline: 3px solid white; 
             background: var(--highlight) !important; 
-            transform: scale(2.2) !important; /* Zooms out the target brick above neighbors */
-            z-index: 9999 !important; /* Keeps it on top of all surrounding bricks */
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important; /* Floating pop-out shadow */
-            font-size: 11px !important; /* High readability text size when popped out */
+            transform: scale(1.6) !important; 
+            z-index: 9999 !important; 
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important; 
+            font-size: 10px !important; 
+            line-height: 1.2 !important;
+            padding: 6px !important;
+            overflow: visible !important;
+            font-weight: bold !important;
+        }
+
+        /* POP-OUT TARGET BRICK STYLING FOR DB2 */
+        .brick-unit-db2.current-focus { 
+            outline: 3px solid white; 
+            background: var(--highlight) !important; 
+            transform: scale(2.0) !important; 
+            z-index: 9999 !important; 
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important; 
+            font-size: 11px !important; 
             line-height: 1.2 !important;
             padding: 6px !important;
             overflow: visible !important;
@@ -121,6 +137,8 @@
             justify-content: center; 
             gap: 4px; 
             margin-bottom: 4px; 
+            position: relative;
+            overflow: visible !important;
         }
 
         .grid-orientation-header {
@@ -146,6 +164,7 @@
             width: 100%;
             max-width: 650px; 
             box-sizing: border-box;
+            overflow: visible !important;
         }
         
         #search { 
