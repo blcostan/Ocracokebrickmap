@@ -23,7 +23,7 @@
             min-height: 100vh; 
         }
         
-       /* DATABASE 1: Fixed 1:2 aspect ratio with improved text fitting */
+/* DATABASE 1: Larger 1:2 aspect ratio bricks to accommodate multi-line text */
 .brick-unit-db1 { 
     background: var(--brick); 
     color: white; 
@@ -32,13 +32,13 @@
     flex-direction: column; 
     align-items: center; 
     justify-content: center; 
-    font-size: 7px; /* Slight size boost for readability */
-    line-height: 1.1;
+    font-size: 8px; /* Slightly larger, legible text */
+    line-height: 1.15;
     font-weight: bold; 
     border-radius: 3px; 
-    padding: 3px 4px; /* Increased padding slightly */
-    width: 80px;  /* Set to 1:2 ratio (Height is 50% of Width) */
-    height: 40px; 
+    padding: 4px 6px; /* Generous internal padding */
+    width: 100px; /* Scaled up maintaining 1:2 ratio */
+    height: 50px; 
     box-sizing: border-box; 
     text-transform: uppercase;
     overflow: hidden; 
