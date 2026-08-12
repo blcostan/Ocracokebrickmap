@@ -336,60 +336,76 @@ function renderOriginalBricks(target) {
     }
 }
 
-    function renderNewBricks(target) {
-        const container = document.getElementById('brick-container');
-        container.style.flexDirection = "column"; 
+function renderNewBricks(target) {
+    const container = document.getElementById('brick-container');
+    container.style.flexDirection = "column"; 
 
-        // Filter section bricks and find the maximum row index dynamically for whichever section is selected
-        const sectionBricks = db2.filter(b => b.Section === target.Section);
-        const maxRow = Math.max(...sectionBricks.map(b => b.Row + b.RowSpan - 1));
+    // Filter section bricks
+    const sectionBricks = db2.filter(b => b.Section === target.Section);
+    const maxRow = Math.max(...sectionBricks.map(b => b.Row + b.RowSpan - 1));
+    
+    // Dynamically calculate max columns for this section
+    const maxCol = Math.max(...sectionBricks.map(b => b.Col + b.ColSpan - 1));
 
-        const wrapper = document.createElement('div');
-        wrapper.style.width = "100%";
-        wrapper.style.maxWidth = "650px";
-        wrapper.style.margin = "0 auto";
-        wrapper.style.boxSizing = "border-box";
+    const wrapper = document.createElement('div');
+    wrapper.style.width = "100%";
+    wrapper.style.maxWidth = maxCol > 12 ? "95%" : "650px"; // Give wider sections extra screen width
+    wrapper.style.margin = "0 auto";
+    wrapper.style.boxSizing = "border-box";
 
-        // 1. TOP HEADER (TOWARD THE ISLAND INN)
-        const topHeader = document.createElement('div');
-        topHeader.className = 'grid-orientation-header';
+    // 1. TOP HEADER
+    const topHeader = document.createElement('div');
+    topHeader.className = 'grid-orientation-header';
+    
+    // Set headers based on section
+    if (target.Section.toUpperCase() === "ENTRANCE LEFT") {
+        topHeader.innerHTML = '↑ ↑ ↑ TOWARD ENTRANCE PATH ↑ ↑ ↑';
+    } else {
         topHeader.innerHTML = '↑ ↑ ↑ TOWARD THE ISLAND INN ↑ ↑ ↑';
-        wrapper.appendChild(topHeader);
-
-        // 2. GRID CONTAINER
-        const grid = document.createElement('div'); 
-        grid.className = 'grid-container';
-        
-        // 3. RENDER BRICKS INVERTED
-        sectionBricks.forEach(b => {
-            const d = document.createElement('div');
-            const hasText = b.Inscription && b.Inscription.trim().length > 0;
-            
-            d.className = hasText ? 'brick-unit-db2' : 'brick-unit-db2 is-blank';
-            d.innerHTML = hasText ? b.Inscription : "";
-            
-            d.style.gridColumn = `${b.Col} / span ${b.ColSpan}`;
-            
-            // Invert rows so Row 1 renders at the bottom
-            const invertedRow = maxRow - b.Row - b.RowSpan + 2;
-            d.style.gridRow = `${invertedRow} / span ${b.RowSpan}`;
-
-            if(b.id == target.id) { 
-                d.classList.add('current-focus'); 
-                setTimeout(() => d.scrollIntoView({ block: 'center' }), 300); 
-            }
-            grid.appendChild(d);
-        });
-        wrapper.appendChild(grid);
-
-        // 4. BOTTOM HEADER (TOWARD LIGHTHOUSE ROAD)
-        const bottomHeader = document.createElement('div');
-        bottomHeader.className = 'grid-orientation-header';
-        bottomHeader.innerHTML = '↓ ↓ ↓ TOWARD LIGHTHOUSE ROAD ↓ ↓ ↓';
-        wrapper.appendChild(bottomHeader);
-
-        container.appendChild(wrapper);
     }
+    wrapper.appendChild(topHeader);
+
+    // 2. GRID CONTAINER
+    const grid = document.createElement('div'); 
+    grid.className = 'grid-container';
+    
+    // Dynamically adjust grid template columns to match section's col count
+    grid.style.gridTemplateColumns = `repeat(${maxCol}, minmax(0, 1fr))`;
+    
+    // 3. RENDER BRICKS INVERTED
+    sectionBricks.forEach(b => {
+        const d = document.createElement('div');
+        const hasText = b.Inscription && b.Inscription.trim().length > 0;
+        
+        d.className = hasText ? 'brick-unit-db2' : 'brick-unit-db2 is-blank';
+        d.innerHTML = hasText ? b.Inscription : "";
+        
+        d.style.gridColumn = `${b.Col} / span ${b.ColSpan}`;
+        
+        const invertedRow = maxRow - b.Row - b.RowSpan + 2;
+        d.style.gridRow = `${invertedRow} / span ${b.RowSpan}`;
+
+        if(b.id == target.id) { 
+            d.classList.add('current-focus'); 
+            setTimeout(() => d.scrollIntoView({ block: 'center' }), 300); 
+        }
+        grid.appendChild(d);
+    });
+    wrapper.appendChild(grid);
+
+    // 4. BOTTOM HEADER
+    const bottomHeader = document.createElement('div');
+    bottomHeader.className = 'grid-orientation-header';
+    
+    if (target.Section.toUpperCase() === "ENTRANCE LEFT") {
+        bottomHeader.innerHTML = '↓ ↓ ↓ TOWARD COMMON LAWN ↓ ↓ ↓';
+    } else {
+        bottomHeader.innerHTML = '↓ ↓ ↓ TOWARD LIGHTHOUSE ROAD ↓ ↓ ↓';
+    }
+    wrapper.appendChild(bottomHeader);
+
+    container.appendChild(wrapper);
+}
 
     function closeBricks() { document.getElementById('brick-overlay').style.display = 'none'; }
     loadData();
