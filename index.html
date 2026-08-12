@@ -280,8 +280,10 @@ function renderOriginalBricks(target) {
     const container = document.getElementById('brick-container');
     container.style.flexDirection = "column";
 
-    // Add North Section header if viewing the North section
-    if (target.Section && target.Section.toLowerCase().includes("north")) {
+    const isNorth = target.Section && target.Section.toLowerCase().includes("north");
+
+    // 1. TOP HEADER (TOWARD LIGHTHOUSE ROAD)
+    if (isNorth) {
         const topHeader = document.createElement('div');
         topHeader.className = 'grid-orientation-header';
         topHeader.innerHTML = '↑ ↑ ↑ TOWARD LIGHTHOUSE ROAD ↑ ↑ ↑';
@@ -312,8 +314,15 @@ function renderOriginalBricks(target) {
         });
         container.appendChild(rowDiv);
     });
-}
 
+    // 2. BOTTOM HEADER (TOWARD COMMON LAWN)
+    if (isNorth) {
+        const bottomHeader = document.createElement('div');
+        bottomHeader.className = 'grid-orientation-header';
+        bottomHeader.innerHTML = '↓ ↓ ↓ TOWARD COMMON LAWN ↓ ↓ ↓';
+        container.appendChild(bottomHeader);
+    }
+}
     function renderNewBricks(target) {
         const container = document.getElementById('brick-container');
         container.style.flexDirection = "column"; 
