@@ -280,13 +280,20 @@ function renderOriginalBricks(target) {
     const container = document.getElementById('brick-container');
     container.style.flexDirection = "column";
 
-    const isNorth = target.Section && target.Section.toLowerCase().includes("north");
+    const sectionName = (target.Section || "").toLowerCase();
+    const isNorth = sectionName.includes("north");
+    const isSouth = sectionName.includes("south");
 
-    // 1. TOP HEADER (TOWARD LIGHTHOUSE ROAD)
+    // 1. TOP HEADERS
     if (isNorth) {
         const topHeader = document.createElement('div');
         topHeader.className = 'grid-orientation-header';
         topHeader.innerHTML = '↑ ↑ ↑ TOWARD LIGHTHOUSE ROAD ↑ ↑ ↑';
+        container.appendChild(topHeader);
+    } else if (isSouth) {
+        const topHeader = document.createElement('div');
+        topHeader.className = 'grid-orientation-header';
+        topHeader.innerHTML = '↑ ↑ ↑ TOWARD COMMON LAWN ↑ ↑ ↑';
         container.appendChild(topHeader);
     }
 
@@ -315,13 +322,19 @@ function renderOriginalBricks(target) {
         container.appendChild(rowDiv);
     });
 
-    // 2. BOTTOM HEADER (TOWARD COMMON LAWN)
+    // 2. BOTTOM HEADERS
     if (isNorth) {
         const bottomHeader = document.createElement('div');
         bottomHeader.className = 'grid-orientation-header';
         bottomHeader.innerHTML = '↓ ↓ ↓ TOWARD COMMON LAWN ↓ ↓ ↓';
         container.appendChild(bottomHeader);
+    } else if (isSouth) {
+        const bottomHeader = document.createElement('div');
+        bottomHeader.className = 'grid-orientation-header';
+        bottomHeader.innerHTML = '↓ ↓ ↓ TOWARD BACK OF GARDEN ↓ ↓ ↓';
+        container.appendChild(bottomHeader);
     }
+}
 }
     function renderNewBricks(target) {
         const container = document.getElementById('brick-container');
