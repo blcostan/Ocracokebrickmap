@@ -23,29 +23,29 @@
             min-height: 100vh; 
         }
         
-        /* DATABASE 1: Fixed dimensions with tight text scaling */
-        .brick-unit-db1 { 
-            background: var(--brick); 
-            color: white; 
-            text-align: center; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 6px; 
-            line-height: 1.1;
-            font-weight: bold; 
-            border-radius: 2px; 
-            padding: 2px; 
-            width: 50px; 
-            height: 40px; 
-            box-sizing: border-box; 
-            text-transform: uppercase;
-            overflow: hidden; 
-            word-break: break-word;
-            hyphens: auto;
-            flex-shrink: 0;
-        }
+       /* DATABASE 1: Fixed 1:2 aspect ratio with improved text fitting */
+.brick-unit-db1 { 
+    background: var(--brick); 
+    color: white; 
+    text-align: center; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 7px; /* Slight size boost for readability */
+    line-height: 1.1;
+    font-weight: bold; 
+    border-radius: 3px; 
+    padding: 3px 4px; /* Increased padding slightly */
+    width: 80px;  /* Set to 1:2 ratio (Height is 50% of Width) */
+    height: 40px; 
+    box-sizing: border-box; 
+    text-transform: uppercase;
+    overflow: hidden; 
+    word-break: break-word;
+    hyphens: auto;
+    flex-shrink: 0;
+}
         
         /* DATABASE 2: Fluid dimensions for grid spanning */
         .brick-unit-db2 { 
