@@ -276,25 +276,33 @@
     }
 
     // PATH 1: Ocracoke_Bricks (STRICTLY ROW LAYOUT)
-    function renderOriginalBricks(target) {
-        const container = document.getElementById('brick-container');
-        container.style.flexDirection = "column";
-        const rows = {}; 
-        db1.filter(b => b.Section === target.Section).forEach(b => {
-            if(!rows[b.Row]) rows[b.Row] = []; rows[b.Row].push(b);
+function renderOriginalBricks(target) {
+    const container = document.getElementById('brick-container');
+    container.style.flexDirection = "column";
+    const rows = {}; 
+    db1.filter(b => b.Section === target.Section).forEach(b => {
+        if(!rows[b.Row]) rows[b.Row] = []; rows[b.Row].push(b);
+    });
+    Object.keys(rows).sort((a,b) => a-b).forEach(r => {
+        const rowDiv = document.createElement('div'); rowDiv.className = 'brick-row';
+        rows[r].sort((a,b) => a.Col - b.Col).forEach(b => {
+            const d = document.createElement('div');
+            d.className = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? 'brick-unit-db1' : 'brick-unit-db1 is-blank';
+            d.innerHTML = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? b.Inscription : "";
+            
+            // TARGET OVERFLOW FIX: Shrink font size if text is too tall
+            if (b.Row === 35 && b.Col === 3) {
+                d.style.fontSize = "6px";
+                d.style.lineHeight = "1.0";
+                d.style.padding = "2px 2px";
+            }
+
+            if(b.id == target.id) { d.classList.add('current-focus'); setTimeout(() => d.scrollIntoView({ block: 'center' }), 300); }
+            rowDiv.appendChild(d);
         });
-        Object.keys(rows).sort((a,b) => a-b).forEach(r => {
-            const rowDiv = document.createElement('div'); rowDiv.className = 'brick-row';
-            rows[r].sort((a,b) => a.Col - b.Col).forEach(b => {
-                const d = document.createElement('div');
-                d.className = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? 'brick-unit-db1' : 'brick-unit-db1 is-blank';
-                d.innerHTML = (b.Inscription && b.Inscription.toUpperCase() !== "[BLANK]") ? b.Inscription : "";
-                if(b.id == target.id) { d.classList.add('current-focus'); setTimeout(() => d.scrollIntoView({ block: 'center' }), 300); }
-                rowDiv.appendChild(d);
-            });
-            container.appendChild(rowDiv);
-        });
-    }
+        container.appendChild(rowDiv);
+    });
+}
 
     function renderNewBricks(target) {
         const container = document.getElementById('brick-container');
