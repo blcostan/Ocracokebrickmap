@@ -342,14 +342,21 @@ function renderNewBricks(target) {
 
     // Filter section bricks
     const sectionBricks = db2.filter(b => b.Section === target.Section);
-    const maxRow = Math.max(...sectionBricks.map(b => b.Row + b.RowSpan - 1));
     
-    // Dynamically calculate max columns for this section
+    // Calculate row and column boundaries for this section
+    const minRow = Math.min(...sectionBricks.map(b => b.Row));
+    const maxRow = Math.max(...sectionBricks.map(b => b.Row + b.RowSpan - 1));
+    const minCol = Math.min(...sectionBricks.map(b => b.Col));
     const maxCol = Math.max(...sectionBricks.map(b => b.Col + b.ColSpan - 1));
+
+    const totalCols = maxCol - minCol + 1;
+    const totalRows = maxRow - minRow + 1;
+
+    const isEntranceLeft = (target.Section || "").toUpperCase() === "ENTRANCE LEFT";
 
     const wrapper = document.createElement('div');
     wrapper.style.width = "100%";
-    wrapper.style.maxWidth = maxCol > 12 ? "95%" : "650px"; // Give wider sections extra screen width
+    wrapper.style.maxWidth = isEntranceLeft ? "850px" : (maxCol > 12 ? "95%" : "650px"); 
     wrapper.style.margin = "0 auto";
     wrapper.style.boxSizing = "border-box";
 
@@ -357,8 +364,7 @@ function renderNewBricks(target) {
     const topHeader = document.createElement('div');
     topHeader.className = 'grid-orientation-header';
     
-    // Set headers based on section
-    if (target.Section.toUpperCase() === "ENTRANCE LEFT") {
+    if (isEntranceLeft) {
         topHeader.innerHTML = '↑ ↑ ↑ TOWARD ENTRANCE PATH ↑ ↑ ↑';
     } else {
         topHeader.innerHTML = '↑ ↑ ↑ TOWARD THE ISLAND INN ↑ ↑ ↑';
@@ -369,8 +375,15 @@ function renderNewBricks(target) {
     const grid = document.createElement('div'); 
     grid.className = 'grid-container';
     
-    // Dynamically adjust grid template columns to match section's col count
-    grid.style.gridTemplateColumns = `repeat(${maxCol}, minmax(0, 1fr))`;
+    if (isEntranceLeft) {
+        // ENTRANCE LEFT ONLY: Lock aspect ratio so 1x2 bricks match horizontal brick dimensions
+        grid.style.gridTemplateColumns = `repeat(${totalCols}, minmax(0, 1fr))`;
+        grid.style.gridAutoRows = "1fr";
+        grid.style.aspectRatio = `${totalCols} / ${totalRows}`;
+    } else {
+        // ALL OTHER SECTIONS: Keep original default grid setup
+        grid.style.gridTemplateColumns = `repeat(${maxCol}, minmax(0, 1fr))`;
+    }
     
     // 3. RENDER BRICKS INVERTED
     sectionBricks.forEach(b => {
@@ -397,7 +410,7 @@ function renderNewBricks(target) {
     const bottomHeader = document.createElement('div');
     bottomHeader.className = 'grid-orientation-header';
     
-    if (target.Section.toUpperCase() === "ENTRANCE LEFT") {
+    if (isEntranceLeft) {
         bottomHeader.innerHTML = '↓ ↓ ↓ TOWARD COMMON LAWN ↓ ↓ ↓';
     } else {
         bottomHeader.innerHTML = '↓ ↓ ↓ TOWARD LIGHTHOUSE ROAD ↓ ↓ ↓';
