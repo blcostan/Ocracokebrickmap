@@ -45,6 +45,7 @@
             word-break: break-word;
             hyphens: auto;
             flex-shrink: 0;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         
         /* DATABASE 2: Fluid dimensions for grid spanning */
@@ -68,6 +69,7 @@
             overflow: hidden; 
             word-break: break-word;
             hyphens: auto;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         /* Entrance Left Grid: Fluid row sizing with ratio preservation */
@@ -93,11 +95,18 @@
             line-height: 1.1 !important;
         }
 
+        /* POP-OUT TARGET BRICK STYLING */
         .current-focus { 
             outline: 3px solid white; 
             background: var(--highlight) !important; 
-            transform: scale(1.05); 
-            z-index: 99; 
+            transform: scale(2.2) !important; /* Zooms out the target brick above neighbors */
+            z-index: 9999 !important; /* Keeps it on top of all surrounding bricks */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important; /* Floating pop-out shadow */
+            font-size: 11px !important; /* High readability text size when popped out */
+            line-height: 1.2 !important;
+            padding: 6px !important;
+            overflow: visible !important;
+            font-weight: bold !important;
         }
         
         .is-blank { 
