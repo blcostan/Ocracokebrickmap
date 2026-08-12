@@ -69,7 +69,19 @@
             word-break: break-word;
             hyphens: auto;
         }
+/* --- ADD NEW CODE HERE --- */
+        /* Scaled font sizing specifically for Entrance Left 20-column grid */
+        .grid-container.entrance-left .brick-unit-db2 {
+            font-size: clamp(3px, 0.55vw, 6px) !important;
+            line-height: 1.0 !important;
+            padding: 1px 1px !important;
+        }
 
+        /* Give 2x2 large bricks slightly larger font in Entrance Left */
+        .grid-container.entrance-left .brick-unit-db2[style*="span 2"] {
+            font-size: clamp(5px, 0.85vw, 9px) !important;
+        }
+        /* ------------------------- */
         .current-focus { 
             outline: 3px solid white; 
             background: var(--highlight) !important; 
@@ -375,15 +387,16 @@ function renderNewBricks(target) {
     const grid = document.createElement('div'); 
     grid.className = 'grid-container';
     
-    if (isEntranceLeft) {
-        // ENTRANCE LEFT ONLY: Lock aspect ratio so 1x2 bricks match horizontal brick dimensions
+    // --- REPLACE YOUR GRID CONTAINER IF/ELSE WITH THIS ---
+    if ((target.Section || "").toUpperCase() === "ENTRANCE LEFT") {
+        grid.classList.add('entrance-left');
         grid.style.gridTemplateColumns = `repeat(${totalCols}, minmax(0, 1fr))`;
         grid.style.gridAutoRows = "1fr";
         grid.style.aspectRatio = `${totalCols} / ${totalRows}`;
     } else {
-        // ALL OTHER SECTIONS: Keep original default grid setup
         grid.style.gridTemplateColumns = `repeat(${maxCol}, minmax(0, 1fr))`;
     }
+    // ----------------------------------------------------
     
     // 3. RENDER BRICKS INVERTED
     sectionBricks.forEach(b => {
