@@ -69,13 +69,12 @@
             word-break: break-word;
             hyphens: auto;
         }
-/* Entrance Left Grid: Expanded width and locked minimum row height for proper brick proportions */
-        .grid-container.entrance-left {
-            grid-template-columns: repeat(20, minmax(0, 1fr)) !important;
-            grid-auto-rows: minmax(50px, auto) !important;
-            aspect-ratio: unset !important;
-            max-width: 1100px !important;
-        }
+/* Entrance Left Grid: Fluid row sizing with ratio preservation */
+.grid-container.entrance-left {
+    grid-template-columns: repeat(20, minmax(0, 1fr)) !important;
+    grid-auto-rows: 1fr !important;
+    max-width: 1100px !important;
+}
 
         /* Clear, legible text formatted specifically for Entrance Left bricks */
         .grid-container.entrance-left .brick-unit-db2 {
@@ -374,7 +373,7 @@ function renderNewBricks(target) {
 
     const wrapper = document.createElement('div');
     wrapper.style.width = "100%";
-    wrapper.style.maxWidth = isEntranceLeft ? "850px" : (maxCol > 12 ? "95%" : "650px"); 
+    wrapper.style.maxWidth = isEntranceLeft ? "1100px" : (maxCol > 12 ? "95%" : "650px"); 
     wrapper.style.margin = "0 auto";
     wrapper.style.boxSizing = "border-box";
 
