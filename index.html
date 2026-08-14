@@ -338,16 +338,7 @@
         const dot = document.getElementById('map-dot'); 
         dot.style.display = "block";
         
-        // Dynamic map dot placement depending on the section
-        if (match.isNew) {
-            if (match.Section === "Back NE") {
-                dot.style.left = "72%"; 
-                dot.style.top = "80%";
-            } else {
-                dot.style.left = "68%"; 
-                dot.style.top = "86%";
-            }
-        } else {
+       if (match.isNew)
             // DATABASE 1 (Ocracoke_Bricks)
             dot.style.left = "54%";
             dot.style.top = match.Section.toLowerCase().includes("north") ? "66%" : "41%";
